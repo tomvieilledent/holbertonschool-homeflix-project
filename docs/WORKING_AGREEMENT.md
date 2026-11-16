@@ -33,7 +33,7 @@ Chaque membre présente sa partie lors de la soutenance du 27 novembre (issues #
 ### Outils
 - **Issues et GitHub Project** : source de vérité pour qui fait quoi et l'état d'avancement. Le statut d'une carte reflète la réalité (« En cours » quand on commence, « Terminé » à la fusion de la PR).
 - **Pull requests** : lieu des décisions sur le code (voir `CONTRIBUTING.md`).
-- **Discussions rapides** : canal de messagerie de l'équipe (à confirmer).
+- **Discussions rapides** : Discord (serveur de l'équipe). Les décisions importantes prises sur Discord sont reportées dans la PR ou l'issue concernée, pour rester traçables.
 
 ## 4. Règles de travail
 
