@@ -87,18 +87,19 @@ Des points d'intégration jalonnent le planning ; chacun vérifie que les morcea
 
 ## 8. Agent IA
 
-> **Section à compléter dans l'issue #17** (rôle de l'agent IA « API & Security Consistency Reviewer »). Elle doit contenir les éléments suivants, exigés par le sujet.
+Le rôle délégué à un agent IA est défini dans [`AI_AGENT_ROLE.md`](AI_AGENT_ROLE.md). Résumé :
 
 | Élément | Contenu |
 |---|---|
-| Objectif | _à définir (#17)_ |
-| Entrées nommées | _à définir (#17)_ |
-| Outils autorisés | _à définir (#17)_ |
-| Limites explicites | _à définir (#17)_ : ni secrets, ni modification de l'authentification, ni média, ni téléchargement, ni fusion, ni déploiement |
-| Livrables | _à définir (#17)_ : rapport avec fichier et ligne, gravité, preuve de reproduction, correction suggérée |
-| Apprenant superviseur | _à désigner (#17)_ |
-| Revue humaine | Un apprenant vérifie chaque constat et approuve tout changement avant fusion (issue #113) |
-| Attribution | _à définir (#17)_ |
+| Rôle | « API & Security Consistency Reviewer » : trouve les écarts entre la documentation (OpenAPI, ADR), le code et les critères d'acceptation |
+| Objectif | Rapport de cohérence avec constats prouvés, sans rien modifier lui-même |
+| Entrées nommées | `docs/api/`, `docs/adr/`, `docs/architecture/data-model.md`, `docs/RISKS.md`, code des trois services, client API du frontend, texte des issues |
+| Outils autorisés | Lecture et recherche de fichiers ; commandes non destructives approuvées (`git diff`/`log`, `docker compose config`, tests après accord) |
+| Limites explicites | Aucun secret, aucune modification de l'authentification, aucun média, aucun téléchargement, aucune fusion, aucun déploiement |
+| Livrables | `docs/ai-review/REPORT.md` : gravité, `fichier:ligne`, preuve de reproduction, correction suggérée, décision humaine |
+| Apprenant superviseur | Tom (second relecteur des constats de sécurité : Haitu) |
+| Revue humaine | Chaque constat est reproduit par un humain, accepté ou rejeté avec justification ; toute correction passe par une PR relue (issue #113) |
+| Attribution | Mention « Constat AI-NN (agent IA), vérifié par <nom> » dans chaque PR de correction ; suivi dans le rapport |
 
 Séparément de ce rôle délégué, l'équipe peut utiliser des assistants IA pour développer, à condition que chacun relise, comprenne et assume le code proposé. Le dernier mot appartient toujours à l'humain qui ouvre la PR.
 
@@ -107,3 +108,4 @@ Séparément de ce rôle délégué, l'équipe peut utiliser des assistants IA p
 | Date | Modification | Par |
 |---|---|---|
 | 2026-11-16 | Création du document | Haitu |
+| 2026-11-16 | Section 8 complétée, renvoi vers `AI_AGENT_ROLE.md` (#17) | Haitu |
