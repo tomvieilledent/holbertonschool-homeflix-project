@@ -1,0 +1,30 @@
+# Propriétaires par zone. Le propriétaire est proposé automatiquement comme relecteur.
+# La dernière règle qui correspond à un fichier l'emporte.
+
+# Par défaut : toute l'équipe
+*                                  @tomvieilledent @ToujoursPareil8 @N-Haitu31
+
+# Frontend (Jason)
+/homeflix/frontend/                @ToujoursPareil8
+
+# Services Spring Boot (Tom)
+/homeflix/identity-service/        @tomvieilledent
+/homeflix/library-service/         @tomvieilledent
+/homeflix/acquisition-service/     @tomvieilledent
+
+# Contrats d'API, ADR identité et modèle de données (Tom)
+/docs/api/                         @tomvieilledent
+/docs/adr/0001-*                   @tomvieilledent
+/docs/architecture/                @tomvieilledent
+
+# Infrastructure, CI et livraison (Haitu)
+/.github/                          @N-Haitu31
+/homeflix/compose.yaml             @N-Haitu31
+/homeflix/.env.example             @N-Haitu31
+/homeflix/initdb/                  @N-Haitu31
+/homeflix/scripts/                 @N-Haitu31
+/homeflix/*-service/Dockerfile     @N-Haitu31
+/homeflix/frontend/Dockerfile      @N-Haitu31
+/homeflix/frontend/nginx.conf      @N-Haitu31
+/docs/adr/0002-*                   @N-Haitu31
+/CONTRIBUTING.md                   @N-Haitu31
