@@ -196,6 +196,8 @@ Capacité de développement : 8 jours × 8 h = 64 h par personne (J9 = présenta
 
 ## 6. Risques principaux
 
+Le registre complet (28 risques avec probabilité, impact, mesure et responsable, révisé à J5 et J9) se trouve dans [`RISKS.md`](RISKS.md). Résumé des principaux :
+
 1. **Surcharge** : ≈ 197 h de développement planifiées (J1–J8) pour 192 h de capacité : dépassement d'environ 3 %, aucune marge. Première variable d'ajustement : les issues P2/P3 (E2E Playwright, anti brute-force, onboarding, page d'état), puis la doc d'architecture détaillée.
 2. **Fichier P2P** : un fichier libre de droits *avec des pairs actifs* doit être validé dès J4 (issue de licence). Plan B : seed local sur une seconde machine.
 3. **Streaming authentifié** : `<video>` n'envoie pas d'en-tête `Authorization` → ticket de streaming signé (ADR à confirmer J1).
