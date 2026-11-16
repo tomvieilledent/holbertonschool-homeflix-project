@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: HomeFlix — Library Service
+  version: 1.0.0
+  description: |
+    Catalogue, recherche, dossiers autorisés, indexation et métadonnées.
+    Conventions (erreurs problem+json, pagination, formats) : `docs/api/CONVENTIONS.md`.
+    URL publique via le proxy : `/api/library/v1/...` ; route interne : `/api/v1/...`.
+    Les jetons JWT sont émis par Identity Service et validés ici via son JWKS (aucun accès à sa base).
+servers:
+  - url: /api/v1
+tags:
+  - { name: Catalogue, description: Parcourir et rechercher les médias }
+  - { name: Admin, description: Dossiers autorisés, indexation, métadonnées (ADMIN) }
+security:
+  - bearerAuth: []
+paths:
+  /media:
+    get:
+      tags: [Catalogue]
+      summary: Liste paginée du catalogue, avec recherche et filtres
+      description: |
+        Recherche insensible à la casse et aux accents sur le titre. Les médias indisponibles restent listés
+        avec leur statut (`availability`). Les entrées supprimées par l'administrateur ne sont jamais retournées.
+      parameters:
+        - { name: q, in: query, description: Texte recherché dans le titre, schema: { type: string, maxLength: 100 } }
+        - { name: genre, in: query, description: Filtre sur un genre (valeur de `GET /genres`), schema: { type: string } }
+        - { name: availability, in: query, schema: { $ref: "#/components/schemas/Availability" } }
+        - { name: sort, in: query, description: "`addedAt,desc` (nouveautés, défaut), `title,asc`, `year,desc`", schema: { type: string, default: "addedAt,desc" } }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200":
+          description: Page de médias
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaPage" }
+              example:
+                items:
+                  - { id: 3f0c9a52-6d1e-4d0b-9a1b-5e7f1c2d3a41, title: Big Buck Bunny, description: "Un lapin géant face à trois rongeurs.", posterUrl: null, genres: [Animation, Comédie], year: 2008, durationSeconds: 596, availability: AVAILABLE, addedAt: "2026-11-18T10:00:00Z" }
+                page: 0
+                size: 20
+                total: 1
+                totalPages: 1
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+  /media/{mediaId}:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    get:
+      tags: [Catalogue]
+      summary: Détail d'un média
+      responses:
+        "200":
+          description: Média
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaItem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /genres:
+    get:
+      tags: [Catalogue]
+      summary: Genres ayant au moins un média disponible
+      responses:
+        "200":
+          description: Genres
+          content:
+            application/json:
+              schema: { type: array, items: { type: string } }
+              example: [Animation, Comédie, Documentaire]
+        "401": { $ref: "#/components/responses/Problem" }
+  /admin/media-roots:
+    get:
+      tags: [Admin]
+      summary: Liste les dossiers autorisés (ADMIN)
+      responses:
+        "200":
+          description: Dossiers
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/MediaRoot" } }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Admin]
+      summary: Ajoute un dossier autorisé (ADMIN)
+      description: |
+        Le chemin est validé avant enregistrement (existe, est un dossier, est lisible, ne contient pas et n'est pas
+        contenu dans une autre racine). Erreurs : `ROOT_NOT_FOUND`, `ROOT_NOT_A_DIRECTORY`, `ROOT_NOT_READABLE` (400), `CONFLICT` (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaRootInput" }
+            example: { path: /media/films, label: Films }
+      responses:
+        "201":
+          description: Dossier ajouté
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaRoot" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /admin/media-roots/validate:
+    post:
+      tags: [Admin]
+      summary: Vérifie un chemin sans l'enregistrer (ADMIN)
+      description: Retourne toujours 200 ; le résultat décrit le problème en langage clair pour l'afficher à l'administrateur.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaRootInput" }
+      responses:
+        "200":
+          description: Résultat de la validation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RootValidation" }
+              examples:
+                valide: { value: { valid: true } }
+                invalide: { value: { valid: false, code: ROOT_NOT_READABLE, message: "Ce dossier existe mais HomeFlix n'a pas le droit de le lire. Vérifiez les permissions du montage." } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /admin/media-roots/{rootId}:
+    parameters:
+      - { name: rootId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [Admin]
+      summary: Modifie le libellé ou l'activation d'un dossier (ADMIN)
+      description: Le chemin n'est pas modifiable (supprimer puis recréer le dossier).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                label: { type: string, maxLength: 60 }
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Dossier mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaRoot" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Admin]
+      summary: Retire un dossier autorisé (ADMIN)
+      description: Les médias de ce dossier passent à `UNAVAILABLE`. Aucun fichier n'est supprimé.
+      responses:
+        "204": { description: Dossier retiré }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /admin/index:
+    post:
+      tags: [Admin]
+      summary: Lance une indexation manuelle (ADMIN)
+      description: |
+        Démarre un scan asynchrone de tous les dossiers actifs. Idempotent : deux scans successifs ne créent
+        pas de doublons. Un seul scan à la fois (`INDEX_ALREADY_RUNNING`, 409).
+      responses:
+        "202":
+          description: Indexation démarrée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IndexJob" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /admin/index/status:
+    get:
+      tags: [Admin]
+      summary: État de la dernière indexation (ADMIN)
+      responses:
+        "200":
+          description: Progression
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IndexJob" }
+              example: { jobId: 5c1d7e0a-0b7a-4a8a-8d21-9f3c2b1a0e10, state: RUNNING, scanned: 42, added: 12, updated: 0, markedUnavailable: 0, duplicates: 1, errors: 0, startedAt: "2026-11-19T09:00:00Z", finishedAt: null }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /admin/media/{mediaId}:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    patch:
+      tags: [Admin]
+      summary: Corrige les métadonnées d'un média (ADMIN)
+      description: Les valeurs éditées ne sont pas écrasées par une réindexation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaMetadataUpdate" }
+            example: { title: Big Buck Bunny, genres: [Animation], year: 2008 }
+      responses:
+        "200":
+          description: Média mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaItem" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Admin]
+      summary: Retire une entrée du catalogue sans supprimer le fichier (ADMIN)
+      description: Le fichier source n'est jamais modifié ni supprimé. L'entrée est exclue des réindexations suivantes.
+      responses:
+        "204": { description: Entrée retirée }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token RS256 émis par Identity (claims `sub`, `roles`, `pid`).
+  parameters:
+    MediaId:
+      { name: mediaId, in: path, required: true, schema: { type: string, format: uuid } }
+    Page:
+      { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+    Size:
+      { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+  responses:
+    Problem:
+      description: Erreur (voir `code`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Validation (`VALIDATION_ERROR`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Rôle insuffisant (`ACCESS_DENIED`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Ressource introuvable (`NOT_FOUND`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, description: Voir CONVENTIONS.md }
+        detail: { type: string }
+        instance: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties: { field: { type: string }, message: { type: string } }
+    Availability:
+      type: string
+      enum: [AVAILABLE, UNAVAILABLE, DOWNLOADING]
+      description: Fichier présent et lisible / absent ou inaccessible / en cours de téléchargement.
+    MediaItem:
+      type: object
+      required: [id, title, genres, availability, addedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        posterUrl: { type: string, nullable: true, description: "Null : le frontend affiche une affiche de remplacement." }
+        genres: { type: array, items: { type: string } }
+        year: { type: integer, nullable: true }
+        durationSeconds: { type: integer, nullable: true }
+        availability: { $ref: "#/components/schemas/Availability" }
+        addedAt: { type: string, format: date-time }
+    MediaPage:
+      type: object
+      required: [items, page, size, total, totalPages]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/MediaItem" } }
+        page: { type: integer }
+        size: { type: integer }
+        total: { type: integer, format: int64 }
+        totalPages: { type: integer }
+    MediaMetadataUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        genres: { type: array, maxItems: 10, items: { type: string, maxLength: 40 } }
+        year: { type: integer, minimum: 1888, maximum: 2100 }
+    MediaRoot:
+      type: object
+      required: [id, path, label, enabled, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        path: { type: string, description: Chemin dans le conteneur (ex. /media/films) }
+        label: { type: string }
+        enabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    MediaRootInput:
+      type: object
+      required: [path]
+      properties:
+        path: { type: string, maxLength: 500 }
+        label: { type: string, maxLength: 60 }
+    RootValidation:
+      type: object
+      required: [valid]
+      properties:
+        valid: { type: boolean }
+        code: { type: string, enum: [ROOT_NOT_FOUND, ROOT_NOT_A_DIRECTORY, ROOT_NOT_READABLE] }
+        message: { type: string, description: Explication en langage clair pour l'administrateur }
+    IndexJob:
+      type: object
+      required: [jobId, state]
+      properties:
+        jobId: { type: string, format: uuid }
+        state: { type: string, enum: [IDLE, RUNNING, COMPLETED, FAILED] }
+        scanned: { type: integer }
+        added: { type: integer }
+        updated: { type: integer }
+        markedUnavailable: { type: integer }
+        duplicates: { type: integer }
+        errors: { type: integer }
+        startedAt: { type: string, format: date-time, nullable: true }
+        finishedAt: { type: string, format: date-time, nullable: true }
