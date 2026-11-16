@@ -2,8 +2,6 @@
 
 Accord d'équipe pour le projet HomeFlix (2 semaines, du 16 au 27 novembre 2026). Il est valable pour les trois membres et se révise en équipe : toute modification passe par une PR relue, comme le reste du dépôt.
 
-> Les éléments marqués **(à confirmer)** n'ont pas encore été discutés en équipe : ils sont proposés ici par défaut et seront validés à la relecture de la PR.
-
 ## 1. Équipe et rôles
 
 | Membre | Compte GitHub | Rôle principal | Zone du code (voir `.github/CODEOWNERS`) |
@@ -26,7 +24,7 @@ Chaque membre présente sa partie lors de la soutenance du 27 novembre (issues #
 ## 3. Communication et routine
 
 ### Daily (10 minutes, chaque jour de développement)
-- **Heure** : 9 h 00 (à confirmer).
+- **Heure** : 9 h 00.
 - **Format** : debout, 3 questions chacun : ce que j'ai terminé, ce que je fais aujourd'hui, ce qui me bloque.
 - Pas de discussion technique longue pendant le daily : si un sujet demande du temps, il se traite juste après, entre les personnes concernées.
 
@@ -46,7 +44,7 @@ Les règles de branches, de commits et de PR sont dans [`CONTRIBUTING.md`](../CO
 - aucun secret dans le dépôt.
 
 ### Règles de revue
-- **Délai de réponse** : une demande de relecture reçoit une réponse dans la demi-journée ouvrée (à confirmer). Une PR qui bloque quelqu'un se relit en priorité.
+- **Délai de réponse** : une demande de relecture reçoit une réponse dans la demi-journée ouvrée. Une PR qui bloque quelqu'un se relit en priorité.
 - **Contenu** : la relecture vérifie dans l'ordre le but, la sécurité, les tests, la lisibilité et la documentation.
 - **Ton** : on critique le code, pas la personne ; une remarque bloquante se justifie.
 - **Dernier à pousser** : la personne qui a poussé le dernier commit d'une PR ne peut pas l'approuver.
