@@ -1,4 +1,12 @@
 target/
+.git
+.gitignore
 .idea/
+.vscode/
 *.iml
 HELP.md
+*.md
+.env
+.env.*
+Dockerfile
+.dockerignore
