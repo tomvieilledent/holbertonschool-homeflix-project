@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: HomeFlix — Identity Service
+  version: 1.0.0
+  description: |
+    Comptes, authentification, rôles et profils de visionnage.
+    Conventions (erreurs problem+json, pagination, formats) : `docs/api/CONVENTIONS.md`.
+    URL publique via le proxy : `/api/identity/v1/...` ; route interne : `/api/v1/...`.
+servers:
+  - url: /api/v1
+tags:
+  - { name: Setup, description: Premier administrateur }
+  - { name: Auth, description: Connexion et session }
+  - { name: Profiles, description: Profils de visionnage }
+  - { name: Account, description: Compte de l'utilisateur connecté }
+  - { name: Admin, description: Gestion des comptes (ADMIN) }
+security:
+  - bearerAuth: []
+paths:
+  /setup/status:
+    get:
+      tags: [Setup]
+      summary: Indique si le premier administrateur doit être créé
+      security: []
+      responses:
+        "200":
+          description: État du setup
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SetupStatus" }
+              example: { setupRequired: true }
+  /setup:
+    post:
+      tags: [Setup]
+      summary: Crée le premier administrateur (jeton de setup à usage unique)
+      description: Anonyme. Impossible dès qu'un administrateur existe (`SETUP_ALREADY_DONE`). Jeton invalide → `SETUP_TOKEN_INVALID`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetupRequest" }
+            example: { setupToken: "a3f9c1…", username: admin, email: admin@maison.fr, password: un-mot-de-passe-long-12 }
+      responses:
+        "201":
+          description: Administrateur créé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion
+      description: |
+        Anonyme. Retourne un access token JWT (15 min) et pose le cookie `refresh_token`
+        (HttpOnly, SameSite=Strict, Path=/api/v1/auth). Ce jeton ne contient pas de profil actif (`pid`).
+        Erreurs : `AUTH_INVALID_CREDENTIALS` (401), `ACCOUNT_DISABLED` (403), `RATE_LIMITED` (429).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+            example: { username: admin, password: un-mot-de-passe-long-12 }
+      responses:
+        "200":
+          description: Connecté
+          headers:
+            Set-Cookie:
+              description: refresh_token (HttpOnly; SameSite=Strict; Path=/api/v1/auth)
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+              example: { accessToken: "eyJhbGciOiJSUzI1NiIs…", expiresIn: 900, tokenType: Bearer }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renouvelle l'access token (rotation du refresh token)
+      description: |
+        Anonyme mais exige le cookie `refresh_token` et l'en-tête `X-Requested-With: homeflix`.
+        Le refresh token est remplacé à chaque appel ; la réutilisation d'un ancien jeton révoque la session.
+        Le claim `pid` est conservé s'il était présent. Session expirée → `SESSION_EXPIRED` (401).
+      security: []
+      parameters:
+        - { $ref: "#/components/parameters/XRequestedWith" }
+      responses:
+        "200":
+          description: Nouveau jeton
+          headers:
+            Set-Cookie: { description: Nouveau refresh_token, schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Déconnexion (révoque le refresh token et efface le cookie)
+      security: []
+      parameters:
+        - { $ref: "#/components/parameters/XRequestedWith" }
+      responses:
+        "204": { description: Déconnecté (idempotent) }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Compte, rôle et profil actif de la session
+      responses:
+        "200":
+          description: Session courante
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+              example:
+                account: { id: 0b2f6c1e-3c7a-4a3e-9d55-1f0a6a1d2c10, username: admin, email: admin@maison.fr, role: ADMIN, enabled: true, createdAt: "2026-11-16T08:00:00Z" }
+                activeProfileId: 7d9e1b52-0f4c-4a52-8a10-2c1c5f6f3a01
+        "401": { $ref: "#/components/responses/Problem" }
+  /profiles:
+    get:
+      tags: [Profiles]
+      summary: Liste les profils du compte connecté
+      responses:
+        "200":
+          description: Profils
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Profile" } }
+        "401": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Profiles]
+      summary: Crée un profil (5 maximum par compte)
+      description: Limite atteinte → `PROFILE_LIMIT_REACHED` (409). Nom déjà utilisé dans le compte → `CONFLICT` (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfileInput" }
+            example: { name: Léa, avatar: bleu }
+      responses:
+        "201":
+          description: Profil créé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /profiles/{profileId}:
+    parameters:
+      - { $ref: "#/components/parameters/ProfileId" }
+    patch:
+      tags: [Profiles]
+      summary: Renomme un profil ou change son avatar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfileInput" }
+      responses:
+        "200":
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Profiles]
+      summary: Supprime un profil et ses données (favoris, progression)
+      description: Déclenche la purge côté Library (appel interne). Le dernier profil d'un compte ne peut pas être supprimé (`CONFLICT`).
+      responses:
+        "204": { description: Supprimé }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /profiles/{profileId}/select:
+    parameters:
+      - { $ref: "#/components/parameters/ProfileId" }
+    post:
+      tags: [Profiles]
+      summary: Sélectionne le profil actif
+      description: Retourne un nouvel access token contenant le claim `pid`. Profil d'un autre compte → 404.
+      responses:
+        "200":
+          description: Jeton avec profil actif
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /accounts/me:
+    delete:
+      tags: [Account]
+      summary: Supprime son propre compte et ses données
+      description: |
+        Confirmation du mot de passe obligatoire. Supprime profils, sessions et données associées (purge Library).
+        Les fichiers médias ne sont jamais supprimés. Refusé pour le dernier administrateur (`LAST_ADMIN`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PasswordConfirmation" }
+      responses:
+        "204": { description: Compte supprimé }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /admin/accounts:
+    get:
+      tags: [Admin]
+      summary: Liste paginée des comptes (ADMIN)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200":
+          description: Comptes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountPage" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Admin]
+      summary: Crée un compte (ADMIN)
+      description: Identifiant ou email déjà utilisé → `CONFLICT` (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountCreate" }
+      responses:
+        "201":
+          description: Compte créé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /admin/accounts/{accountId}:
+    parameters:
+      - { $ref: "#/components/parameters/AccountId" }
+    get:
+      tags: [Admin]
+      summary: Détail d'un compte (ADMIN)
+      responses:
+        "200":
+          description: Compte
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Admin]
+      summary: Active/désactive un compte ou change son rôle (ADMIN)
+      description: La désactivation révoque immédiatement les sessions. Le dernier administrateur ne peut être ni désactivé ni rétrogradé (`LAST_ADMIN`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountUpdate" }
+            example: { enabled: false }
+      responses:
+        "200":
+          description: Compte mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Admin]
+      summary: Supprime un compte et ses données (ADMIN)
+      description: Dernier administrateur → `LAST_ADMIN` (409). Les fichiers médias ne sont jamais supprimés.
+      responses:
+        "204": { description: Supprimé }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /admin/accounts/{accountId}/password-reset:
+    parameters:
+      - { $ref: "#/components/parameters/AccountId" }
+    post:
+      tags: [Admin]
+      summary: Réinitialise le mot de passe (ADMIN)
+      description: Définit un mot de passe temporaire ; l'utilisateur devra le changer à la prochaine connexion (`mustChangePassword`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PasswordReset" }
+      responses:
+        "204": { description: Mot de passe réinitialisé }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /.well-known/jwks.json:
+    servers:
+      - url: /
+    get:
+      tags: [Auth]
+      summary: Clés publiques de signature des JWT (JWKS)
+      description: Anonyme, réservé au réseau interne (non routé par le proxy). Utilisé par Library et Acquisition pour valider les jetons.
+      security: []
+      responses:
+        "200":
+          description: JWKS (clés publiques uniquement)
+          content:
+            application/json:
+              schema: { type: object }
+              example: { keys: [{ kty: RSA, use: sig, alg: RS256, kid: 2026-11, n: "…", e: AQAB }] }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token RS256 (15 min). Claims `sub` (compte), `roles`, `pid` (profil actif, optionnel), `kid`.
+  parameters:
+    XRequestedWith:
+      name: X-Requested-With
+      in: header
+      required: true
+      description: Doit valoir `homeflix` (protection CSRF).
+      schema: { type: string, enum: [homeflix] }
+    ProfileId:
+      { name: profileId, in: path, required: true, schema: { type: string, format: uuid } }
+    AccountId:
+      { name: accountId, in: path, required: true, schema: { type: string, format: uuid } }
+    Page:
+      { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+    Size:
+      { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+  responses:
+    Problem:
+      description: Erreur (voir `code`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Validation (`VALIDATION_ERROR`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example: { type: "https://homeflix.local/problems/validation-error", title: Données invalides, status: 400, code: VALIDATION_ERROR, errors: [{ field: password, message: 12 caractères minimum }] }
+    Forbidden:
+      description: Rôle insuffisant (`ACCESS_DENIED`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Ressource introuvable ou appartenant à un autre compte (`NOT_FOUND`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    TooManyRequests:
+      description: Trop de tentatives (`RATE_LIMITED`)
+      headers:
+        Retry-After: { schema: { type: integer }, description: Secondes avant nouvel essai }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, description: Voir CONVENTIONS.md }
+        detail: { type: string }
+        instance: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties: { field: { type: string }, message: { type: string } }
+    SetupStatus:
+      { type: object, required: [setupRequired], properties: { setupRequired: { type: boolean } } }
+    SetupRequest:
+      type: object
+      required: [setupToken, username, email, password]
+      properties:
+        setupToken: { type: string }
+        username: { type: string, minLength: 3, maxLength: 40 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12, maxLength: 128, writeOnly: true }
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, writeOnly: true }
+    TokenResponse:
+      type: object
+      required: [accessToken, expiresIn, tokenType]
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer, description: Durée de vie en secondes }
+        tokenType: { type: string, enum: [Bearer] }
+    Role: { type: string, enum: [USER, ADMIN] }
+    Account:
+      type: object
+      required: [id, username, email, role, enabled, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        role: { $ref: "#/components/schemas/Role" }
+        enabled: { type: boolean }
+        mustChangePassword: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    AccountCreate:
+      type: object
+      required: [username, email, password, role]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 40 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12, maxLength: 128, writeOnly: true }
+        role: { $ref: "#/components/schemas/Role" }
+    AccountUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        enabled: { type: boolean }
+        role: { $ref: "#/components/schemas/Role" }
+    AccountPage:
+      type: object
+      required: [items, page, size, total, totalPages]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Account" } }
+        page: { type: integer }
+        size: { type: integer }
+        total: { type: integer, format: int64 }
+        totalPages: { type: integer }
+    PasswordReset:
+      type: object
+      required: [temporaryPassword]
+      properties:
+        temporaryPassword: { type: string, minLength: 12, maxLength: 128, writeOnly: true }
+    PasswordConfirmation:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string, writeOnly: true }
+    Profile:
+      type: object
+      required: [id, name, avatar, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        avatar: { type: string, description: Identifiant d'avatar prédéfini }
+        createdAt: { type: string, format: date-time }
+    ProfileInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 30 }
+        avatar: { type: string, maxLength: 30 }
+    Me:
+      type: object
+      required: [account]
+      properties:
+        account: { $ref: "#/components/schemas/Account" }
+        activeProfileId: { type: string, format: uuid, nullable: true }
