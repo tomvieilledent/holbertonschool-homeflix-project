@@ -1,5 +1,5 @@
 # Plan d'exécution HomeFlix
-> Généré avec le backlog GitHub. Source de vérité : le [GitHub Project](https://github.com/users/tomvieilledent/projects/1) et les issues. Calendrier : lundi 16 → vendredi 27 novembre 2026 (week-ends exclus).
+> Généré avec le backlog GitHub. Source de vérité : le [GitHub Project](https://github.com/users/tomvieilledent/projects/1) et les issues. Calendrier : développement du lundi 16 au mercredi 25 novembre (8 jours, 8h–17h), jeudi 26 : préparation de la présentation, vendredi 27 : présentation.
 ## 1. État du dépôt (audit du 16/11)
 | Élément | État |
 |---|---|
@@ -19,20 +19,20 @@
 ## 3. Charge et équilibre
 | Développeur | Issues | Charge estimée | Jours-équivalents (8 h) | P0 | P1 | P2/P3 |
 |---|---|---|---|---|---|---|
-| Jason | 44 | 67.5 h | 8.4 j | 37.5 h | 27.5 h | 2.5 h |
-| Tom | 42 | 69.0 h | 8.6 j | 43.5 h | 24.0 h | 1.5 h |
-| Haitu | 39 | 77.0 h | 9.6 j | 49.5 h | 24.0 h | 3.5 h |
-| **Total** | 125 | 213.5 h | 26.7 j | | | |
+| Jason | 45 | 69.5 h | 8.7 j | 39.5 h | 27.5 h | 2.5 h |
+| Tom | 43 | 71.0 h | 8.9 j | 45.5 h | 24.0 h | 1.5 h |
+| Haitu | 40 | 79.0 h | 9.9 j | 51.5 h | 24.0 h | 3.5 h |
+| **Total** | 128 | 219.5 h | 27.4 j | | | |
 
-Capacité théorique : 9 jours × 8 h = 72 h par personne (J10 = présentation). **La charge est proche de 100 % de cette capacité** : les estimations supposent un développement assisté par IA, et aucun développeur n'a de marge. Voir les risques.
+Capacité de développement : 8 jours × 8 h = 64 h par personne (J9 = présentation, J10 = soutenance). **La charge de développement est proche de 100 % de cette capacité, avec des pics supérieurs à 8 h sur certains jours** : les estimations supposent un développement assisté par IA, et aucun développeur n'a de marge. Voir les risques.
 
 ### Charge par jour (heures, répartition linéaire)
 
 | Dév | J1 | J2 | J3 | J4 | J5 | J6 | J7 | J8 | J9 | J10 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Jason | 3.8 | 6.5 | 7.2 | 6.8 | 6.8 | 9.7 | 10.2 | 9.4 | 7.0 | 0.0 |
-| Tom | 7.2 | 3.5 | 6.0 | 8.0 | 10.2 | 9.0 | 9.0 | 10.8 | 5.2 | 0.0 |
-| Haitu | 7.2 | 9.2 | 8.8 | 4.5 | 6.0 | 5.8 | 11.0 | 10.0 | 11.0 | 3.5 |
+| Jason | 3.8 | 6.5 | 7.2 | 6.8 | 6.8 | 9.7 | 12.9 | 8.7 | 5.0 | 2.0 |
+| Tom | 7.2 | 3.5 | 6.0 | 8.0 | 10.2 | 9.0 | 13.2 | 8.8 | 3.0 | 2.0 |
+| Haitu | 7.2 | 9.2 | 8.8 | 4.5 | 7.8 | 7.0 | 11.0 | 12.8 | 8.8 | 2.0 |
 
 ## 4. Planning et points d'intégration
 
@@ -86,19 +86,20 @@ Capacité théorique : 9 jours × 8 h = 72 h par personne (J10 = présentation).
 | [#83](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/83) | [FRONTEND] Admin — configuration des dossiers médias | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #69, #23 |
 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) | [FRONTEND] Admin — édition des métadonnées et suppression d'une entrée | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #69, #57 |
 | [#85](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/85) | [FRONTEND] Admin — catalogue d'acquisition et rappel des droits | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #69, #23, #24 |
+| [#101](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/101) | [FRONTEND] Admin — état des services | P2 | 1.0 h (S) | J7 (11-24) → J7 (11-24) | #69 |
+| [#102](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/102) | [FRONTEND] Suppression de son compte et de ses données | P1 | 1.0 h (S) | J7 (11-24) → J7 (11-24) | #76 |
 | [#86](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/86) | [SECURITY] Revue XSS et rendu sécurisé du contenu utilisateur | P1 | 1.0 h (S) | J7 (11-24) → J7 (11-24) | #57 |
 | [#94](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/94) | [FRONTEND] Admin — lancement et suivi de l'indexation | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #83 |
 | [#95](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/95) | [FRONTEND] Admin — suivi des téléchargements (états, progression, annulation) | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #85 |
 | [#96](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/96) | [FRONTEND] Revue du responsive design (mobile, tablette, desktop) | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #47, #53, #77 |
-| [#101](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/101) | [FRONTEND] Admin — état des services | P2 | 1.0 h (S) | J8 (11-25) → J8 (11-25) | #69 |
-| [#102](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/102) | [FRONTEND] Suppression de son compte et de ses données | P1 | 1.0 h (S) | J8 (11-25) → J8 (11-25) | #76 |
-| [#103](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/103) | [SECURITY] Accessibilité — clavier, focus, ARIA et contrastes | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #96 |
+| [#103](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/103) | [SECURITY] Accessibilité — clavier, focus, ARIA et contrastes | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #96 |
 | [#104](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/104) | [INTEGRATION] Brancher l'administration et l'acquisition sur les vrais services | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #77, #83, #94, #84, #95, #62, #38, #88 |
 | [#105](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/105) | [FRONTEND] Onboarding du premier lancement et états vides guidés | P3 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #47 |
+| [#120](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/120) | [BUG] Corriger les défauts d'intégration frontend (stabilisation J9) | P0 | 2.0 h (S) | J8 (11-25) → J8 (11-25) | #104 |
 | [#117](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/117) | [DOCS] Captures d'écran et documentation du frontend | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #104 |
 | [#118](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/118) | [DOCS] Préparer les slides — expérience utilisateur et frontend | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #117 |
 | [#119](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/119) | [DOCS] Script et enregistrement de la partie démonstration de la vidéo | P1 | 2.0 h (S) | J9 (11-26) → J9 (11-26) | #104 |
-| [#120](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/120) | [BUG] Corriger les défauts d'intégration frontend (stabilisation J9) | P0 | 2.0 h (S) | J9 (11-26) → J9 (11-26) | #104 |
+| [#127](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/127) | [DOCS] Présentation finale — Présenter la partie produit/UX et répondre aux questions | P0 | 2 h (S) | J10 (11-27) → J10 (11-27) | #125 |
 
 ### Tom
 
@@ -134,18 +135,19 @@ Capacité théorique : 9 jours × 8 h = 72 h par personne (J10 = présentation).
 | [#78](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/78) | [TEST] Identity — tests d'authentification, rôles et isolation des profils | P1 | 2.5 h (M) | J6 (11-23) → J7 (11-24) | #48, #59, #62 |
 | [#79](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/79) | [SECURITY] Acquisition — validation des sources, liste blanche et protection SSRF | P0 | 1.5 h (S) | J6 (11-23) → J7 (11-24) | #60 |
 | [#87](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/87) | [BACKEND] Library — endpoint d'accueil (récents, catégories, favoris, continuer à regarder) | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #63, #64, #49 |
+| [#98](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/98) | [TEST] Library — tests Range, autorisations et isolation des profils | P1 | 2.5 h (M) | J7 (11-24) → J7 (11-24) | #50, #51, #63, #64 |
 | [#88](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/88) | [BACKEND] Acquisition — rappel des droits et démarrage/statut/annulation des téléchargements | P0 | 2.5 h (M) | J7 (11-24) → J7 (11-24) | #60, #74, #79, #41 |
+| [#109](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/109) | [DOCS] Documenter les contrats interservices et la sécurité des API internes | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #72 |
 | [#97](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/97) | [BACKEND] Identity — suppression de compte et purge des données associées | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #59, #72 |
-| [#98](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/98) | [TEST] Library — tests Range, autorisations et isolation des profils | P1 | 2.5 h (M) | J7 (11-24) → J8 (11-25) | #50, #51, #63, #64 |
 | [#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99) | [BACKEND] Acquisition — synchronisation des états et transmission du fichier terminé à Library | P0 | 2.0 h (S) | J7 (11-24) → J8 (11-25) | #88, #72 |
-| [#106](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/106) | [BACKEND] Acquisition — gestion des pannes et messages d'erreur compréhensibles | P1 | 1.0 h (S) | J8 (11-25) → J8 (11-25) | #99 |
+| [#106](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/106) | [BACKEND] Acquisition — gestion des pannes et messages d'erreur compréhensibles | P1 | 1.0 h (S) | J7 (11-24) → J8 (11-25) | #99 |
+| [#113](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/113) | [SECURITY] Lancer la revue de l'agent IA et vérifier chaque constat | P1 | 2.0 h (S) | J7 (11-24) → J8 (11-25) | #17, #108 |
 | [#107](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/107) | [TEST] Acquisition — tests des règles métier et de sécurité | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #88, #99 |
 | [#108](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/108) | [TEST] Vérifier la conformité OpenAPI ↔ implémentation (springdoc + tests de contrat) | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #78, #98, #107 |
-| [#109](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/109) | [DOCS] Documenter les contrats interservices et la sécurité des API internes | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #72, #99 |
-| [#113](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/113) | [SECURITY] Lancer la revue de l'agent IA et vérifier chaque constat | P1 | 2.0 h (S) | J8 (11-25) → J9 (11-26) | #17, #108 |
-| [#114](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/114) | [BACKEND] Corriger les défauts de sécurité et d'intégration remontés (J8–J9) | P0 | 2.5 h (M) | J8 (11-25) → J9 (11-26) | #113, #82 |
+| [#114](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/114) | [BACKEND] Corriger les défauts de sécurité et d'intégration remontés (J8–J9) | P0 | 2.5 h (M) | J8 (11-25) → J8 (11-25) | #113, #82 |
 | [#121](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/121) | [DOCS] Préparer les slides — architecture, microservices et sécurité (section backend) | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #92 |
 | [#122](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/122) | [DOCS] Enregistrer la partie technique de la vidéo de démonstration | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #92 |
+| [#128](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/128) | [DOCS] Présentation finale — Présenter l'architecture, la sécurité et le backend, et répondre aux questions | P0 | 2 h (S) | J10 (11-27) → J10 (11-27) | #125 |
 
 ### Haitu
 
@@ -171,29 +173,30 @@ Capacité théorique : 9 jours × 8 h = 72 h par personne (J10 = présentation).
 | [#55](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/55) | [INTEGRATION] Revue de mi-parcours J5 — parcours principal et réduction de périmètre | P0 | 1.5 h (S) | J5 (11-20) → J5 (11-20) | #45, #38 |
 | [#60](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/60) | [BACKEND] Acquisition — migrations, entités et catalogue de contenus autorisés (+ seed) | P0 | 2.5 h (M) | J5 (11-20) → J6 (11-23) | #12, #24, #14 |
 | [#61](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/61) | [DEVOPS] Isoler le client BitTorrent (Transmission) dans Docker Compose | P0 | 2.0 h (S) | J5 (11-20) → J6 (11-23) | #42, #46 |
+| [#75](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/75) | [DEVOPS] Scripts de sauvegarde et de restauration des données persistantes | P1 | 2.5 h (M) | J5 (11-20) → J6 (11-23) | #42 |
+| [#92](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/92) | [DOCS] Documentation technique — architecture, services, données et choix | P1 | 1.5 h (S) | J5 (11-20) → J7 (11-24) | #12, #11, #1 |
 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) | [BACKEND] Library — disponibilité, fichiers supprimés et doublons | P1 | 1.5 h (S) | J6 (11-23) → J7 (11-24) | #38 |
 | [#74](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/74) | [BACKEND] Acquisition — adaptateur du client BitTorrent (Transmission RPC) | P0 | 3.0 h (M) | J6 (11-23) → J7 (11-24) | #60, #61 |
-| [#75](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/75) | [DEVOPS] Scripts de sauvegarde et de restauration des données persistantes | P1 | 2.5 h (M) | J6 (11-23) → J7 (11-24) | #42 |
+| [#89](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/89) | [TEST] Tests de démarrage et de persistance automatisés | P1 | 1.5 h (S) | J6 (11-23) → J7 (11-24) | #45 |
 | [#81](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/81) | [SECURITY] Statut des services — agrégateur de santé pour l'administration | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #16, #18 |
 | [#82](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/82) | [INTEGRATION] Point d'intégration J7 — profils, progression, favoris, administration, acquisition | P0 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #59, #63, #64, #88 |
-| [#89](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/89) | [TEST] Tests de démarrage et de persistance automatisés | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #45 |
+| [#100](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/100) | [DOCS] Guide de sauvegarde/restauration et note de sensibilisation au droit d'auteur et au P2P | P1 | 1.5 h (S) | J7 (11-24) → J7 (11-24) | #75, #46 |
 | [#90](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/90) | [SECURITY] Audit des montages, permissions, réseau et images | P1 | 2.0 h (S) | J7 (11-24) → J8 (11-25) | #61, #75 |
 | [#91](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/91) | [DOCS] README utilisateur — installation, configuration, accès et première lecture | P0 | 2.5 h (M) | J7 (11-24) → J8 (11-25) | #28, #42 |
-| [#92](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/92) | [DOCS] Documentation technique — architecture, services, données et choix | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #12, #11, #1 |
 | [#93](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/93) | [DEVOPS] Environnement de démonstration, comptes de démo et script de réinitialisation | P1 | 1.5 h (S) | J7 (11-24) → J8 (11-25) | #14, #91 |
-| [#100](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/100) | [DOCS] Guide de sauvegarde/restauration et note de sensibilisation au droit d'auteur et au P2P | P1 | 1.5 h (S) | J8 (11-25) → J8 (11-25) | #75, #46 |
+| [#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111) | [INTEGRATION] Test de transfert P2P réel de bout en bout | P0 | 2.0 h (S) | J8 (11-25) → J8 (11-25) | #99, #74, #95, #61 |
+| [#112](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/112) | [TEST] Installation sur environnement vierge en suivant uniquement le README | P0 | 2.5 h (M) | J8 (11-25) → J8 (11-25) | #91, #93 |
+| [#115](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/115) | [TEST] Plan d'acceptation et exécution des 10 scénarios MVP | P0 | 3.5 h (M) | J8 (11-25) → J8 (11-25) | #111, #112, #82 |
 | [#110](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/110) | [TEST] Tests E2E Playwright du parcours principal | P3 | 3.5 h (M) | J8 (11-25) → J9 (11-26) | #53, #83, #18 |
-| [#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111) | [INTEGRATION] Test de transfert P2P réel de bout en bout | P0 | 2.0 h (S) | J8 (11-25) → J9 (11-26) | #99, #74, #95, #61 |
-| [#112](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/112) | [TEST] Installation sur environnement vierge en suivant uniquement le README | P0 | 2.5 h (M) | J8 (11-25) → J9 (11-26) | #91, #93 |
-| [#115](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/115) | [TEST] Plan d'acceptation et exécution des 10 scénarios MVP | P0 | 3.5 h (M) | J9 (11-26) → J9 (11-26) | #111, #112, #82 |
 | [#116](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/116) | [DOCS] Dépannage, limites connues et environnements testés | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #112 |
-| [#123](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/123) | [DOCS] Préparer les slides — infrastructure, sécurité et choix techniques + assemblage du deck | P1 | 1.5 h (S) | J9 (11-26) → J10 (11-27) | #115 |
-| [#124](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/124) | [DOCS] Montage et publication de la vidéo de démonstration (2 à 6 minutes) | P1 | 2.5 h (M) | J9 (11-26) → J10 (11-27) | #119, #122 |
-| [#125](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/125) | [DOCS] Répétition générale, plan de démonstration et rétrospective | P1 | 1.5 h (S) | J10 (11-27) → J10 (11-27) | #123, #115 |
+| [#123](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/123) | [DOCS] Préparer les slides — infrastructure, sécurité et choix techniques + assemblage du deck | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #115 |
+| [#124](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/124) | [DOCS] Montage et publication de la vidéo de démonstration (2 à 6 minutes) | P1 | 2.5 h (M) | J9 (11-26) → J9 (11-26) | #119, #122 |
+| [#125](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/125) | [DOCS] Répétition générale chronométrée et plan B de la démonstration | P1 | 1.5 h (S) | J9 (11-26) → J9 (11-26) | #123, #115 |
+| [#126](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/126) | [DOCS] Présentation finale — Présenter l'infrastructure, le P2P et la livraison, et répondre aux questions | P0 | 2 h (S) | J10 (11-27) → J10 (11-27) | #125 |
 
 ## 6. Risques principaux
 
-1. **Surcharge** : ≈ 213 h planifiées pour une capacité de 216 h. Première variable d'ajustement : les issues P2/P3 (E2E Playwright, anti brute-force, onboarding, page d'état), puis la doc d'architecture détaillée.
+1. **Surcharge** : ≈ 190 h de développement planifiées (J1–J8) pour 192 h de capacité, sans marge. Première variable d'ajustement : les issues P2/P3 (E2E Playwright, anti brute-force, onboarding, page d'état), puis la doc d'architecture détaillée.
 2. **Fichier P2P** : un fichier libre de droits *avec des pairs actifs* doit être validé dès J4 (issue de licence). Plan B : seed local sur une seconde machine.
 3. **Streaming authentifié** : `<video>` n'envoie pas d'en-tête `Authorization` → ticket de streaming signé (ADR à confirmer J1).
 4. **Squelette incohérent** : Library/Acquisition sans datasource, sécurité par défaut bloquante (corrigé par l'issue d'assainissement du squelette).
