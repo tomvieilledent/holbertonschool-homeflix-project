@@ -1,0 +1,119 @@
+name: homeflix
+
+x-service: &service
+  restart: unless-stopped
+  networks: [internal]
+  depends_on:
+    db: { condition: service_healthy }
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    networks: [internal]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?défini dans .env}
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?}
+      LIBRARY_DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
+      ACQUISITION_DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  identity-service:
+    <<: *service
+    build: ./identity-service
+    environment:
+      SERVER_PORT: 8081
+      DB_URL: jdbc:postgresql://db:5432/identity
+      DB_USER: identity
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+    healthcheck: &javahc
+      # TCP tant que /actuator/health n'est pas ouvert par la config Security (voir issue T08)
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/$$SERVER_PORT'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  library-service:
+    <<: *service
+    build: ./library-service
+    depends_on:
+      db: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/library
+      SPRING_DATASOURCE_USERNAME: library
+      SPRING_DATASOURCE_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
+      IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      MEDIA_ROOT: /media
+      DOWNLOADS_ROOT: /downloads
+    volumes:
+      - ${MEDIA_DIR:-./demo-media}:/media:ro
+      - downloads:/downloads:ro
+    healthcheck: *javahc
+
+  acquisition-service:
+    <<: *service
+    build: ./acquisition-service
+    depends_on:
+      db: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+      transmission: { condition: service_started }
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/acquisition
+      SPRING_DATASOURCE_USERNAME: acquisition
+      SPRING_DATASOURCE_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
+      IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
+      LIBRARY_BASE_URL: http://library-service:8082
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      TRANSMISSION_URL: http://transmission:9091/transmission/rpc
+      TRANSMISSION_USER: ${TRANSMISSION_USER:?}
+      TRANSMISSION_PASS: ${TRANSMISSION_PASS:?}
+      DOWNLOADS_ROOT: /downloads
+    volumes:
+      - downloads:/downloads
+    healthcheck: *javahc
+
+  # Client BitTorrent existant : aucune interface publiée, joignable uniquement par acquisition-service.
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest # à épingler sur une version testée
+    restart: unless-stopped
+    networks: [internal]
+    environment:
+      PUID: 1000
+      PGID: 1000
+      USER: ${TRANSMISSION_USER:?}
+      PASS: ${TRANSMISSION_PASS:?}
+    volumes:
+      - transmission-config:/config
+      - downloads:/downloads
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    networks: [internal]
+    depends_on:
+      identity-service: { condition: service_healthy }
+      library-service: { condition: service_healthy }
+      acquisition-service: { condition: service_healthy }
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
+networks:
+  internal:
+
+volumes:
+  pgdata:
+  downloads:
+  transmission-config:
