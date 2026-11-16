@@ -11,6 +11,8 @@ servers:
   - url: /api/v1
 tags:
   - { name: Catalogue, description: Parcourir et rechercher les médias }
+  - { name: Playback, description: Lecture vidéo en streaming }
+  - { name: Profile data, description: Progression, favoris et accueil du profil actif }
   - { name: Admin, description: Dossiers autorisés, indexation, métadonnées (ADMIN) }
 security:
   - bearerAuth: []
@@ -223,6 +225,172 @@ paths:
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /media/{mediaId}/stream-ticket:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    post:
+      tags: [Playback]
+      summary: Obtient un ticket de streaming signé pour un média
+      description: |
+        Une balise `<video>` ne peut pas envoyer l'en-tête `Authorization` : le lecteur demande d'abord un ticket,
+        puis charge `url`. Le ticket est un JWT (audience `stream`) lié au compte, au profil actif (`pid`) et à ce média,
+        valable 2 h, utilisable uniquement sur ce média. Média indisponible → `MEDIA_UNAVAILABLE` (409) ;
+        fichier absent → `MEDIA_FILE_MISSING` (404) ; sans profil actif → `PROFILE_NOT_SELECTED` (409).
+      responses:
+        "200":
+          description: Ticket
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StreamTicket" }
+              example: { url: "/api/library/v1/stream/3f0c9a52-6d1e-4d0b-9a1b-5e7f1c2d3a41?t=eyJhbGciOi…", expiresAt: "2026-11-19T11:00:00Z" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /stream/{mediaId}:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    get:
+      tags: [Playback]
+      summary: Flux vidéo (HTTP Range)
+      description: |
+        Authentifié uniquement par le ticket `t` (pas d'en-tête `Authorization`). Format supporté documenté : MP4 H.264/AAC.
+        - Sans `Range` : `200` avec `Accept-Ranges: bytes`.
+        - `Range: bytes=0-99`, `bytes=100-` ou `bytes=-500` : `206 Partial Content` avec `Content-Range`.
+        - Plage hors limites : `416` avec `Content-Range: bytes */<taille>`.
+        - Ticket absent ou mauvais média : `403` ; ticket expiré : `401` (`TICKET_EXPIRED`).
+        - Fichier absent : `404` (`MEDIA_FILE_MISSING`) ; format non supporté : `415` (`MEDIA_UNSUPPORTED_FORMAT`).
+        Le chemin disque n'est jamais exposé.
+      security: []
+      parameters:
+        - { name: t, in: query, required: true, description: Ticket de streaming, schema: { type: string } }
+        - { name: Range, in: header, required: false, schema: { type: string, example: "bytes=0-1048575" } }
+      responses:
+        "200":
+          description: Fichier complet
+          headers:
+            Accept-Ranges: { schema: { type: string, example: bytes } }
+            Content-Length: { schema: { type: integer, format: int64 } }
+          content:
+            video/mp4: { schema: { type: string, format: binary } }
+        "206":
+          description: Contenu partiel
+          headers:
+            Content-Range: { schema: { type: string, example: "bytes 0-1048575/52428800" } }
+            Content-Length: { schema: { type: integer, format: int64 } }
+          content:
+            video/mp4: { schema: { type: string, format: binary } }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "416":
+          description: Plage invalide
+          headers:
+            Content-Range: { schema: { type: string, example: "bytes */52428800" } }
+  /media/{mediaId}/progress:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    get:
+      tags: [Profile data]
+      summary: Progression du profil actif sur ce média
+      description: "Le profil est lu dans le claim `pid`, jamais dans l'URL. Sans progression, l'état est `NOT_STARTED` et la position 0."
+      responses:
+        "200":
+          description: Progression
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Progress" }
+              example: { mediaId: 3f0c9a52-6d1e-4d0b-9a1b-5e7f1c2d3a41, positionSeconds: 312, durationSeconds: 596, state: STARTED, updatedAt: "2026-11-19T10:30:00Z" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [Profile data]
+      summary: Enregistre la position de lecture (idempotent)
+      description: La position est bornée à la durée. L'état passe à `COMPLETED` à partir de 95 % de la durée.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProgressUpdate" }
+            example: { positionSeconds: 312, durationSeconds: 596 }
+      responses:
+        "200":
+          description: Progression enregistrée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Progress" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Profile data]
+      summary: Réinitialise la progression (retour à NOT_STARTED)
+      responses:
+        "204": { description: Progression réinitialisée }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /me/favourites:
+    get:
+      tags: [Profile data]
+      summary: « Ma liste » du profil actif
+      description: Retourne les médias favoris du profil actif, les plus récemment ajoutés en premier.
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200":
+          description: Favoris
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaPage" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /me/favourites/{mediaId}:
+    parameters:
+      - { $ref: "#/components/parameters/MediaId" }
+    put:
+      tags: [Profile data]
+      summary: Ajoute un média à « Ma liste » (idempotent)
+      responses:
+        "204": { description: Présent dans la liste }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Profile data]
+      summary: Retire un média de « Ma liste » (idempotent)
+      responses:
+        "204": { description: Absent de la liste }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /me/continue-watching:
+    get:
+      tags: [Profile data]
+      summary: Titres commencés et non terminés du profil actif
+      description: États `STARTED` uniquement, triés par dernière lecture décroissante.
+      responses:
+        "200":
+          description: Titres à reprendre
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ContinueWatchingItem" } }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /home:
+    get:
+      tags: [Profile data]
+      summary: Sections de la page d'accueil du profil actif
+      description: Les quatre sections sont toujours présentes, éventuellement vides.
+      responses:
+        "200":
+          description: Accueil
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Home" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
 components:
   securitySchemes:
     bearerAuth:
@@ -345,3 +513,47 @@ components:
         errors: { type: integer }
         startedAt: { type: string, format: date-time, nullable: true }
         finishedAt: { type: string, format: date-time, nullable: true }
+    StreamTicket:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string, description: URL relative du flux, ticket inclus }
+        expiresAt: { type: string, format: date-time }
+    ProgressState:
+      type: string
+      enum: [NOT_STARTED, STARTED, COMPLETED]
+    Progress:
+      type: object
+      required: [mediaId, positionSeconds, state]
+      properties:
+        mediaId: { type: string, format: uuid }
+        positionSeconds: { type: integer, minimum: 0 }
+        durationSeconds: { type: integer, nullable: true }
+        state: { $ref: "#/components/schemas/ProgressState" }
+        updatedAt: { type: string, format: date-time, nullable: true }
+    ProgressUpdate:
+      type: object
+      required: [positionSeconds, durationSeconds]
+      properties:
+        positionSeconds: { type: integer, minimum: 0 }
+        durationSeconds: { type: integer, minimum: 1 }
+    ContinueWatchingItem:
+      type: object
+      required: [media, progress]
+      properties:
+        media: { $ref: "#/components/schemas/MediaItem" }
+        progress: { $ref: "#/components/schemas/Progress" }
+    GenreSection:
+      type: object
+      required: [genre, items]
+      properties:
+        genre: { type: string }
+        items: { type: array, items: { $ref: "#/components/schemas/MediaItem" } }
+    Home:
+      type: object
+      required: [continueWatching, recentlyAdded, categories, favourites]
+      properties:
+        continueWatching: { type: array, items: { $ref: "#/components/schemas/ContinueWatchingItem" } }
+        recentlyAdded: { type: array, items: { $ref: "#/components/schemas/MediaItem" } }
+        categories: { type: array, items: { $ref: "#/components/schemas/GenreSection" } }
+        favourites: { type: array, items: { $ref: "#/components/schemas/MediaItem" } }
