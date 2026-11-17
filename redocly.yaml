@@ -1,0 +1,6 @@
+# Lint des contrats OpenAPI (CI). Seules les ERREURS font échouer la CI ; les avertissements sont affichés.
+extends:
+  - recommended
+rules:
+  info-license: off          # projet privé, pas de licence d'API à déclarer
+  no-server-example.com: off # les contrats utilisent des chemins relatifs (/api/v1)
