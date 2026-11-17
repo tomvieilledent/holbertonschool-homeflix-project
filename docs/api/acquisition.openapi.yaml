@@ -21,7 +21,7 @@ tags:
 security:
   - bearerAuth: []
 paths:
-  /acquisition/catalogue:
+  /catalogue:
     get:
       tags: [Catalogue]
       summary: Liste le catalogue autorisé
@@ -38,7 +38,7 @@ paths:
               schema: { $ref: "#/components/schemas/CataloguePage" }
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /acquisition/rights-notice:
+  /rights-notice:
     get:
       tags: [Rights]
       summary: Lit le rappel des droits et l'état d'acquittement du compte
@@ -51,7 +51,7 @@ paths:
               schema: { $ref: "#/components/schemas/RightsNotice" }
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /acquisition/rights-notice/ack:
+  /rights-notice/ack:
     post:
       tags: [Rights]
       summary: Acquitte le rappel des droits (une fois par compte et par version)
@@ -76,7 +76,7 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: "#/components/schemas/Problem" }
-  /acquisition/downloads:
+  /downloads:
     post:
       tags: [Downloads]
       summary: Démarre le téléchargement d'une entrée du catalogue
@@ -139,7 +139,7 @@ paths:
         "400": { $ref: "#/components/responses/ValidationError" }
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /acquisition/downloads/{downloadId}:
+  /downloads/{downloadId}:
     get:
       tags: [Downloads]
       summary: Lit l'état d'un téléchargement
@@ -155,7 +155,7 @@ paths:
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
-  /acquisition/downloads/{downloadId}/cancel:
+  /downloads/{downloadId}/cancel:
     post:
       tags: [Downloads]
       summary: Annule un téléchargement en cours
