@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthProvider from '@/features/auth/AuthProvider'
 import { useAuth } from '@/features/auth/authContext'
+import { apiFetch } from '@/services/api'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -14,10 +15,11 @@ const ME = {
 }
 
 function Probe() {
-  const { status, account, login, logout } = useAuth()
+  const { status, account, sessionExpired, login, logout } = useAuth()
   return (
     <>
       <p data-testid="status">{status}</p>
+      <p data-testid="expired">{String(sessionExpired)}</p>
       <p data-testid="user">{account?.username ?? '-'}</p>
       <button type="button" onClick={() => login('camille', 'un-mot-de-passe-long')}>
         login
@@ -83,6 +85,28 @@ describe('AuthProvider', () => {
     )
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
     expect(urlsCalled(fetchMock).filter((u) => u.endsWith('/auth/refresh'))).toHaveLength(1)
+  })
+
+  it('redevient anonyme avec sessionExpired quand le client d’API perd la session', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ accessToken: 'jeton', expiresIn: 900, tokenType: 'Bearer' }))
+      .mockResolvedValueOnce(json(ME))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authenticated'))
+    expect(screen.getByTestId('expired')).toHaveTextContent('false')
+
+    // Un appel protégé reçoit 401, le refresh est refusé : la session est perdue.
+    fetchMock
+      .mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+      .mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+    await expect(apiFetch('library', '/v1/media')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' })
+
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    expect(screen.getByTestId('expired')).toHaveTextContent('true')
   })
 
   it('connecte puis déconnecte', async () => {

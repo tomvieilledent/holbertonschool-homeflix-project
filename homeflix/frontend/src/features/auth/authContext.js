@@ -8,6 +8,7 @@ export const AuthContext = createContext(null)
  *   status: 'loading'|'authenticated'|'anonymous',
  *   account: {id: string, username: string, email: string, role: 'USER'|'ADMIN'}|null,
  *   activeProfileId: string|null,
+ *   sessionExpired: boolean,
  *   login: (username: string, password: string) => Promise<void>,
  *   logout: () => Promise<void>,
  * }}

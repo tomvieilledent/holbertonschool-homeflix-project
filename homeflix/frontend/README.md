@@ -107,6 +107,23 @@ Les erreurs de route (rendu, chargement d'une page admin) sont gérées par `app
 - `AppLayout` : lien d'évitement « Aller au contenu principal » (premier élément focalisable), en-tête, navigation (le lien « Administration » n'apparaît que pour un `ADMIN`) et menu du compte (changer de profil, se déconnecter ; Échap le ferme). `BareLayout` sert la connexion, le choix du profil et la page 404, sans en-tête.
 - La table des routes est exportée (`routes` dans `app/router.jsx`) pour être testée avec un routeur en mémoire.
 
+## Client d'API
+
+Tous les appels passent par `apiFetch(service, path, options)` (`services/api.js`) :
+
+```js
+const page = await apiFetch('library', '/v1/media', { query: { q: 'sintel', page: 0 }, signal })
+await apiFetch('library', '/v1/me/favourites/' + id, { method: 'PUT' })
+await apiFetch('identity', '/v1/auth/login', { method: 'POST', auth: false, body: { username, password } })
+```
+
+- **Jeton** : l'access token (en mémoire) est ajouté en `Authorization: Bearer`. `auth: false` pour un endpoint anonyme.
+- **401 → refresh** : sur un 401, le client renouvelle le jeton puis rejoue la requête **une seule fois**. Les requêtes simultanées partagent un seul refresh (le refresh token est à usage unique). `AUTH_INVALID_CREDENTIALS` et `TICKET_EXPIRED` ne déclenchent pas de refresh. Un second 401 après le rejeu, ou un refresh refusé, met fin à la session.
+- **Session perdue** : le client lève `SESSION_EXPIRED` et prévient `AuthProvider` (`onSessionExpired`) ; l'utilisateur est redirigé vers `/login` avec le message « Votre session a expiré ». Une simple panne réseau pendant le refresh ne déconnecte pas.
+- **Erreurs** : toute erreur est une `ApiError` avec `status`, `code`, `fieldErrors` (validation) et `retryAfter` (429). Son `message` est un texte français choisi d'après le `code` (`services/errorMessages.js`) : **le `detail` du serveur n'est jamais affiché**. Une panne réseau donne `NETWORK_ERROR`, une réponse sans problem+json un message d'après le statut. `downloadFailureMessage(errorCode)` traduit l'échec d'un téléchargement.
+- **Annulation** : passer un `AbortSignal` (`signal`). La requête annulée est rejetée avec une `AbortError` (à ignorer avec `isAbortError(error)`), sans refresh ni message d'erreur.
+- Un test vérifie que chaque code de `docs/api/CONVENTIONS.md` et des fixtures d'erreur a un message.
+
 ## Développer sans backend (mocks MSW)
 
 ```bash

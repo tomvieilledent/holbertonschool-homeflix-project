@@ -4,7 +4,8 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 
 const fromHere = (path) => fileURLToPath(new URL(path, import.meta.url))
-const fixturesDir = fromHere('../../docs/api/fixtures')
+const apiDocsDir = fromHere('../../docs/api')
+const fixturesDir = `${apiDocsDir}/fixtures`
 
 // Sert le service worker de MSW uniquement avec `vite dev` : il n'est jamais copié dans le build.
 const mswWorker = () => ({
@@ -51,7 +52,8 @@ export default defineConfig(({ mode }) => {
       css: false,
     },
     server: {
-      fs: { allow: [fromHere('.'), fixturesDir] },
+      // Les mocks et les tests lisent les fixtures et les conventions de docs/api, hors du dossier frontend.
+      fs: { allow: [fromHere('.'), apiDocsDir] },
       proxy: {
         ...proxyService('identity', 8081),
         ...proxyService('library', 8082),
