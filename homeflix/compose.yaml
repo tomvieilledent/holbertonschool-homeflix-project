@@ -62,7 +62,7 @@ services:
       DOWNLOADS_ROOT: /downloads
     volumes:
       - ${MEDIA_DIR:-./demo-media}:/media:ro
-      - downloads:/downloads:ro
+      - ${DOWNLOADS_DIR:-downloads}:/downloads:ro
     healthcheck: *javahc
 
   acquisition-service:
@@ -84,8 +84,10 @@ services:
       TRANSMISSION_USER: ${TRANSMISSION_USER:?TRANSMISSION_USER est obligatoire (lancez ./scripts/gen-secrets.sh)}
       TRANSMISSION_PASS: ${TRANSMISSION_PASS:?TRANSMISSION_PASS est obligatoire (lancez ./scripts/gen-secrets.sh)}
       DOWNLOADS_ROOT: /downloads
+    # Même UID/GID que Transmission : Acquisition peut lire, déplacer et supprimer les fichiers que le client écrit.
+    user: "${PUID:-1000}:${PGID:-1000}"
     volumes:
-      - downloads:/downloads
+      - ${DOWNLOADS_DIR:-downloads}:/downloads
     healthcheck: *javahc
 
   # Client BitTorrent existant : aucune interface publiée, joignable uniquement par acquisition-service.
@@ -94,13 +96,13 @@ services:
     restart: unless-stopped
     networks: [internal]
     environment:
-      PUID: 1000
-      PGID: 1000
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
       USER: ${TRANSMISSION_USER:?TRANSMISSION_USER est obligatoire (lancez ./scripts/gen-secrets.sh)}
       PASS: ${TRANSMISSION_PASS:?TRANSMISSION_PASS est obligatoire (lancez ./scripts/gen-secrets.sh)}
     volumes:
       - transmission-config:/config
-      - downloads:/downloads
+      - ${DOWNLOADS_DIR:-downloads}:/downloads
     healthcheck:
       # Le RPC répond 401 sans identifiants : le service est joignable.
       test: ["CMD-SHELL", "curl -s -o /dev/null http://127.0.0.1:9091/transmission/rpc"]
