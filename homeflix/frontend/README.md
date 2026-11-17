@@ -93,6 +93,14 @@ show('Profil enregistré', { variant: 'success' })
 
 `ToastProvider` n'est pas encore monté dans `App.jsx` : à faire au premier écran qui émet un toast.
 
+## Session, mise en page et routes protégées
+
+- `AuthProvider` (monté dans `App.jsx`) rouvre la session au démarrage via le cookie `refresh_token` puis `GET /auth/me`. `useAuth()` expose `status` (`loading`, `authenticated`, `anonymous`), `account` (avec son `role`), `login()` et `logout()`. L'access token reste en mémoire (`services/auth.js`), jamais dans `localStorage`.
+- `RequireAuth` redirige un anonyme vers `/login?next=<destination>` (requête et ancre conservées) ; pendant `loading`, il affiche un indicateur au lieu de rediriger. `RequireRole role="ADMIN"` affiche « Accès refusé » à un compte sans ce rôle. Ces gardes sont un confort d'interface : l'autorisation réelle reste vérifiée par les services.
+- La page de connexion doit relire la destination avec `safeNext()` (`features/auth/redirect.js`), qui n'accepte que des chemins internes (pas d'URL absolue ni de `//`).
+- `AppLayout` : lien d'évitement « Aller au contenu principal » (premier élément focalisable), en-tête, navigation (le lien « Administration » n'apparaît que pour un `ADMIN`) et menu du compte (changer de profil, se déconnecter ; Échap le ferme). `BareLayout` sert la connexion, le choix du profil et la page 404, sans en-tête.
+- La table des routes est exportée (`routes` dans `app/router.jsx`) pour être testée avec un routeur en mémoire.
+
 ## Appels API et proxy
 
 Le frontend appelle toujours des URLs relatives `/api/<service>/v1/...`.
