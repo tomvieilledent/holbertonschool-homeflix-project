@@ -61,9 +61,10 @@ erDiagram
     media_items ||--o{ progress : "progression de"
     media_roots {
         uuid id PK
-        text path UK "chemin canonique dans le conteneur"
+        text path UK "chemin canonique dans le conteneur ; unique parmi les dossiers non retirés"
         text label
         boolean enabled
+        boolean removed "retiré par l'administrateur (suppression douce) : ses médias passent à UNAVAILABLE"
         timestamptz created_at
     }
     media_items {

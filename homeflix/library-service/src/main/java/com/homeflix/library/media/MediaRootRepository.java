@@ -8,7 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MediaRootRepository extends JpaRepository<MediaRoot, UUID> {
 
-    Optional<MediaRoot> findByPath(String path);
+    /** Dossiers actifs (non retirés), du plus ancien au plus récent. */
+    List<MediaRoot> findByRemovedFalseOrderByCreatedAtAsc();
 
-    List<MediaRoot> findByEnabledTrue();
+    Optional<MediaRoot> findByIdAndRemovedFalse(UUID id);
+
+    Optional<MediaRoot> findByPathAndRemovedFalse(String path);
 }

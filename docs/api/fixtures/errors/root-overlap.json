@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/root-overlap",
+  "title": "Dossier refusé",
+  "status": 409,
+  "code": "ROOT_OVERLAP",
+  "detail": "Ce dossier chevauche le dossier déjà configuré « Films ».",
+  "instance": "/api/v1/admin/media-roots"
+}
