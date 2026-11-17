@@ -1,0 +1,45 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+
+.state__icon {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+}
+
+.state--error .state__icon {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.state__title {
+  margin: 0;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+.state__description {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

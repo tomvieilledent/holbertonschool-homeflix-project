@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import NotFoundPage from '@/app/NotFoundPage'
+import RouteErrorPage from '@/app/RouteErrorPage'
 import LoginPage from '@/features/auth/LoginPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import DetailPage from '@/features/catalogue/DetailPage'
@@ -11,15 +12,20 @@ const lazyPage = (loader) => ({
 })
 
 export const router = createBrowserRouter([
-  { path: '/', element: <HomePage /> },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/profiles', element: <ProfilesPage /> },
-  { path: '/media/:mediaId', element: <DetailPage /> },
-  { path: '/watch/:mediaId', element: <PlayerPage /> },
-  { path: '/admin', ...lazyPage(() => import('@/features/admin/AdminPage')) },
   {
-    path: '/admin/acquisition',
-    ...lazyPage(() => import('@/features/admin/AcquisitionPage')),
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/profiles', element: <ProfilesPage /> },
+      { path: '/media/:mediaId', element: <DetailPage /> },
+      { path: '/watch/:mediaId', element: <PlayerPage /> },
+      { path: '/admin', ...lazyPage(() => import('@/features/admin/AdminPage')) },
+      {
+        path: '/admin/acquisition',
+        ...lazyPage(() => import('@/features/admin/AcquisitionPage')),
+      },
+      { path: '*', element: <NotFoundPage /> },
+    ],
   },
-  { path: '*', element: <NotFoundPage /> },
 ])
