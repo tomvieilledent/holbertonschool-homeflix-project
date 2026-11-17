@@ -17,7 +17,7 @@ servers:
 tags:
   - { name: Catalogue, description: Entrées autorisées au téléchargement }
   - { name: Rights, description: Rappel des droits d'auteur à acquitter avant le premier téléchargement }
-  - { name: Downloads, description: Démarrer, suivre et annuler un téléchargement }
+  - { name: Downloads, description: "Démarrer, suivre et annuler un téléchargement" }
 security:
   - bearerAuth: []
 paths:
