@@ -1,0 +1,13 @@
+.logo {
+  display: block;
+  width: auto;
+}
+
+.logo--light-theme,
+:root[data-theme='light'] .logo--dark-theme {
+  display: none;
+}
+
+:root[data-theme='light'] .logo--light-theme {
+  display: block;
+}
