@@ -1,0 +1,20 @@
+# Surcouche de DÉVELOPPEMENT : publie les ports des services et de la base, liés à 127.0.0.1
+# (jamais exposés au réseau). Hors de cette surcouche, seul le frontend est publié.
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+#
+# Les ports hôte sont configurables dans .env (valeurs par défaut choisies pour éviter les
+# conflits avec une base ou un autre projet déjà présent sur 5432 ou 8081).
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DEV_DB_PORT:-15432}:5432"
+  identity-service:
+    ports:
+      - "127.0.0.1:${DEV_IDENTITY_PORT:-18081}:8081"
+  library-service:
+    ports:
+      - "127.0.0.1:${DEV_LIBRARY_PORT:-18082}:8082"
+  acquisition-service:
+    ports:
+      - "127.0.0.1:${DEV_ACQUISITION_PORT:-18083}:8083"

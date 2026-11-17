@@ -35,8 +35,8 @@ services:
       DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
     healthcheck: &javahc
-      # TCP tant que /actuator/health n'est pas ouvert par la config Security (voir issue T08)
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/$$SERVER_PORT'"]
+      # /actuator/health est public et sans détail (SecurityConfig de chaque service).
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:$$SERVER_PORT/actuator/health > /dev/null"]
       interval: 10s
       timeout: 3s
       retries: 12
@@ -68,7 +68,7 @@ services:
     depends_on:
       db: { condition: service_healthy }
       identity-service: { condition: service_healthy }
-      transmission: { condition: service_started }
+      transmission: { condition: service_healthy }
     environment:
       SERVER_PORT: 8083
       DB_URL: jdbc:postgresql://db:5432/acquisition
@@ -98,6 +98,13 @@ services:
     volumes:
       - transmission-config:/config
       - downloads:/downloads
+    healthcheck:
+      # Le RPC répond 401 sans identifiants : le service est joignable.
+      test: ["CMD-SHELL", "curl -s -o /dev/null http://127.0.0.1:9091/transmission/rpc"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
 
   frontend:
     build: ./frontend

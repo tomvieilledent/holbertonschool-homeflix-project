@@ -22,9 +22,8 @@ ARG SERVER_PORT=8082
 ENV SERVER_PORT=${SERVER_PORT}
 EXPOSE 8082
 
-# Test TCP en attendant que /actuator/health soit ouvert par la configuration
-# Spring Security (issue #16). À remplacer ensuite par un appel HTTP.
+# /actuator/health est public (SecurityConfig). curl est présent dans l'image eclipse-temurin.
 HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=12 \
-  CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/${SERVER_PORT}"]
+  CMD curl -fsS -o /dev/null http://127.0.0.1:${SERVER_PORT}/actuator/health
 
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
