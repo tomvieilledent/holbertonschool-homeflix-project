@@ -72,13 +72,18 @@ public class IndexWriter {
         return new Outcome(changed ? Result.UPDATED : Result.UNCHANGED, item.getId());
     }
 
-    /** Marque indisponibles les médias de la racine absents du scan ; aucun fichier n'est touché. */
+    /**
+     * Marque indisponibles les médias de la racine absents du scan ; aucun fichier n'est touché.
+     *
+     * @param failedPaths chemins relatifs présents sur le disque mais dont le traitement a échoué : laissés tels quels
+     */
     @Transactional
-    public int markMissing(UUID rootId, Set<UUID> seen) {
+    public int markMissing(UUID rootId, Set<UUID> seen, Set<String> failedPaths) {
         List<MediaItem> candidates = items.findByRootId(rootId);
         int count = 0;
         for (MediaItem item : candidates) {
-            if (!item.isDeleted() && item.getAvailability() == Availability.AVAILABLE && !seen.contains(item.getId())) {
+            if (!item.isDeleted() && item.getAvailability() == Availability.AVAILABLE && !seen.contains(item.getId())
+                    && !failedPaths.contains(item.getRelativePath())) {
                 item.setAvailability(Availability.UNAVAILABLE);
                 count++;
             }

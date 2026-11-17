@@ -55,6 +55,7 @@ class IndexApiIntegrationTests {
 	@Autowired MockMvc mvc;
 	@Autowired JdbcTemplate jdbc;
 	@Autowired ObjectMapper json;
+	@Autowired IndexWriter writer;
 
 	Path root;
 	UUID rootId;
@@ -179,6 +180,20 @@ class IndexApiIntegrationTests {
 		scan();
 		assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'a.mp4'", String.class)).isEqualTo("AVAILABLE");
 		assertThat(count()).isEqualTo(2);
+	}
+
+	@Test
+	void aFileWhoseProcessingFailedIsNotDeclaredUnavailable() throws Exception {
+		video("a.mp4", "1");
+		video("b.mp4", "2");
+		scan();
+
+		// Le scan n'a « vu » aucun des deux, mais a.mp4 est présent et a seulement échoué.
+		int marked = writer.markMissing(rootId, java.util.Set.of(), java.util.Set.of("a.mp4"));
+
+		assertThat(marked).isEqualTo(1);
+		assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'a.mp4'", String.class)).isEqualTo("AVAILABLE");
+		assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'b.mp4'", String.class)).isEqualTo("UNAVAILABLE");
 	}
 
 	@Test

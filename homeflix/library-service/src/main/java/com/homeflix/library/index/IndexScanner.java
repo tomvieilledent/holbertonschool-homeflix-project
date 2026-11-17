@@ -52,18 +52,20 @@ public class IndexScanner {
             // Dossier absent ou démonté : on le signale et ses médias deviennent indisponibles.
             log.warn("Dossier inaccessible : {}", root.getPath(), e);
             job.error();
-            job.markedUnavailable(writer.markMissing(root.getId(), Set.of()));
+            job.markedUnavailable(writer.markMissing(root.getId(), Set.of(), Set.of()));
             return;
         }
 
         Set<UUID> seen = new HashSet<>();
+        // Fichiers présents mais dont le traitement a échoué : leur état en base ne doit pas changer.
+        Set<String> failed = new HashSet<>();
         try {
             // Les liens symboliques ne sont pas suivis par le parcours : chaque fichier est résolu par SafePathResolver.
             Files.walkFileTree(realRoot, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (VideoFiles.isVideo(file)) {
-                        indexFile(root, realRoot, file, job, seenRealPaths, seen);
+                        indexFile(root, realRoot, file, job, seenRealPaths, seen, failed);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -81,13 +83,14 @@ public class IndexScanner {
             job.error();
             return;
         }
-        job.markedUnavailable(writer.markMissing(root.getId(), seen));
+        job.markedUnavailable(writer.markMissing(root.getId(), seen, failed));
     }
 
-    private void indexFile(MediaRoot root, Path realRoot, Path file, IndexJob job, Set<Path> seenRealPaths, Set<UUID> seen) {
+    private void indexFile(MediaRoot root, Path realRoot, Path file, IndexJob job, Set<Path> seenRealPaths, Set<UUID> seen,
+            Set<String> failed) {
         job.scanned();
+        String relative = realRoot.relativize(file).toString().replace('\\', '/');
         try {
-            String relative = realRoot.relativize(file).toString().replace('\\', '/');
             Path real = resolver.resolveInside(realRoot, relative);
             if (!Files.isRegularFile(real)) {
                 return;
@@ -107,6 +110,7 @@ public class IndexScanner {
             }
         } catch (IOException | RuntimeException e) {
             log.warn("Fichier ignoré : {}", file, e);
+            failed.add(relative); // présent sur le disque : ne pas le déclarer indisponible
             job.error();
         }
     }
