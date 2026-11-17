@@ -42,7 +42,15 @@ check "/api/*/actuator est refusé (404)" "[ \"\$(curl -s -o /dev/null -w '%{htt
 check "une API protégée sans jeton répond 401" "[ \"\$(curl -s -o /dev/null -w '%{http_code}' $base/api/identity/v1/x)\" = 401 ]"
 
 echo "== Ports publiés (seul le frontend doit l'être)"
-published=$(docker compose ps --format '{{.Service}} {{.Publishers}}' | grep -E '0\.0\.0\.0:|127\.0\.0\.1:|\[::\]:' | awk '{print $1}' | sort -u | tr '\n' ' ')
+# On lit les ports publiés directement dans docker inspect (indépendant de la version de Compose).
+published=""
+for id in $(docker compose ps -q); do
+  hostports=$(docker inspect -f '{{range $p, $b := .NetworkSettings.Ports}}{{if $b}}x{{end}}{{end}}' "$id")
+  if [ -n "$hostports" ]; then
+    published+="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.service"}}' "$id") "
+  fi
+done
+published=$(echo "$published" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
 [ "$published" = "frontend " ] && pass "seul le frontend publie un port" || fail "services qui publient un port : ${published:-aucun}"
 
 echo "== Isolation des bases"
