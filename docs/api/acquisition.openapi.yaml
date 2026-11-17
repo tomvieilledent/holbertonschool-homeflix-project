@@ -83,6 +83,7 @@ paths:
       description: |
         Le corps ne contient que l'identifiant d'une entrée du catalogue : toute autre propriété est refusée (`VALIDATION_ERROR`).
         Refusé tant que le rappel des droits de la version courante n'est pas acquitté par le compte (`412 RIGHTS_NOT_ACKNOWLEDGED`).
+        Refusé aussi si le fichier est déjà dans la bibliothèque (`inLibrary` vaut true) : `409 CONFLICT`.
       operationId: startDownload
       requestBody:
         required: true
@@ -104,7 +105,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Un téléchargement est déjà actif pour cette entrée (`DOWNLOAD_ALREADY_ACTIVE`).
+          description: Téléchargement déjà actif pour cette entrée (`DOWNLOAD_ALREADY_ACTIVE`) ou fichier déjà dans la bibliothèque (`CONFLICT`).
           content:
             application/problem+json:
               schema: { $ref: "#/components/schemas/Problem" }
@@ -238,7 +239,7 @@ components:
             properties: { field: { type: string }, message: { type: string } }
     CatalogueEntry:
       type: object
-      required: [id, title, source, license, licenseProofUrl, sizeBytes]
+      required: [id, title, source, license, licenseProofUrl, sizeBytes, inLibrary]
       description: Entrée autorisée. Ne contient ni lien magnet ni empreinte.
       properties:
         id: { type: string, format: uuid }
@@ -247,6 +248,14 @@ components:
         license: { type: string, description: "Licence ou autorisation de redistribution (ex. CC BY 3.0)." }
         licenseProofUrl: { type: string, format: uri, description: "Page officielle prouvant la licence." }
         sizeBytes: { type: integer, format: int64 }
+        inLibrary:
+          type: boolean
+          description: "Le fichier est déjà présent dans la bibliothèque (téléchargement terminé et indexé). Le frontend désactive alors « Télécharger »."
+        libraryMediaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Identifiant du média indexé dans Library si `inLibrary` vaut true (lien « Voir dans la bibliothèque »), sinon null."
         activeDownloadId:
           type: string
           format: uuid
@@ -297,11 +306,16 @@ components:
         errorCode:
           type: string
           nullable: true
-          description: "Présent si `FAILED` (ex. `TORRENT_CLIENT_UNAVAILABLE`, `NO_PEERS`, `DISK_FULL`). Le frontend choisit le message français."
+          description: "Présent si `FAILED` (`NO_PEERS`, `DISK_FULL`, `TORRENT_CLIENT_UNAVAILABLE`, voir CONVENTIONS.md). Le frontend choisit le message français."
         errorMessage:
           type: string
           nullable: true
           description: "Message lisible en français, sans détail technique, chemin ni trace."
+        libraryMediaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Média indexé dans Library une fois `COMPLETED` (lien « Voir dans la bibliothèque »), sinon null."
         createdAt: { type: string, format: date-time }
         finishedAt: { type: string, format: date-time, nullable: true }
     DownloadPage:

@@ -88,6 +88,16 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `LIBRARY_UNAVAILABLE` | 503 | Library injoignable depuis un autre service |
 | `INTERNAL_ERROR` | 500 | Erreur inattendue (message générique) |
 
+### Codes d'échec d'un téléchargement
+
+Valeurs du champ `errorCode` d'un téléchargement `FAILED` (Acquisition). Ce ne sont pas des erreurs HTTP : le frontend s'en sert pour choisir le message français affiché.
+
+| Code | Sens |
+|---|---|
+| `NO_PEERS` | Aucun pair disponible pour ce fichier |
+| `DISK_FULL` | Espace disque insuffisant dans le dossier de téléchargements |
+| `TORRENT_CLIENT_UNAVAILABLE` | Client BitTorrent injoignable pendant le téléchargement |
+
 ## Pagination
 
 Paramètres : `page` (défaut 0), `size` (défaut 20, maximum 50), `sort` (`champ,asc|desc`). Réponse :
