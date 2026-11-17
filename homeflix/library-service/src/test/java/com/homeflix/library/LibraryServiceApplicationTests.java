@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.homeflix.library.media.MediaItemRepository;
+import com.homeflix.library.media.MediaMetadataRepository;
 import com.homeflix.library.media.MediaRootRepository;
 
 @SpringBootTest
@@ -26,6 +27,7 @@ class LibraryServiceApplicationTests {
 	// leurs règles sont testés avec un vrai PostgreSQL dans MediaRootApiIntegrationTests.
 	@MockitoBean MediaRootRepository mediaRootRepository;
 	@MockitoBean MediaItemRepository mediaItemRepository;
+	@MockitoBean MediaMetadataRepository mediaMetadataRepository;
 
 	@Test
 	void contextLoads() {
