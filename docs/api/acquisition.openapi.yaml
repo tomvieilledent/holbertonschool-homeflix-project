@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: HomeFlix — Acquisition Service
+  version: 1.0.0
+  description: |
+    Catalogue autorisé, rappel des droits d'auteur et téléchargements pilotés par le client BitTorrent.
+    Conventions (erreurs problem+json, pagination, formats) : `docs/api/CONVENTIONS.md`.
+    URL publique via le proxy : `/api/acquisition/v1/...` ; route interne : `/api/v1/...`.
+
+    **Règles de sécurité de ce contrat**
+    - Toutes les opérations sont réservées au rôle `ADMIN` (claim `roles` du jeton) : un utilisateur ordinaire reçoit `403 ACCESS_DENIED`.
+    - **Aucun endpoint n'accepte d'URL, de lien magnet ni de chemin de fichier.** Un téléchargement se démarre uniquement avec l'identifiant d'une entrée du catalogue autorisé ; le lien magnet est lu en base par le service.
+    - Aucune réponse ne contient de lien magnet, d'empreinte (`infohash`), d'identifiant du client BitTorrent ni de chemin du système de fichiers.
+    - Le client BitTorrent (Transmission) n'est jamais exposé : il n'est joignable que par ce service.
+servers:
+  - url: /api/v1
+tags:
+  - { name: Catalogue, description: Entrées autorisées au téléchargement }
+  - { name: Rights, description: Rappel des droits d'auteur à acquitter avant le premier téléchargement }
+  - { name: Downloads, description: Démarrer, suivre et annuler un téléchargement }
+security:
+  - bearerAuth: []
+paths:
+  /acquisition/catalogue:
+    get:
+      tags: [Catalogue]
+      summary: Liste le catalogue autorisé
+      description: Seules les entrées avec une licence et une preuve de licence sont présentes (contraintes `NOT NULL` en base).
+      operationId: listCatalogue
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Size"
+      responses:
+        "200":
+          description: Page d'entrées du catalogue
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CataloguePage" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /acquisition/rights-notice:
+    get:
+      tags: [Rights]
+      summary: Lit le rappel des droits et l'état d'acquittement du compte
+      operationId: getRightsNotice
+      responses:
+        "200":
+          description: Texte du rappel et acquittement du compte courant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RightsNotice" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /acquisition/rights-notice/ack:
+    post:
+      tags: [Rights]
+      summary: Acquitte le rappel des droits (une fois par compte et par version)
+      description: "Idempotent : acquitter une version déjà acquittée renvoie `200` sans erreur."
+      operationId: acknowledgeRightsNotice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RightsAckRequest" }
+      responses:
+        "200":
+          description: Acquittement enregistré
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RightsNotice" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: La version fournie n'est plus la version courante (`CONFLICT`) ; relire le rappel.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+  /acquisition/downloads:
+    post:
+      tags: [Downloads]
+      summary: Démarre le téléchargement d'une entrée du catalogue
+      description: |
+        Le corps ne contient que l'identifiant d'une entrée du catalogue : toute autre propriété est refusée (`VALIDATION_ERROR`).
+        Refusé tant que le rappel des droits de la version courante n'est pas acquitté par le compte (`412 RIGHTS_NOT_ACKNOWLEDGED`).
+      operationId: startDownload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StartDownloadRequest" }
+      responses:
+        "202":
+          description: Téléchargement créé (état `QUEUED` puis `DOWNLOADING`)
+          headers:
+            Location:
+              description: URL du téléchargement créé
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Download" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Un téléchargement est déjà actif pour cette entrée (`DOWNLOAD_ALREADY_ACTIVE`).
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "412":
+          description: Rappel des droits non acquitté (`RIGHTS_NOT_ACKNOWLEDGED`).
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "503":
+          description: Client BitTorrent injoignable (`TORRENT_CLIENT_UNAVAILABLE`).
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+    get:
+      tags: [Downloads]
+      summary: Liste les téléchargements
+      operationId: listDownloads
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Size"
+        - name: state
+          in: query
+          description: Filtre par état
+          schema: { $ref: "#/components/schemas/DownloadState" }
+      responses:
+        "200":
+          description: Page de téléchargements, du plus récent au plus ancien
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DownloadPage" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /acquisition/downloads/{downloadId}:
+    get:
+      tags: [Downloads]
+      summary: Lit l'état d'un téléchargement
+      operationId: getDownload
+      parameters:
+        - $ref: "#/components/parameters/DownloadId"
+      responses:
+        "200":
+          description: Téléchargement avec sa progression
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Download" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /acquisition/downloads/{downloadId}/cancel:
+    post:
+      tags: [Downloads]
+      summary: Annule un téléchargement en cours
+      description: |
+        Valable pour les états `QUEUED` et `DOWNLOADING`. Annuler un téléchargement déjà `CANCELLED` renvoie `200` (idempotent) ;
+        un téléchargement `COMPLETED` ou `FAILED` ne peut plus être annulé (`409 CONFLICT`).
+        L'annulation ne supprime aucun fichier de la bibliothèque.
+      operationId: cancelDownload
+      parameters:
+        - $ref: "#/components/parameters/DownloadId"
+      responses:
+        "200":
+          description: Téléchargement annulé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Download" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: État terminal, annulation impossible (`CONFLICT`).
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "503":
+          description: Client BitTorrent injoignable (`TORRENT_CLIENT_UNAVAILABLE`).
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token RS256 émis par Identity (claims `sub`, `roles`, `pid`). Rôle `ADMIN` requis sur toutes les routes.
+  parameters:
+    DownloadId:
+      { name: downloadId, in: path, required: true, schema: { type: string, format: uuid } }
+    Page:
+      { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+    Size:
+      { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+  responses:
+    Problem:
+      description: Erreur (voir `code`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Validation (`VALIDATION_ERROR`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Rôle insuffisant (`ACCESS_DENIED`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Ressource introuvable (`NOT_FOUND`)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, description: Voir CONVENTIONS.md }
+        detail: { type: string }
+        instance: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties: { field: { type: string }, message: { type: string } }
+    CatalogueEntry:
+      type: object
+      required: [id, title, source, license, licenseProofUrl, sizeBytes]
+      description: Entrée autorisée. Ne contient ni lien magnet ni empreinte.
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        source: { type: string, description: "Organisme ou site d'origine." }
+        license: { type: string, description: "Licence ou autorisation de redistribution (ex. CC BY 3.0)." }
+        licenseProofUrl: { type: string, format: uri, description: "Page officielle prouvant la licence." }
+        sizeBytes: { type: integer, format: int64 }
+        activeDownloadId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Identifiant du téléchargement actif de cette entrée, sinon null.
+    CataloguePage:
+      type: object
+      required: [items, page, size, total, totalPages]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/CatalogueEntry" } }
+        page: { type: integer }
+        size: { type: integer }
+        total: { type: integer, format: int64 }
+        totalPages: { type: integer }
+    RightsNotice:
+      type: object
+      required: [version, text, acknowledged]
+      properties:
+        version: { type: string, description: "Version du texte ; un changement de version demande un nouvel acquittement.", example: "2026-11" }
+        text: { type: string, description: "Rappel affiché avant le premier téléchargement." }
+        acknowledged: { type: boolean, description: "Le compte courant a acquitté cette version." }
+        acknowledgedAt: { type: string, format: date-time, nullable: true }
+    RightsAckRequest:
+      type: object
+      required: [noticeVersion]
+      additionalProperties: false
+      properties:
+        noticeVersion: { type: string, description: "Version lue par l'administrateur." }
+    StartDownloadRequest:
+      type: object
+      required: [catalogueEntryId]
+      additionalProperties: false
+      properties:
+        catalogueEntryId: { type: string, format: uuid }
+    DownloadState:
+      type: string
+      enum: [QUEUED, DOWNLOADING, COMPLETED, FAILED, CANCELLED]
+      description: En file / en cours / terminé / échoué / annulé. `COMPLETED`, `FAILED` et `CANCELLED` sont terminaux.
+    Download:
+      type: object
+      required: [id, catalogueEntryId, title, state, progressPercent, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        catalogueEntryId: { type: string, format: uuid }
+        title: { type: string }
+        state: { $ref: "#/components/schemas/DownloadState" }
+        progressPercent: { type: integer, minimum: 0, maximum: 100 }
+        errorCode:
+          type: string
+          nullable: true
+          description: "Présent si `FAILED` (ex. `TORRENT_CLIENT_UNAVAILABLE`, `NO_PEERS`, `DISK_FULL`). Le frontend choisit le message français."
+        errorMessage:
+          type: string
+          nullable: true
+          description: "Message lisible en français, sans détail technique, chemin ni trace."
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time, nullable: true }
+    DownloadPage:
+      type: object
+      required: [items, page, size, total, totalPages]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Download" } }
+        page: { type: integer }
+        size: { type: integer }
+        total: { type: integer, format: int64 }
+        totalPages: { type: integer }
