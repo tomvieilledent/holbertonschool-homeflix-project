@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/media-unavailable",
+  "title": "Média indisponible",
+  "status": 409,
+  "code": "MEDIA_UNAVAILABLE",
+  "detail": "Ce média est actuellement indisponible.",
+  "instance": "/api/v1/example"
+}

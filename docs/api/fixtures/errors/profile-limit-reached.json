@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/profile-limit-reached",
+  "title": "Limite de profils atteinte",
+  "status": 409,
+  "code": "PROFILE_LIMIT_REACHED",
+  "detail": "Le nombre maximal de profils est atteint.",
+  "instance": "/api/v1/example"
+}

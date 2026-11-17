@@ -1,0 +1,14 @@
+{
+  "id": "0d87d40e-72dd-5e79-9985-13d8a4b2d503",
+  "title": "Coffee Run",
+  "description": "Une course pour le café qui tourne à l'aventure.",
+  "posterUrl": "/posters/coffee-run.jpg",
+  "genres": [
+    "Comédie familiale",
+    "Animation"
+  ],
+  "year": 2020,
+  "durationSeconds": 210,
+  "availability": "UNAVAILABLE",
+  "addedAt": "2026-11-07T09:09:00Z"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/index-already-running",
+  "title": "Indexation en cours",
+  "status": 409,
+  "code": "INDEX_ALREADY_RUNNING",
+  "detail": "Une indexation est déjà en cours.",
+  "instance": "/api/v1/example"
+}

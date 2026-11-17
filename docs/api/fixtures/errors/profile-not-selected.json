@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/profile-not-selected",
+  "title": "Aucun profil sélectionné",
+  "status": 409,
+  "code": "PROFILE_NOT_SELECTED",
+  "detail": "Sélectionnez un profil avant cette opération.",
+  "instance": "/api/v1/example"
+}

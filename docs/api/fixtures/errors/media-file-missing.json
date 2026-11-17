@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/media-file-missing",
+  "title": "Fichier introuvable",
+  "status": 404,
+  "code": "MEDIA_FILE_MISSING",
+  "detail": "Le fichier de ce film n'est plus accessible.",
+  "instance": "/api/v1/example"
+}

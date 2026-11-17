@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/not-found",
+  "title": "Ressource introuvable",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "detail": "La ressource demandée n'existe pas.",
+  "instance": "/api/v1/example"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/setup-already-done",
+  "title": "Configuration déjà faite",
+  "status": 409,
+  "code": "SETUP_ALREADY_DONE",
+  "detail": "Le premier administrateur existe déjà.",
+  "instance": "/api/v1/example"
+}

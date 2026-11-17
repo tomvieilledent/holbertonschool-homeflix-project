@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/session-expired",
+  "title": "Session expirée",
+  "status": 401,
+  "code": "SESSION_EXPIRED",
+  "detail": "La session a expiré.",
+  "instance": "/api/v1/example"
+}

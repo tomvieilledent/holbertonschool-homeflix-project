@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/root-not-found",
+  "title": "Dossier introuvable",
+  "status": 400,
+  "code": "ROOT_NOT_FOUND",
+  "detail": "Le dossier indiqué est introuvable.",
+  "instance": "/api/v1/example"
+}

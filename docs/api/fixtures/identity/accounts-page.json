@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "id": "bbfc99cc-abf1-5cba-b6be-1bb4cb3113cb",
+      "username": "admin",
+      "email": "admin@homeflix.local",
+      "role": "ADMIN",
+      "enabled": true,
+      "mustChangePassword": false,
+      "createdAt": "2026-11-16T08:00:00Z"
+    },
+    {
+      "id": "6fcc85dc-7559-5ded-9c76-97a9df6d4a84",
+      "username": "famille",
+      "email": "famille@homeflix.local",
+      "role": "USER",
+      "enabled": true,
+      "mustChangePassword": false,
+      "createdAt": "2026-11-16T08:30:00Z"
+    },
+    {
+      "id": "1a7641e0-832b-5648-afdc-21d45da878ff",
+      "username": "invite",
+      "email": "invite@homeflix.local",
+      "role": "USER",
+      "enabled": false,
+      "mustChangePassword": true,
+      "createdAt": "2026-11-16T09:15:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "total": 3,
+  "totalPages": 1
+}

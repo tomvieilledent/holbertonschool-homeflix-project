@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/setup-token-invalid",
+  "title": "Jeton de configuration invalide",
+  "status": 403,
+  "code": "SETUP_TOKEN_INVALID",
+  "detail": "Le jeton de configuration est invalide.",
+  "instance": "/api/v1/example"
+}

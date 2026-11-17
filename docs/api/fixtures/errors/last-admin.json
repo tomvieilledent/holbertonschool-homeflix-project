@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/last-admin",
+  "title": "Dernier administrateur",
+  "status": 409,
+  "code": "LAST_ADMIN",
+  "detail": "Opération refusée sur le dernier administrateur.",
+  "instance": "/api/v1/example"
+}

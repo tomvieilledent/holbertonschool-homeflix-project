@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/download-already-active",
+  "title": "Téléchargement déjà actif",
+  "status": 409,
+  "code": "DOWNLOAD_ALREADY_ACTIVE",
+  "detail": "Un téléchargement est déjà actif pour cette entrée.",
+  "instance": "/api/v1/example"
+}

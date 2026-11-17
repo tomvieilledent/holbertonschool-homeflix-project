@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/access-denied",
+  "title": "Accès refusé",
+  "status": 403,
+  "code": "ACCESS_DENIED",
+  "detail": "Rôle insuffisant pour cette opération.",
+  "instance": "/api/v1/example"
+}

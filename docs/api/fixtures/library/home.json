@@ -1,0 +1,484 @@
+{
+  "continueWatching": [
+    {
+      "media": {
+        "id": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+        "title": "Elephants Dream",
+        "description": "Deux hommes explorent une machine étrange et gigantesque.",
+        "posterUrl": "/posters/elephants-dream.jpg",
+        "genres": [
+          "Science-fiction",
+          "Animation"
+        ],
+        "year": 2006,
+        "durationSeconds": 654,
+        "availability": "AVAILABLE",
+        "addedAt": "2026-11-14T09:02:00Z"
+      },
+      "progress": {
+        "mediaId": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+        "positionSeconds": 212,
+        "durationSeconds": 654,
+        "state": "STARTED",
+        "updatedAt": "2026-11-16T20:15:00Z"
+      }
+    },
+    {
+      "media": {
+        "id": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+        "title": "Big Buck Bunny",
+        "description": "Un lapin géant et paisible tient tête à trois rongeurs malicieux.",
+        "posterUrl": "/posters/big-buck-bunny.jpg",
+        "genres": [
+          "Comédie familiale",
+          "Animation"
+        ],
+        "year": 2008,
+        "durationSeconds": 596,
+        "availability": "AVAILABLE",
+        "addedAt": "2026-11-16T09:00:00Z"
+      },
+      "progress": {
+        "mediaId": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+        "positionSeconds": 410,
+        "durationSeconds": 596,
+        "state": "STARTED",
+        "updatedAt": "2026-11-15T19:02:00Z"
+      }
+    }
+  ],
+  "recentlyAdded": [
+    {
+      "id": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+      "title": "Big Buck Bunny",
+      "description": "Un lapin géant et paisible tient tête à trois rongeurs malicieux.",
+      "posterUrl": "/posters/big-buck-bunny.jpg",
+      "genres": [
+        "Comédie familiale",
+        "Animation"
+      ],
+      "year": 2008,
+      "durationSeconds": 596,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-16T09:00:00Z"
+    },
+    {
+      "id": "d847e3f6-b96c-570d-982c-4e93614aba42",
+      "title": "Sintel",
+      "description": "Une jeune femme part à la recherche d'un dragon qu'elle a un jour sauvé.",
+      "posterUrl": "/posters/sintel.jpg",
+      "genres": [
+        "Fantastique",
+        "Animation"
+      ],
+      "year": 2010,
+      "durationSeconds": 888,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-15T09:01:00Z"
+    },
+    {
+      "id": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+      "title": "Elephants Dream",
+      "description": "Deux hommes explorent une machine étrange et gigantesque.",
+      "posterUrl": "/posters/elephants-dream.jpg",
+      "genres": [
+        "Science-fiction",
+        "Animation"
+      ],
+      "year": 2006,
+      "durationSeconds": 654,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-14T09:02:00Z"
+    },
+    {
+      "id": "7d29c871-d8bb-5c4e-a704-9d68eeaa0afa",
+      "title": "Tears of Steel",
+      "description": "Des guerriers et des scientifiques tentent de sauver le monde de robots.",
+      "posterUrl": "/posters/tears-of-steel.jpg",
+      "genres": [
+        "Science-fiction"
+      ],
+      "year": 2012,
+      "durationSeconds": 734,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-13T09:03:00Z"
+    },
+    {
+      "id": "d1013014-343d-562f-96da-82ea90ad7cf9",
+      "title": "Cosmos Laundromat",
+      "description": "Un mouton dépressif rencontre un vendeur excentrique.",
+      "posterUrl": "/posters/cosmos-laundromat.jpg",
+      "genres": [
+        "Fantastique",
+        "Animation"
+      ],
+      "year": 2015,
+      "durationSeconds": 730,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-12T09:04:00Z"
+    },
+    {
+      "id": "0879f7bc-8dd2-5f0c-b399-326d179d0519",
+      "title": "Spring",
+      "description": "Une bergère et son chien affrontent les esprits du printemps.",
+      "posterUrl": "/posters/spring.jpg",
+      "genres": [
+        "Fantastique",
+        "Animation"
+      ],
+      "year": 2019,
+      "durationSeconds": 462,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-11T09:05:00Z"
+    }
+  ],
+  "categories": [
+    {
+      "genre": "Animation",
+      "items": [
+        {
+          "id": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+          "title": "Big Buck Bunny",
+          "description": "Un lapin géant et paisible tient tête à trois rongeurs malicieux.",
+          "posterUrl": "/posters/big-buck-bunny.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2008,
+          "durationSeconds": 596,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-16T09:00:00Z"
+        },
+        {
+          "id": "d847e3f6-b96c-570d-982c-4e93614aba42",
+          "title": "Sintel",
+          "description": "Une jeune femme part à la recherche d'un dragon qu'elle a un jour sauvé.",
+          "posterUrl": "/posters/sintel.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2010,
+          "durationSeconds": 888,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-15T09:01:00Z"
+        },
+        {
+          "id": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+          "title": "Elephants Dream",
+          "description": "Deux hommes explorent une machine étrange et gigantesque.",
+          "posterUrl": "/posters/elephants-dream.jpg",
+          "genres": [
+            "Science-fiction",
+            "Animation"
+          ],
+          "year": 2006,
+          "durationSeconds": 654,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-14T09:02:00Z"
+        },
+        {
+          "id": "d1013014-343d-562f-96da-82ea90ad7cf9",
+          "title": "Cosmos Laundromat",
+          "description": "Un mouton dépressif rencontre un vendeur excentrique.",
+          "posterUrl": "/posters/cosmos-laundromat.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2015,
+          "durationSeconds": 730,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-12T09:04:00Z"
+        },
+        {
+          "id": "0879f7bc-8dd2-5f0c-b399-326d179d0519",
+          "title": "Spring",
+          "description": "Une bergère et son chien affrontent les esprits du printemps.",
+          "posterUrl": "/posters/spring.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2019,
+          "durationSeconds": 462,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-11T09:05:00Z"
+        },
+        {
+          "id": "721a567a-0c56-5130-a509-5dbdac424875",
+          "title": "Caminandes : Llamigos",
+          "description": "Un lama cherche à se faire un ami dans la neige.",
+          "posterUrl": "/posters/caminandes-llamigos.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2016,
+          "durationSeconds": 150,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-09T09:07:00Z"
+        }
+      ]
+    },
+    {
+      "genre": "Aventure",
+      "items": [
+        {
+          "id": "93334b80-56c5-58b5-8eab-252f7a0e2f66",
+          "title": "Agent 327 : Operation Barbershop",
+          "description": "Un agent secret mène l'enquête dans un salon de coiffure.",
+          "posterUrl": "/posters/agent-327.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Aventure"
+          ],
+          "year": 2017,
+          "durationSeconds": 231,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-10T09:06:00Z"
+        },
+        {
+          "id": "96980cd7-9b1b-5933-81bf-887ce87f1690",
+          "title": "Charge",
+          "description": "Un guerrier épuisé traverse un monde en ruine.",
+          "posterUrl": "/posters/charge.jpg",
+          "genres": [
+            "Science-fiction",
+            "Aventure"
+          ],
+          "year": 2022,
+          "durationSeconds": 200,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-08T09:08:00Z"
+        },
+        {
+          "id": "3f12ff71-5b21-5266-9f07-e00ad64b40d2",
+          "title": "Hero",
+          "description": "Un jeune héros s'entraîne pour sauver son village.",
+          "posterUrl": null,
+          "genres": [
+            "Aventure",
+            "Animation"
+          ],
+          "year": 2018,
+          "durationSeconds": 236,
+          "availability": "UNAVAILABLE",
+          "addedAt": "2026-11-07T09:10:00Z"
+        }
+      ]
+    },
+    {
+      "genre": "Comédie familiale",
+      "items": [
+        {
+          "id": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+          "title": "Big Buck Bunny",
+          "description": "Un lapin géant et paisible tient tête à trois rongeurs malicieux.",
+          "posterUrl": "/posters/big-buck-bunny.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2008,
+          "durationSeconds": 596,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-16T09:00:00Z"
+        },
+        {
+          "id": "93334b80-56c5-58b5-8eab-252f7a0e2f66",
+          "title": "Agent 327 : Operation Barbershop",
+          "description": "Un agent secret mène l'enquête dans un salon de coiffure.",
+          "posterUrl": "/posters/agent-327.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Aventure"
+          ],
+          "year": 2017,
+          "durationSeconds": 231,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-10T09:06:00Z"
+        },
+        {
+          "id": "721a567a-0c56-5130-a509-5dbdac424875",
+          "title": "Caminandes : Llamigos",
+          "description": "Un lama cherche à se faire un ami dans la neige.",
+          "posterUrl": "/posters/caminandes-llamigos.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2016,
+          "durationSeconds": 150,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-09T09:07:00Z"
+        },
+        {
+          "id": "0d87d40e-72dd-5e79-9985-13d8a4b2d503",
+          "title": "Coffee Run",
+          "description": "Une course pour le café qui tourne à l'aventure.",
+          "posterUrl": "/posters/coffee-run.jpg",
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2020,
+          "durationSeconds": 210,
+          "availability": "UNAVAILABLE",
+          "addedAt": "2026-11-07T09:09:00Z"
+        },
+        {
+          "id": "1482e35a-f6d6-5629-bcb3-4c818b8ba8ed",
+          "title": "Glass Half",
+          "description": "Deux critiques d'art débattent devant un verre à moitié plein.",
+          "posterUrl": null,
+          "genres": [
+            "Comédie familiale",
+            "Animation"
+          ],
+          "year": 2015,
+          "durationSeconds": 174,
+          "availability": "DOWNLOADING",
+          "addedAt": "2026-11-07T09:11:00Z"
+        }
+      ]
+    },
+    {
+      "genre": "Fantastique",
+      "items": [
+        {
+          "id": "d847e3f6-b96c-570d-982c-4e93614aba42",
+          "title": "Sintel",
+          "description": "Une jeune femme part à la recherche d'un dragon qu'elle a un jour sauvé.",
+          "posterUrl": "/posters/sintel.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2010,
+          "durationSeconds": 888,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-15T09:01:00Z"
+        },
+        {
+          "id": "d1013014-343d-562f-96da-82ea90ad7cf9",
+          "title": "Cosmos Laundromat",
+          "description": "Un mouton dépressif rencontre un vendeur excentrique.",
+          "posterUrl": "/posters/cosmos-laundromat.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2015,
+          "durationSeconds": 730,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-12T09:04:00Z"
+        },
+        {
+          "id": "0879f7bc-8dd2-5f0c-b399-326d179d0519",
+          "title": "Spring",
+          "description": "Une bergère et son chien affrontent les esprits du printemps.",
+          "posterUrl": "/posters/spring.jpg",
+          "genres": [
+            "Fantastique",
+            "Animation"
+          ],
+          "year": 2019,
+          "durationSeconds": 462,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-11T09:05:00Z"
+        }
+      ]
+    },
+    {
+      "genre": "Science-fiction",
+      "items": [
+        {
+          "id": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+          "title": "Elephants Dream",
+          "description": "Deux hommes explorent une machine étrange et gigantesque.",
+          "posterUrl": "/posters/elephants-dream.jpg",
+          "genres": [
+            "Science-fiction",
+            "Animation"
+          ],
+          "year": 2006,
+          "durationSeconds": 654,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-14T09:02:00Z"
+        },
+        {
+          "id": "7d29c871-d8bb-5c4e-a704-9d68eeaa0afa",
+          "title": "Tears of Steel",
+          "description": "Des guerriers et des scientifiques tentent de sauver le monde de robots.",
+          "posterUrl": "/posters/tears-of-steel.jpg",
+          "genres": [
+            "Science-fiction"
+          ],
+          "year": 2012,
+          "durationSeconds": 734,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-13T09:03:00Z"
+        },
+        {
+          "id": "96980cd7-9b1b-5933-81bf-887ce87f1690",
+          "title": "Charge",
+          "description": "Un guerrier épuisé traverse un monde en ruine.",
+          "posterUrl": "/posters/charge.jpg",
+          "genres": [
+            "Science-fiction",
+            "Aventure"
+          ],
+          "year": 2022,
+          "durationSeconds": 200,
+          "availability": "AVAILABLE",
+          "addedAt": "2026-11-08T09:08:00Z"
+        }
+      ]
+    }
+  ],
+  "favourites": [
+    {
+      "id": "d847e3f6-b96c-570d-982c-4e93614aba42",
+      "title": "Sintel",
+      "description": "Une jeune femme part à la recherche d'un dragon qu'elle a un jour sauvé.",
+      "posterUrl": "/posters/sintel.jpg",
+      "genres": [
+        "Fantastique",
+        "Animation"
+      ],
+      "year": 2010,
+      "durationSeconds": 888,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-15T09:01:00Z"
+    },
+    {
+      "id": "7d29c871-d8bb-5c4e-a704-9d68eeaa0afa",
+      "title": "Tears of Steel",
+      "description": "Des guerriers et des scientifiques tentent de sauver le monde de robots.",
+      "posterUrl": "/posters/tears-of-steel.jpg",
+      "genres": [
+        "Science-fiction"
+      ],
+      "year": 2012,
+      "durationSeconds": 734,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-13T09:03:00Z"
+    },
+    {
+      "id": "0879f7bc-8dd2-5f0c-b399-326d179d0519",
+      "title": "Spring",
+      "description": "Une bergère et son chien affrontent les esprits du printemps.",
+      "posterUrl": "/posters/spring.jpg",
+      "genres": [
+        "Fantastique",
+        "Animation"
+      ],
+      "year": 2019,
+      "durationSeconds": 462,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-11T09:05:00Z"
+    }
+  ]
+}

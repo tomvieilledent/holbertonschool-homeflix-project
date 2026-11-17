@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/library-unavailable",
+  "title": "Library indisponible",
+  "status": 503,
+  "code": "LIBRARY_UNAVAILABLE",
+  "detail": "Le service Library est injoignable.",
+  "instance": "/api/v1/example"
+}

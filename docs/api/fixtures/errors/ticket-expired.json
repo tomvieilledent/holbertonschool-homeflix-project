@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/ticket-expired",
+  "title": "Ticket expiré",
+  "status": 401,
+  "code": "TICKET_EXPIRED",
+  "detail": "Le ticket de streaming a expiré.",
+  "instance": "/api/v1/example"
+}
