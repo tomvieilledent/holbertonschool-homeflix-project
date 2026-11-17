@@ -83,6 +83,10 @@ Dans `src/components/`, accessibles au clavier, stylés uniquement avec les toke
 | `Modal` | `role="dialog"` nommé par son titre, piège de focus, fermeture par Échap ou clic sur le fond, focus rendu au déclencheur |
 | `ToastProvider` + `useToast()` | Notifications dans une région `aria-live` ; `role="alert"` pour les erreurs ; minuteur en pause au survol et au focus |
 | `Spinner` | Indicateur de chargement (`role="status"`, libellé masqué visuellement) |
+| `Skeleton` | Silhouette de chargement (`text`, `rect`, `circle`) ; décorative, ou annoncée comme statut si `label` est fourni |
+| `EmptyState` | État vide : titre, description, icône décorative et actions (ex. « Explorer le catalogue ») |
+| `ErrorState` | État d'erreur en français sans détail technique (`role="alert"`), bouton « Réessayer » via `onRetry` |
+| `ErrorBoundary` | Filet de sécurité global (monté dans `App.jsx`) : une erreur de rendu affiche `ErrorState` au lieu d'une page blanche ; le détail reste dans la console |
 
 ```jsx
 <ToastProvider>{/* à la racine de l'application */}</ToastProvider>
@@ -90,6 +94,8 @@ Dans `src/components/`, accessibles au clavier, stylés uniquement avec les toke
 const { show } = useToast()
 show('Profil enregistré', { variant: 'success' })
 ```
+
+Les erreurs de route (rendu, chargement d'une page admin) sont gérées par `app/RouteErrorPage.jsx`, branchée comme `errorElement` du routeur.
 
 `ToastProvider` n'est pas encore monté dans `App.jsx` : à faire au premier écran qui émet un toast.
 
