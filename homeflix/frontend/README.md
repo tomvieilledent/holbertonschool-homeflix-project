@@ -21,7 +21,8 @@ npm run build
 | `components/` | Composants UI partagés entre fonctionnalités |
 | `services/` | Accès à l'API (`api.js` : `apiFetch(service, path)`) |
 | `hooks/` | Hooks partagés |
-| `styles/` | Feuilles de style globales |
+| `styles/` | `tokens.css` (design tokens) et styles de base |
+| `assets/logo/` | Logos SVG (couleur, monochrome foncé, monochrome blanc) |
 
 ## Conventions
 
@@ -50,6 +51,25 @@ Voir `.env.example`.
 | `VITE_API_BASE` | `/api` | Base **relative** de l'API (fonctionne derrière nginx) |
 | `VITE_APP_NAME` | `Homeflix` | Nom affiché |
 | `VITE_DEV_PROXY_HOST` | `localhost` | Hôte des microservices pour le proxy de dev |
+
+## Identité visuelle et design tokens
+
+Palette, typographie, espacements, rayons, ombres et focus sont des variables CSS dans `src/styles/tokens.css`. Les composants n'utilisent que ces variables, jamais de valeur en dur.
+
+- **Thème sombre** (par défaut) : `:root`. **Thème clair** : `<html data-theme="light">`.
+- Couleurs de marque : corail `#F68657` (principale), jaune orangé `#F6B352` (secondaire), anthracite `#383A3F` (surface) et `#1F2124` (fond).
+- Sur un bouton corail, le texte est `--color-on-primary` (`#1F2124`), jamais blanc (2,5:1).
+- En thème clair, le corail ne passe pas en texte sur blanc : les liens utilisent `--color-link` (`#B83E0E`).
+- Polices (chargées en local via `@fontsource-variable`) : Plus Jakarta Sans pour les titres (`--font-heading`), Roboto pour l'interface (`--font-ui`), Public Sans pour les textes longs et la navigation (`--font-text`, `--font-nav`).
+- Logo : composant `<Logo />` (version couleur en thème sombre, monochrome foncée en thème clair). Taille minimale 48 px de haut, sinon utiliser le favicon.
+- Les icônes (`favicon.*`, `apple-touch-icon.png`, `android-chrome-*`, `maskable-512x512.png`) et `site.webmanifest` sont dans `public/`.
+- `og:image` est relatif dans `index.html` : le remplacer par l'URL absolue du site au déploiement.
+
+Vérifier les contrastes WCAG AA (texte >= 4,5:1, éléments d'interface >= 3:1) dans les deux thèmes :
+
+```bash
+npm run check:contrast
+```
 
 ## Appels API et proxy
 

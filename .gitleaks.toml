@@ -1,0 +1,15 @@
+# Configuration de gitleaks (scan de secrets de la CI). Règles par défaut + liste d'exceptions.
+title = "HomeFlix"
+
+[extend]
+useDefault = true
+
+# Valeurs FACTICES documentées, jamais des secrets : exemples de l'OpenAPI et jeton des fixtures.
+# Les exceptions portent sur la valeur exacte, pas sur un fichier entier : une vraie fuite dans
+# ces mêmes fichiers resterait détectée.
+[allowlist]
+description = "Valeurs factices des exemples OpenAPI et des fixtures"
+regexes = [
+  '''un-mot-de-passe-long-12''',
+  '''eyJhbGciOiJSUzI1NiJ9\.fixture\.signature''',
+]

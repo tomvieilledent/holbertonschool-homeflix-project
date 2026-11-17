@@ -12,8 +12,8 @@ servers:
 tags:
   - { name: Catalogue, description: Parcourir et rechercher les médias }
   - { name: Playback, description: Lecture vidéo en streaming }
-  - { name: Profile data, description: Progression, favoris et accueil du profil actif }
-  - { name: Admin, description: Dossiers autorisés, indexation, métadonnées (ADMIN) }
+  - { name: Profile data, description: "Progression, favoris et accueil du profil actif" }
+  - { name: Admin, description: "Dossiers autorisés, indexation, métadonnées (ADMIN)" }
 security:
   - bearerAuth: []
 paths:
@@ -517,7 +517,7 @@ components:
       type: object
       required: [url, expiresAt]
       properties:
-        url: { type: string, description: URL relative du flux, ticket inclus }
+        url: { type: string, description: "URL relative du flux, ticket inclus" }
         expiresAt: { type: string, format: date-time }
     ProgressState:
       type: string
