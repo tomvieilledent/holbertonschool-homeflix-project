@@ -5,7 +5,7 @@
 #   ./scripts/smoke.sh            # démarre, vérifie, arrête (les volumes sont conservés)
 #   KEEP_UP=1 ./scripts/smoke.sh  # laisse la pile démarrée
 #
-# Prérequis : Docker Compose, curl, un fichier .env (créé par ./scripts/gen-env.sh si absent).
+# Prérequis : Docker Compose, curl, un fichier .env (créé ou complété par ./scripts/gen-secrets.sh).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -15,7 +15,7 @@ pass() { printf '  [OK]   %s\n' "$1"; }
 fail() { printf '  [FAIL] %s\n' "$1"; fails=$((fails + 1)); }
 check() { if eval "$2" > /dev/null 2>&1; then pass "$1"; else fail "$1"; fi; }
 
-[ -f .env ] || { echo "Création de .env"; ./scripts/gen-env.sh || exit 1; }
+./scripts/gen-secrets.sh || exit 1   # crée .env ou ajoute les variables manquantes
 set -a; . ./.env; set +a
 FRONTEND_PORT="${FRONTEND_PORT:-8080}"
 

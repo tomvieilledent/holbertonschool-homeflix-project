@@ -18,7 +18,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 | Services Spring Boot (identity, library, acquisition) | Spring Boot 4.1.2, Java 21 ; squelettes (classe principale + test `contextLoads`), Dockerfile multi-stage présent |
 | Frontend | React 19 + Vite, JavaScript ; architecture posée par la PR #135 ; Dockerfile multi-stage (Node 24 → nginx 1.27) |
 | `homeflix/compose.yaml` | Présent : db, 3 services, transmission, frontend ; réseau `internal` ; volumes `pgdata`, `downloads`, `transmission-config` |
-| `homeflix/.env.example` | Présent, valeurs `CHANGE_ME` ; `scripts/gen-env.sh` génère un `.env` aléatoire |
+| `homeflix/.env.example` | Présent, valeurs `CHANGE_ME` ; `scripts/gen-secrets.sh` génère un `.env` aléatoire |
 | `homeflix/initdb/01-create-databases.sh` | Crée un rôle et une base par service, `REVOKE CONNECT … FROM PUBLIC` |
 | `homeflix/frontend/nginx.conf` | Reverse proxy déjà écrit (préfixe retiré, `/internal` et `/actuator` en 404) |
 | CI, tests, client BitTorrent opérationnel | Inexistants à ce jour (issues #29, #74, #61) |
@@ -108,7 +108,7 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 
 ### 9. Configuration et secrets
 
-- Un seul fichier `.env` à la racine de `homeflix/`, ignoré par Git ; `.env.example` ne contient que des `CHANGE_ME`. `scripts/gen-env.sh` génère des secrets aléatoires et refuse d'écraser un `.env` existant.
+- Un seul fichier `.env` à la racine de `homeflix/`, ignoré par Git ; `.env.example` ne contient que des `CHANGE_ME`. `scripts/gen-secrets.sh` génère des secrets aléatoires (mots de passe, clé interne, clé JWT RSA, jeton de setup, secret des tickets de streaming), crée `.env` avec les droits 600 ou complète un `.env` existant **sans jamais modifier ses valeurs**. `scripts/check-secrets.sh` vérifie qu'aucun secret n'est suivi par Git (rejouable en CI).
 - Les variables `${VAR:?}` de `compose.yaml` font échouer `docker compose up` avec un message clair si un secret est absent.
 - Clés de signature RSA et de ticket de streaming (ADR 0001) : fournies par variable d'environnement ou volume, jamais committées (#28).
 
