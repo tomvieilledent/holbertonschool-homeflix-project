@@ -50,9 +50,9 @@ services:
       identity-service: { condition: service_healthy }
     environment:
       SERVER_PORT: 8082
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/library
-      SPRING_DATASOURCE_USERNAME: library
-      SPRING_DATASOURCE_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
+      DB_URL: jdbc:postgresql://db:5432/library
+      DB_USER: library
+      DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
       IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
       MEDIA_ROOT: /media
@@ -71,9 +71,9 @@ services:
       transmission: { condition: service_started }
     environment:
       SERVER_PORT: 8083
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/acquisition
-      SPRING_DATASOURCE_USERNAME: acquisition
-      SPRING_DATASOURCE_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
+      DB_URL: jdbc:postgresql://db:5432/acquisition
+      DB_USER: acquisition
+      DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
       IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
       LIBRARY_BASE_URL: http://library-service:8082
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
