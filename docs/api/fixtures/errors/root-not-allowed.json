@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/root-not-allowed",
+  "title": "Dossier refusé",
+  "status": 400,
+  "code": "ROOT_NOT_ALLOWED",
+  "detail": "Ce dossier n'est pas dans un emplacement autorisé : choisissez un dossier situé sous /media ou /downloads.",
+  "instance": "/api/v1/admin/media-roots"
+}

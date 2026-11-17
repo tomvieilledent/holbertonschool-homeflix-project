@@ -88,8 +88,10 @@ paths:
       tags: [Admin]
       summary: Ajoute un dossier autorisé (ADMIN)
       description: |
-        Le chemin est validé avant enregistrement (existe, est un dossier, est lisible, ne contient pas et n'est pas
-        contenu dans une autre racine). Erreurs : `ROOT_NOT_FOUND`, `ROOT_NOT_A_DIRECTORY`, `ROOT_NOT_READABLE` (400), `CONFLICT` (409).
+        Le chemin est validé avant enregistrement : il doit être absolu, sans segment `..`, se trouver sous un emplacement
+        autorisé (les montages `/media` et `/downloads` du conteneur), exister, être un dossier lisible, et ne contenir
+        ni n'être contenu dans une autre racine. Le chemin enregistré est le chemin réel (liens symboliques résolus).
+        Erreurs : `ROOT_NOT_FOUND`, `ROOT_NOT_A_DIRECTORY`, `ROOT_NOT_READABLE`, `ROOT_NOT_ALLOWED` (400), `ROOT_OVERLAP` (409).
       requestBody:
         required: true
         content:
@@ -497,7 +499,7 @@ components:
       required: [valid]
       properties:
         valid: { type: boolean }
-        code: { type: string, enum: [ROOT_NOT_FOUND, ROOT_NOT_A_DIRECTORY, ROOT_NOT_READABLE] }
+        code: { type: string, enum: [ROOT_NOT_FOUND, ROOT_NOT_A_DIRECTORY, ROOT_NOT_READABLE, ROOT_NOT_ALLOWED, ROOT_OVERLAP] }
         message: { type: string, description: Explication en langage clair pour l'administrateur }
     IndexJob:
       type: object

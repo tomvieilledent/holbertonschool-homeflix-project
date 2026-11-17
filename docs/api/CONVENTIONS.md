@@ -78,6 +78,8 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `ROOT_NOT_FOUND` | 400 | Dossier autorisé introuvable |
 | `ROOT_NOT_READABLE` | 400 | Dossier autorisé non lisible |
 | `ROOT_NOT_A_DIRECTORY` | 400 | Le chemin n'est pas un dossier |
+| `ROOT_NOT_ALLOWED` | 400 | Chemin invalide (relatif, `..`) ou en dehors des emplacements autorisés (`/media`, `/downloads`) |
+| `ROOT_OVERLAP` | 409 | Le dossier contient ou est contenu dans un dossier déjà configuré |
 | `INDEX_ALREADY_RUNNING` | 409 | Une indexation est déjà en cours |
 | `MEDIA_FILE_MISSING` | 404 | Fichier du média absent ou inaccessible |
 | `MEDIA_UNAVAILABLE` | 409 | Média marqué indisponible |

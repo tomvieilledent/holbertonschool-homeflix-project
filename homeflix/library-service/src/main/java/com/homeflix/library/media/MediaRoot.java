@@ -16,7 +16,7 @@ public class MediaRoot {
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String path;
 
     @Column(nullable = false)
@@ -24,6 +24,10 @@ public class MediaRoot {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    /** Suppression douce : un dossier retiré garde ses médias (UNAVAILABLE) et reste en base. */
+    @Column(nullable = false)
+    private boolean removed = false;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
@@ -43,5 +47,7 @@ public class MediaRoot {
     public void setLabel(String label) { this.label = label; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public boolean isRemoved() { return removed; }
+    public void setRemoved(boolean removed) { this.removed = removed; }
     public Instant getCreatedAt() { return createdAt; }
 }

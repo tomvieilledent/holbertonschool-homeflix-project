@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.homeflix.library.media.MediaItemRepository;
+import com.homeflix.library.media.MediaRootRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -17,6 +21,11 @@ class LibraryServiceApplicationTests {
 
 	@Autowired
 	MockMvc mockMvc;
+
+	// Profil « test » : pas de base de données, donc pas de repositories JPA. Les dossiers autorisés et
+	// leurs règles sont testés avec un vrai PostgreSQL dans MediaRootApiIntegrationTests.
+	@MockitoBean MediaRootRepository mediaRootRepository;
+	@MockitoBean MediaItemRepository mediaItemRepository;
 
 	@Test
 	void contextLoads() {
