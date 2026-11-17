@@ -108,7 +108,7 @@ services:
       library-service: { condition: service_healthy }
       acquisition-service: { condition: service_healthy }
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-8080}:8080"
 
 networks:
   internal:
