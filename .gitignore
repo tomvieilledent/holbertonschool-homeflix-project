@@ -9,3 +9,17 @@
 # Médias de démonstration : téléchargés par homeflix/scripts/fetch-demo-media.sh, jamais committés
 homeflix/demo-media/*
 !homeflix/demo-media/.gitkeep
+
+# Secrets : jamais committés (voir homeflix/scripts/gen-secrets.sh et homeflix/scripts/check-secrets.sh)
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+homeflix/secrets/
+
+# Données locales : bases, téléchargements, sauvegardes
+homeflix/data/
+homeflix/pgdata/
+homeflix/downloads/
+homeflix/backups/

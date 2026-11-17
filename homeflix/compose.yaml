@@ -12,10 +12,10 @@ services:
     restart: unless-stopped
     networks: [internal]
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?défini dans .env}
-      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?}
-      LIBRARY_DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
-      ACQUISITION_DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      LIBRARY_DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?LIBRARY_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      ACQUISITION_DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?ACQUISITION_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d:ro
@@ -32,8 +32,10 @@ services:
       SERVER_PORT: 8081
       DB_URL: jdbc:postgresql://db:5432/identity
       DB_USER: identity
-      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?}
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64:?JWT_PRIVATE_KEY_BASE64 est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      SETUP_TOKEN: ${SETUP_TOKEN:?SETUP_TOKEN est obligatoire (lancez ./scripts/gen-secrets.sh)}
     healthcheck: &javahc
       # /actuator/health est public et sans détail (SecurityConfig de chaque service).
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:$$SERVER_PORT/actuator/health > /dev/null"]
@@ -52,9 +54,10 @@ services:
       SERVER_PORT: 8082
       DB_URL: jdbc:postgresql://db:5432/library
       DB_USER: library
-      DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?}
+      DB_PASSWORD: ${LIBRARY_DB_PASSWORD:?LIBRARY_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
       IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      STREAM_TICKET_SECRET: ${STREAM_TICKET_SECRET:?STREAM_TICKET_SECRET est obligatoire (lancez ./scripts/gen-secrets.sh)}
       MEDIA_ROOT: /media
       DOWNLOADS_ROOT: /downloads
     volumes:
@@ -73,13 +76,13 @@ services:
       SERVER_PORT: 8083
       DB_URL: jdbc:postgresql://db:5432/acquisition
       DB_USER: acquisition
-      DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?}
+      DB_PASSWORD: ${ACQUISITION_DB_PASSWORD:?ACQUISITION_DB_PASSWORD est obligatoire (lancez ./scripts/gen-secrets.sh)}
       IDENTITY_JWKS_URI: http://identity-service:8081/.well-known/jwks.json
       LIBRARY_BASE_URL: http://library-service:8082
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY est obligatoire (lancez ./scripts/gen-secrets.sh)}
       TRANSMISSION_URL: http://transmission:9091/transmission/rpc
-      TRANSMISSION_USER: ${TRANSMISSION_USER:?}
-      TRANSMISSION_PASS: ${TRANSMISSION_PASS:?}
+      TRANSMISSION_USER: ${TRANSMISSION_USER:?TRANSMISSION_USER est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      TRANSMISSION_PASS: ${TRANSMISSION_PASS:?TRANSMISSION_PASS est obligatoire (lancez ./scripts/gen-secrets.sh)}
       DOWNLOADS_ROOT: /downloads
     volumes:
       - downloads:/downloads
@@ -93,8 +96,8 @@ services:
     environment:
       PUID: 1000
       PGID: 1000
-      USER: ${TRANSMISSION_USER:?}
-      PASS: ${TRANSMISSION_PASS:?}
+      USER: ${TRANSMISSION_USER:?TRANSMISSION_USER est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      PASS: ${TRANSMISSION_PASS:?TRANSMISSION_PASS est obligatoire (lancez ./scripts/gen-secrets.sh)}
     volumes:
       - transmission-config:/config
       - downloads:/downloads

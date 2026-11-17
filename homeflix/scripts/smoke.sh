@@ -5,7 +5,7 @@
 #   ./scripts/smoke.sh            # démarre, vérifie, arrête (les volumes sont conservés)
 #   KEEP_UP=1 ./scripts/smoke.sh  # laisse la pile démarrée
 #
-# Prérequis : Docker Compose, curl, un fichier .env (créé par ./scripts/gen-env.sh si absent).
+# Prérequis : Docker Compose, curl, un fichier .env (créé ou complété par ./scripts/gen-secrets.sh).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -15,7 +15,7 @@ pass() { printf '  [OK]   %s\n' "$1"; }
 fail() { printf '  [FAIL] %s\n' "$1"; fails=$((fails + 1)); }
 check() { if eval "$2" > /dev/null 2>&1; then pass "$1"; else fail "$1"; fi; }
 
-[ -f .env ] || { echo "Création de .env"; ./scripts/gen-env.sh || exit 1; }
+./scripts/gen-secrets.sh || exit 1   # crée .env ou ajoute les variables manquantes
 set -a; . ./.env; set +a
 FRONTEND_PORT="${FRONTEND_PORT:-8080}"
 
@@ -42,7 +42,15 @@ check "/api/*/actuator est refusé (404)" "[ \"\$(curl -s -o /dev/null -w '%{htt
 check "une API protégée sans jeton répond 401" "[ \"\$(curl -s -o /dev/null -w '%{http_code}' $base/api/identity/v1/x)\" = 401 ]"
 
 echo "== Ports publiés (seul le frontend doit l'être)"
-published=$(docker compose ps --format '{{.Service}} {{.Publishers}}' | grep -E '0\.0\.0\.0:|127\.0\.0\.1:|\[::\]:' | awk '{print $1}' | sort -u | tr '\n' ' ')
+# On lit les ports publiés directement dans docker inspect (indépendant de la version de Compose).
+published=""
+for id in $(docker compose ps -q); do
+  hostports=$(docker inspect -f '{{range $p, $b := .NetworkSettings.Ports}}{{if $b}}x{{end}}{{end}}' "$id")
+  if [ -n "$hostports" ]; then
+    published+="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.service"}}' "$id") "
+  fi
+done
+published=$(echo "$published" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
 [ "$published" = "frontend " ] && pass "seul le frontend publie un port" || fail "services qui publient un port : ${published:-aucun}"
 
 echo "== Isolation des bases"
