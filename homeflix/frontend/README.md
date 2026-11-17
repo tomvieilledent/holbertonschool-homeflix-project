@@ -83,6 +83,10 @@ Dans `src/components/`, accessibles au clavier, stylés uniquement avec les toke
 | `Modal` | `role="dialog"` nommé par son titre, piège de focus, fermeture par Échap ou clic sur le fond, focus rendu au déclencheur |
 | `ToastProvider` + `useToast()` | Notifications dans une région `aria-live` ; `role="alert"` pour les erreurs ; minuteur en pause au survol et au focus |
 | `Spinner` | Indicateur de chargement (`role="status"`, libellé masqué visuellement) |
+| `Skeleton` | Silhouette de chargement (`text`, `rect`, `circle`) ; décorative, ou annoncée comme statut si `label` est fourni |
+| `EmptyState` | État vide : titre, description, icône décorative et actions (ex. « Explorer le catalogue ») |
+| `ErrorState` | État d'erreur en français sans détail technique (`role="alert"`), bouton « Réessayer » via `onRetry` |
+| `ErrorBoundary` | Filet de sécurité global (monté dans `App.jsx`) : une erreur de rendu affiche `ErrorState` au lieu d'une page blanche ; le détail reste dans la console |
 
 ```jsx
 <ToastProvider>{/* à la racine de l'application */}</ToastProvider>
@@ -90,6 +94,8 @@ Dans `src/components/`, accessibles au clavier, stylés uniquement avec les toke
 const { show } = useToast()
 show('Profil enregistré', { variant: 'success' })
 ```
+
+Les erreurs de route (rendu, chargement d'une page admin) sont gérées par `app/RouteErrorPage.jsx`, branchée comme `errorElement` du routeur.
 
 `ToastProvider` n'est pas encore monté dans `App.jsx` : à faire au premier écran qui émet un toast.
 
@@ -100,6 +106,22 @@ show('Profil enregistré', { variant: 'success' })
 - La page de connexion doit relire la destination avec `safeNext()` (`features/auth/redirect.js`), qui n'accepte que des chemins internes (pas d'URL absolue ni de `//`).
 - `AppLayout` : lien d'évitement « Aller au contenu principal » (premier élément focalisable), en-tête, navigation (le lien « Administration » n'apparaît que pour un `ADMIN`) et menu du compte (changer de profil, se déconnecter ; Échap le ferme). `BareLayout` sert la connexion, le choix du profil et la page 404, sans en-tête.
 - La table des routes est exportée (`routes` dans `app/router.jsx`) pour être testée avec un routeur en mémoire.
+
+## Développer sans backend (mocks MSW)
+
+```bash
+echo "VITE_USE_MOCKS=true" >> .env.local
+npm run dev
+```
+
+Avec `VITE_USE_MOCKS=true`, MSW intercepte dans le navigateur les appels `/api/identity|library|acquisition/v1/...` et répond à partir des fixtures du contrat (`docs/api/fixtures`, via l'alias `@fixtures`). Le message `[mock] API simulée active` apparaît dans la console.
+
+- **Comptes de démonstration** (mot de passe `mot-de-passe-12`) : `admin` (ADMIN), `famille` (USER), `invite` (désactivé : erreur `ACCOUNT_DISABLED`). Le premier profil (Alice) a des favoris et des reprises de lecture ; les deux autres ont des listes vides, pour tester les états vides.
+- **Couverture** : tous les endpoints des trois contrats (auth et session, profils, comptes, catalogue, recherche, accueil, favoris, progression, ticket de streaming, dossiers, indexation, métadonnées, acquisition). Les droits sont simulés (401 sans session, 403 pour un USER sur les routes admin, `PROFILE_NOT_SELECTED` sans profil actif).
+- **État** : les écritures (profils, favoris, progression, dossiers…) vivent en mémoire jusqu'au rechargement ; seule la session survit (sessionStorage). L'indexation et les téléchargements avancent à chaque consultation pour pouvoir tester le suivi.
+- **Limites** : le flux vidéo n'est pas simulé (`/stream/{id}` renvoie « fichier introuvable » pour exercer l'écran d'erreur du lecteur) ; Acquisition n'a pas encore de fixtures JSON, ses données sont dans `src/mocks/db.js` ; tous les comptes partagent les mêmes profils.
+- **Production** : le mode n'existe qu'avec `npm run dev` (`import.meta.env.DEV`). Le service worker est servi par un plugin Vite réservé au serveur de dev, pas copié dans `public/`. `npm run check:no-mocks` (après `npm run build`) vérifie qu'aucun mock ne se trouve dans `dist/`.
+- **Tests** : `src/mocks/mocks.test.js` exécute les handlers avec `msw/node` (formes de réponse égales aux fixtures, droits, scénarios métier).
 
 ## Appels API et proxy
 
