@@ -1,0 +1,49 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-3) var(--space-5);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  line-height: var(--text-base-lh);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-link);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn:hover:not(:disabled, [aria-disabled='true']) {
+  filter: brightness(1.08);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn[aria-disabled='true'] {
+  cursor: progress;
+}

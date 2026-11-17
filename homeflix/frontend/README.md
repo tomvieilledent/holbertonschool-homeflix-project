@@ -9,6 +9,7 @@ npm install
 cp .env.example .env.local   # optionnel
 npm run dev                  # http://localhost:5173
 npm run lint
+npm test                      # tests Vitest
 npm run build
 ```
 
@@ -70,6 +71,27 @@ Vérifier les contrastes WCAG AA (texte >= 4,5:1, éléments d'interface >= 3:1)
 ```bash
 npm run check:contrast
 ```
+
+## Composants de base
+
+Dans `src/components/`, accessibles au clavier, stylés uniquement avec les tokens. Les props sont documentées en JSDoc dans chaque fichier.
+
+| Composant | Rôle |
+| --- | --- |
+| `Button` | Variantes `primary`, `secondary`, `ghost`, `danger` ; états `disabled` et `loading` (occupé, clics ignorés, reste focalisable) |
+| `Field` | Label visible relié à l'input, aide, erreur annoncée (`role="alert"`, `aria-invalid`, `aria-describedby`) |
+| `Modal` | `role="dialog"` nommé par son titre, piège de focus, fermeture par Échap ou clic sur le fond, focus rendu au déclencheur |
+| `ToastProvider` + `useToast()` | Notifications dans une région `aria-live` ; `role="alert"` pour les erreurs ; minuteur en pause au survol et au focus |
+| `Spinner` | Indicateur de chargement (`role="status"`, libellé masqué visuellement) |
+
+```jsx
+<ToastProvider>{/* à la racine de l'application */}</ToastProvider>
+
+const { show } = useToast()
+show('Profil enregistré', { variant: 'success' })
+```
+
+`ToastProvider` n'est pas encore monté dans `App.jsx` : à faire au premier écran qui émet un toast.
 
 ## Appels API et proxy
 
