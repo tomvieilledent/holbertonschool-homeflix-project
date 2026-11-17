@@ -224,7 +224,7 @@ Le registre complet (28 risques avec probabilité, impact, mesure et responsable
 
 - Squelettes Spring Boot des trois services et du frontend Vite/React.
 - Conversion du frontend de TypeScript vers JavaScript.
-- `compose.yaml`, Dockerfiles, nginx, `.env.example`, init des bases, `scripts/gen-env.sh` (démarrage de la stack validé localement) : les issues Docker correspondantes servent à les durcir/compléter, pas à les recréer.
+- `compose.yaml`, Dockerfiles, nginx, `.env.example`, init des bases, `scripts/gen-env.sh` (devenu `scripts/gen-secrets.sh` avec l'issue #28 ; démarrage de la stack validé localement) : les issues Docker correspondantes servent à les durcir/compléter, pas à les recréer.
 
 ## 10. Critères de validation
 
