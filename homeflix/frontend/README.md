@@ -93,6 +93,22 @@ show('Profil enregistré', { variant: 'success' })
 
 `ToastProvider` n'est pas encore monté dans `App.jsx` : à faire au premier écran qui émet un toast.
 
+## Développer sans backend (mocks MSW)
+
+```bash
+echo "VITE_USE_MOCKS=true" >> .env.local
+npm run dev
+```
+
+Avec `VITE_USE_MOCKS=true`, MSW intercepte dans le navigateur les appels `/api/identity|library|acquisition/v1/...` et répond à partir des fixtures du contrat (`docs/api/fixtures`, via l'alias `@fixtures`). Le message `[mock] API simulée active` apparaît dans la console.
+
+- **Comptes de démonstration** (mot de passe `mot-de-passe-12`) : `admin` (ADMIN), `famille` (USER), `invite` (désactivé : erreur `ACCOUNT_DISABLED`). Le premier profil (Alice) a des favoris et des reprises de lecture ; les deux autres ont des listes vides, pour tester les états vides.
+- **Couverture** : tous les endpoints des trois contrats (auth et session, profils, comptes, catalogue, recherche, accueil, favoris, progression, ticket de streaming, dossiers, indexation, métadonnées, acquisition). Les droits sont simulés (401 sans session, 403 pour un USER sur les routes admin, `PROFILE_NOT_SELECTED` sans profil actif).
+- **État** : les écritures (profils, favoris, progression, dossiers…) vivent en mémoire jusqu'au rechargement ; seule la session survit (sessionStorage). L'indexation et les téléchargements avancent à chaque consultation pour pouvoir tester le suivi.
+- **Limites** : le flux vidéo n'est pas simulé (`/stream/{id}` renvoie « fichier introuvable » pour exercer l'écran d'erreur du lecteur) ; Acquisition n'a pas encore de fixtures JSON, ses données sont dans `src/mocks/db.js` ; tous les comptes partagent les mêmes profils.
+- **Production** : le mode n'existe qu'avec `npm run dev` (`import.meta.env.DEV`). Le service worker est servi par un plugin Vite réservé au serveur de dev, pas copié dans `public/`. `npm run check:no-mocks` (après `npm run build`) vérifie qu'aucun mock ne se trouve dans `dist/`.
+- **Tests** : `src/mocks/mocks.test.js` exécute les handlers avec `msw/node` (formes de réponse égales aux fixtures, droits, scénarios métier).
+
 ## Appels API et proxy
 
 Le frontend appelle toujours des URLs relatives `/api/<service>/v1/...`.

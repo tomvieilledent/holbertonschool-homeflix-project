@@ -1,6 +1,23 @@
 import react from '@vitejs/plugin-react'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
+
+const fromHere = (path) => fileURLToPath(new URL(path, import.meta.url))
+const fixturesDir = fromHere('../../docs/api/fixtures')
+
+// Sert le service worker de MSW uniquement avec `vite dev` : il n'est jamais copié dans le build.
+const mswWorker = () => ({
+  name: 'msw-worker-dev',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use('/mockServiceWorker.js', (_request, response) => {
+      response.setHeader('Content-Type', 'text/javascript')
+      response.setHeader('Service-Worker-Allowed', '/')
+      response.end(readFileSync(fromHere('./node_modules/msw/lib/mockServiceWorker.js')))
+    })
+  },
+})
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -19,10 +36,12 @@ export default defineConfig(({ mode }) => {
   })
 
   return {
-    plugins: [react()],
+    plugins: [react(), mswWorker()],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': fromHere('./src'),
+        // Fixtures JSON du contrat d'API, réutilisées par les mocks (voir src/mocks).
+        '@fixtures': fixturesDir,
       },
     },
     test: {
@@ -32,6 +51,7 @@ export default defineConfig(({ mode }) => {
       css: false,
     },
     server: {
+      fs: { allow: [fromHere('.'), fixturesDir] },
       proxy: {
         ...proxyService('identity', 8081),
         ...proxyService('library', 8082),
