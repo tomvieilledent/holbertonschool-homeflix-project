@@ -1,0 +1,12 @@
+{
+  "jobId": "7d7b2a2b-7b38-5162-bf17-17a30511b3fd",
+  "state": "RUNNING",
+  "scanned": 8,
+  "added": 3,
+  "updated": 0,
+  "markedUnavailable": 0,
+  "duplicates": 0,
+  "errors": 0,
+  "startedAt": "2026-11-17T08:00:00Z",
+  "finishedAt": null
+}

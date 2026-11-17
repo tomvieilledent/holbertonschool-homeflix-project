@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/conflict",
+  "title": "Conflit",
+  "status": 409,
+  "code": "CONFLICT",
+  "detail": "L'état de la ressource ne permet pas cette opération.",
+  "instance": "/api/v1/example"
+}

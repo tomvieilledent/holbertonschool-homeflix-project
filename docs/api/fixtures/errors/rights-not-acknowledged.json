@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/rights-not-acknowledged",
+  "title": "Rappel des droits non acquitté",
+  "status": 412,
+  "code": "RIGHTS_NOT_ACKNOWLEDGED",
+  "detail": "Acquittez le rappel des droits avant de télécharger.",
+  "instance": "/api/v1/example"
+}

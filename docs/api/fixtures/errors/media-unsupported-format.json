@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/media-unsupported-format",
+  "title": "Format non supporté",
+  "status": 415,
+  "code": "MEDIA_UNSUPPORTED_FORMAT",
+  "detail": "Ce format n'est pas supporté pour la lecture.",
+  "instance": "/api/v1/example"
+}

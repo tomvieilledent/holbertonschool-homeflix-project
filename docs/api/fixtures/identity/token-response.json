@@ -1,0 +1,5 @@
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiJ9.fixture.signature",
+  "expiresIn": 900,
+  "tokenType": "Bearer"
+}

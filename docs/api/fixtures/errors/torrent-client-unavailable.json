@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/torrent-client-unavailable",
+  "title": "Client BitTorrent indisponible",
+  "status": 503,
+  "code": "TORRENT_CLIENT_UNAVAILABLE",
+  "detail": "Le client de téléchargement est injoignable.",
+  "instance": "/api/v1/example"
+}

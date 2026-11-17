@@ -1,0 +1,14 @@
+{
+  "type": "https://homeflix.local/problems/validation-error",
+  "title": "Données invalides",
+  "status": 400,
+  "code": "VALIDATION_ERROR",
+  "detail": "Un ou plusieurs champs sont invalides.",
+  "instance": "/api/v1/example",
+  "errors": [
+    {
+      "field": "username",
+      "message": "Doit contenir au moins 3 caractères"
+    }
+  ]
+}

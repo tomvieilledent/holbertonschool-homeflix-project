@@ -1,0 +1,48 @@
+[
+  {
+    "media": {
+      "id": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+      "title": "Elephants Dream",
+      "description": "Deux hommes explorent une machine étrange et gigantesque.",
+      "posterUrl": "/posters/elephants-dream.jpg",
+      "genres": [
+        "Science-fiction",
+        "Animation"
+      ],
+      "year": 2006,
+      "durationSeconds": 654,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-14T09:02:00Z"
+    },
+    "progress": {
+      "mediaId": "71cdedcf-8f74-543a-886b-18edd6969ba5",
+      "positionSeconds": 212,
+      "durationSeconds": 654,
+      "state": "STARTED",
+      "updatedAt": "2026-11-16T20:15:00Z"
+    }
+  },
+  {
+    "media": {
+      "id": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+      "title": "Big Buck Bunny",
+      "description": "Un lapin géant et paisible tient tête à trois rongeurs malicieux.",
+      "posterUrl": "/posters/big-buck-bunny.jpg",
+      "genres": [
+        "Comédie familiale",
+        "Animation"
+      ],
+      "year": 2008,
+      "durationSeconds": 596,
+      "availability": "AVAILABLE",
+      "addedAt": "2026-11-16T09:00:00Z"
+    },
+    "progress": {
+      "mediaId": "304212f0-ed3f-518e-9417-9bd99f4e2ea3",
+      "positionSeconds": 410,
+      "durationSeconds": 596,
+      "state": "STARTED",
+      "updatedAt": "2026-11-15T19:02:00Z"
+    }
+  }
+]

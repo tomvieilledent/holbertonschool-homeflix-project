@@ -1,0 +1,20 @@
+[
+  {
+    "id": "c1cc34cd-68d0-5dde-9035-a9501ea974ff",
+    "name": "Alice",
+    "avatar": "avatar-1",
+    "createdAt": "2026-11-16T08:35:00Z"
+  },
+  {
+    "id": "6038949b-6851-59e7-9d12-0f6209850b2a",
+    "name": "Bruno",
+    "avatar": "avatar-2",
+    "createdAt": "2026-11-16T08:36:00Z"
+  },
+  {
+    "id": "7eda1f0a-a4d5-50b6-bb98-408869f21d71",
+    "name": "Enfants",
+    "avatar": "avatar-kids",
+    "createdAt": "2026-11-16T08:37:00Z"
+  }
+]

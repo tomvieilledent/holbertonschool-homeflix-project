@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/account-disabled",
+  "title": "Compte désactivé",
+  "status": 403,
+  "code": "ACCOUNT_DISABLED",
+  "detail": "Ce compte est désactivé.",
+  "instance": "/api/v1/example"
+}

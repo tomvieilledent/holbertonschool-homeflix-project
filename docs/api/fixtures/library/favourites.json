@@ -1,0 +1,43 @@
+[
+  {
+    "id": "d847e3f6-b96c-570d-982c-4e93614aba42",
+    "title": "Sintel",
+    "description": "Une jeune femme part à la recherche d'un dragon qu'elle a un jour sauvé.",
+    "posterUrl": "/posters/sintel.jpg",
+    "genres": [
+      "Fantastique",
+      "Animation"
+    ],
+    "year": 2010,
+    "durationSeconds": 888,
+    "availability": "AVAILABLE",
+    "addedAt": "2026-11-15T09:01:00Z"
+  },
+  {
+    "id": "7d29c871-d8bb-5c4e-a704-9d68eeaa0afa",
+    "title": "Tears of Steel",
+    "description": "Des guerriers et des scientifiques tentent de sauver le monde de robots.",
+    "posterUrl": "/posters/tears-of-steel.jpg",
+    "genres": [
+      "Science-fiction"
+    ],
+    "year": 2012,
+    "durationSeconds": 734,
+    "availability": "AVAILABLE",
+    "addedAt": "2026-11-13T09:03:00Z"
+  },
+  {
+    "id": "0879f7bc-8dd2-5f0c-b399-326d179d0519",
+    "title": "Spring",
+    "description": "Une bergère et son chien affrontent les esprits du printemps.",
+    "posterUrl": "/posters/spring.jpg",
+    "genres": [
+      "Fantastique",
+      "Animation"
+    ],
+    "year": 2019,
+    "durationSeconds": 462,
+    "availability": "AVAILABLE",
+    "addedAt": "2026-11-11T09:05:00Z"
+  }
+]

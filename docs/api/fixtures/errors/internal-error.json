@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/internal-error",
+  "title": "Erreur interne",
+  "status": 500,
+  "code": "INTERNAL_ERROR",
+  "detail": "Une erreur inattendue s'est produite.",
+  "instance": "/api/v1/example"
+}

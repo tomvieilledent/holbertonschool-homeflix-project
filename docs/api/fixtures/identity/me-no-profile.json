@@ -1,0 +1,12 @@
+{
+  "account": {
+    "id": "6fcc85dc-7559-5ded-9c76-97a9df6d4a84",
+    "username": "famille",
+    "email": "famille@homeflix.local",
+    "role": "USER",
+    "enabled": true,
+    "mustChangePassword": false,
+    "createdAt": "2026-11-16T08:30:00Z"
+  },
+  "activeProfileId": null
+}
