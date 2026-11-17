@@ -5,3 +5,7 @@
 .env
 .env.*
 !.env.example
+
+# Médias de démonstration : téléchargés par homeflix/scripts/fetch-demo-media.sh, jamais committés
+homeflix/demo-media/*
+!homeflix/demo-media/.gitkeep
