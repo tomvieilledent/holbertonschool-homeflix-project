@@ -1,0 +1,6 @@
+# Interrogation des trackers (protocole UDP « scrape ») — 2026-11-17 18:23 UTC
+# Commande : python3 homeflix/scripts/p2p-seeders.py   (Sintel, infohash 08ada5a7…6095a10)
+tracker.opentrackr.org:1337  seeders=251 leechers=87 téléchargements terminés=7914
+explodie.org:6969  seeders=57 leechers=17 téléchargements terminés=0
+tracker.leechers-paradise.org:6969  injoignable
+tracker.coppersurfer.tk:6969  injoignable

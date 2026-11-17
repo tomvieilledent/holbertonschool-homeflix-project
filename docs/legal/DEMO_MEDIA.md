@@ -34,7 +34,7 @@ Le sujet exige de vérifier à la fois la **reproduction** et la **redistributio
 - « You can freely reuse and distribute this content, also commercially, for as long you provide a proper attribution. » (pages officielles de Blender)
 - Pour une rediffusion du film entier : conserver le générique complet, qui est inclus dans les fichiers.
 
-Conclusion : la reproduction (copie sur le serveur de démonstration, lecture) et la redistribution (partage pair-à-pair, voir issue #46) sont permises, à condition de **citer l'attribution** et de **conserver le générique**.
+Conclusion : la reproduction (copie sur le serveur de démonstration, lecture) et la redistribution (partage pair-à-pair, voir [`P2P_DEMO.md`](P2P_DEMO.md)) sont permises, à condition de **citer l'attribution** et de **conserver le générique**.
 
 > Cette conclusion s'applique à ces deux films. Elle ne dispense pas de vérifier les droits de tout autre fichier utilisé dans HomeFlix.
 
@@ -78,7 +78,7 @@ Le script télécharge chaque source, **vérifie son SHA-256**, extrait l'archiv
 - **Sintel : le miroir est un site tiers.** Le MP4 n'est pas hébergé sur `download.blender.org` (qui propose du MKV) mais sur un miroir cité par la page officielle. Deux autres miroirs listés étaient injoignables ou en erreur 404 le 2026-11-16. L'intégrité est garantie par le SHA-256 que nous avons calculé, non par une somme officielle de Blender. Plan B : télécharger le MKV officiel (`https://download.blender.org/durian/movies/`, somme MD5 fournie) et le convertir en MP4 H.264/AAC avec `ffmpeg`.
 - **Big Buck Bunny** est téléchargé depuis le site officiel de Blender ; la page de téléchargement indique elle-même que ses liens datent de 2008 et peuvent avoir expiré. Le lien était valide le 2026-11-16.
 - L'audio de Sintel est en 5.1 : certains navigateurs ou appareils le rabattent en stéréo. Le son a été vérifié sur la machine de développement ; à contrôler sur chaque machine de démonstration avant la soutenance.
-- Ces fichiers servent à la **lecture locale**. Le fichier du **téléchargement pair-à-pair** de la démo est distinct et documenté dans l'issue #46.
+- Ces fichiers servent à la **lecture locale**. Le fichier du **téléchargement pair-à-pair** de la démo (torrent, infohash, seeders, test de téléchargement) est documenté dans [`P2P_DEMO.md`](P2P_DEMO.md) : c'est le même MP4 de *Sintel* (même SHA-256).
 
 ## Preuves conservées
 
