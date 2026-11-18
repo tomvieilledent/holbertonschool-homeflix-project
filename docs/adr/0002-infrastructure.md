@@ -72,12 +72,12 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 | Chemin | Contenu | Library | Acquisition | Transmission |
 |---|---|---|---|---|
 | `/media` | Bibliothèque de l'utilisateur (`MEDIA_DIR`, bind mount) | lecture seule | non monté | non monté |
-| `/downloads` | Fichiers téléchargés (volume nommé `downloads`) | lecture seule | lecture/écriture | lecture/écriture |
+| `/downloads` | Fichiers téléchargés (volume nommé `downloads` par défaut, ou dossier de l'hôte via `DOWNLOADS_DIR`) | lecture seule | lecture/écriture | lecture/écriture |
 
 - Library ne peut donc pas modifier ni effacer les médias source, ni les téléchargements.
 - Un fichier terminé est découvert par Library via `/downloads`, qui est une racine autorisée distincte de `/media`. Acquisition notifie Library par un appel interne ; Library indexe sans copier.
 - Les conteneurs Spring s'exécutent avec un utilisateur non root (déjà le cas dans les Dockerfiles).
-- Les droits de `/downloads` (UID/GID) sont alignés entre Transmission (`PUID`/`PGID`) et le conteneur Acquisition ; à vérifier dans #42 et #90.
+- Les droits de `/downloads` (UID/GID) sont alignés : Transmission (`PUID`/`PGID`) et le conteneur Acquisition (`user: PUID:PGID`) utilisent le même UID/GID (1000 par défaut). Sans cela, Acquisition (utilisateur système `app`, UID 999) ne pourrait pas supprimer les fichiers que Transmission écrit en UID 1000. Library, en lecture seule, lit grâce aux droits « autres » (umask 022 de Transmission). Vérifié par `scripts/smoke.sh` (#42) ; à revérifier sur un environnement vierge (#90).
 
 ### 6. Client BitTorrent : Transmission, piloté en RPC, isolé
 

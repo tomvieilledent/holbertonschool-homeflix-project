@@ -4,6 +4,7 @@
 #
 #   ./scripts/smoke.sh            # démarre, vérifie, arrête (les volumes sont conservés)
 #   KEEP_UP=1 ./scripts/smoke.sh  # laisse la pile démarrée
+#   CHECK_PERSISTENCE=1 ./scripts/smoke.sh  # vérifie aussi que les données survivent à down puis up
 #
 # Prérequis : Docker Compose, curl, un fichier .env (créé ou complété par ./scripts/gen-secrets.sh).
 set -uo pipefail
@@ -66,6 +67,31 @@ for pair in "identity:$IDENTITY_DB_PASSWORD" "library:$LIBRARY_DB_PASSWORD" "acq
     echo "$out" | grep -q "CONNECT privilege" && pass "$user ne peut pas se connecter à la base $other" || fail "$user peut atteindre la base $other"
   done
 done
+
+echo "== Volumes et droits"
+dc() { docker compose exec -T "$@"; }
+check "Library ne peut pas écrire dans /media (lecture seule)" "! dc library-service sh -c 'touch /media/.smoke-ro'"
+check "Library ne peut pas écrire dans /downloads (lecture seule)" "! dc library-service sh -c 'touch /downloads/.smoke-ro'"
+check "Transmission écrit dans /downloads" "dc transmission sh -c 'touch /downloads/.smoke-t'"
+check "Library lit un fichier écrit par Transmission" "dc library-service sh -c 'test -r /downloads/.smoke-t'"
+check "Acquisition supprime un fichier écrit par Transmission (UID/GID alignés)" "dc acquisition-service sh -c 'rm /downloads/.smoke-t'"
+check "Acquisition écrit dans /downloads" "dc acquisition-service sh -c 'touch /downloads/.smoke-a && rm /downloads/.smoke-a'"
+# /media existe (vide) dans les images de base : ce qui compte, c'est que la bibliothèque n'y soit pas montée.
+check "Acquisition et Transmission n'ont pas la bibliothèque montée (/media)" "! dc acquisition-service grep -q ' /media ' /proc/mounts && ! dc transmission grep -q ' /media ' /proc/mounts"
+check "Library a bien /media montée" "dc library-service grep -q ' /media ' /proc/mounts"
+
+if [ "${CHECK_PERSISTENCE:-0}" = "1" ]; then
+  echo "== Persistance des données (docker compose down puis up)"
+  dc db psql -U postgres -d postgres -qc "create table if not exists smoke_persist (v text); insert into smoke_persist values ('avant-arret')" > /dev/null
+  docker compose down > /dev/null 2>&1
+  if docker compose up -d --wait --wait-timeout 420 > /dev/null 2>&1; then
+    [ "$(dc db psql -U postgres -d postgres -tAc 'select v from smoke_persist' | tail -1)" = "avant-arret" ] \
+      && pass "les données PostgreSQL survivent à down puis up" || fail "les données PostgreSQL ont disparu après down puis up"
+    dc db psql -U postgres -d postgres -qc 'drop table if exists smoke_persist' > /dev/null
+  else
+    fail "la pile ne redémarre pas après down"
+  fi
+fi
 
 if [ "${KEEP_UP:-0}" != "1" ]; then
   echo "== Arrêt (docker compose down, volumes conservés)"
