@@ -63,7 +63,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/.well-known/jwks.json").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/setup/status").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/setup", "/api/v1/auth/login", "/api/v1/auth/refresh")
+                .requestMatchers(HttpMethod.POST, "/api/v1/setup", "/api/v1/auth/login", "/api/v1/auth/refresh",
+                    "/api/v1/auth/logout")
                     .permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
