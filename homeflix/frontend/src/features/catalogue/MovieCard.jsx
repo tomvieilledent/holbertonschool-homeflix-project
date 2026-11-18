@@ -14,8 +14,16 @@ import '@/features/catalogue/MovieCard.css'
  * @param {boolean} [props.isFavourite]
  * @param {(media: object) => void} [props.onToggleFavourite] Si absent, le bouton « Ma liste » n'est pas affiché.
  * @param {boolean} [props.favouritePending] Désactive le bouton pendant l'appel serveur.
+ * @param {{positionSeconds: number, durationSeconds?: number|null}} [props.progress] Reprise de lecture :
+ *   affiche une barre de progression (« Continuer à regarder »).
  */
-export default function MovieCard({ media, isFavourite = false, onToggleFavourite, favouritePending = false }) {
+export default function MovieCard({
+  media,
+  isFavourite = false,
+  onToggleFavourite,
+  favouritePending = false,
+  progress,
+}) {
   const { id, title, posterUrl, genres = [], durationSeconds, availability } = media
   const details = [genres[0], formatDuration(durationSeconds)].filter(Boolean).join(' · ')
 
@@ -33,6 +41,14 @@ export default function MovieCard({ media, isFavourite = false, onToggleFavourit
         </div>
         <h3 className="movie-card__title">{title}</h3>
         {details && <p className="movie-card__meta">{details}</p>}
+        {progress?.durationSeconds > 0 && (
+          <progress
+            className="movie-card__progress"
+            max={progress.durationSeconds}
+            value={Math.min(progress.positionSeconds, progress.durationSeconds)}
+            aria-label={`Progression de « ${title} »`}
+          />
+        )}
       </Link>
       <div className="movie-card__footer">
         <AvailabilityBadge availability={availability} />
