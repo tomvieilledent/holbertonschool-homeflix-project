@@ -68,6 +68,7 @@ services:
   acquisition-service:
     <<: *service
     build: ./acquisition-service
+    networks: [internal, torrent]   # « torrent » : seul réseau où Transmission est joignable
     depends_on:
       db: { condition: service_healthy }
       identity-service: { condition: service_healthy }
@@ -91,18 +92,28 @@ services:
     healthcheck: *javahc
 
   # Client BitTorrent existant : aucune interface publiée, joignable uniquement par acquisition-service.
+  # Il est seul avec Acquisition sur le réseau « torrent » : ni Library, ni Identity, ni le frontend, ni la base
+  # ne peuvent l'atteindre. Le port RPC (9091) et le port de pairs (51413) ne sont pas publiés sur l'hôte.
   transmission:
-    image: lscr.io/linuxserver/transmission:latest # à épingler sur une version testée
+    # Version épinglée et testée (risque R23) ; à mettre à jour volontairement, jamais en « latest ».
+    # Empreinte de l'image testée : sha256:aaf349cd859ca9d5f34f394c56b8097c267a513283698adc4d07ee61d7cb1a85
+    image: lscr.io/linuxserver/transmission:4.1.4-r0-ls369
     restart: unless-stopped
-    networks: [internal]
+    networks: [torrent]
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       USER: ${TRANSMISSION_USER:?TRANSMISSION_USER est obligatoire (lancez ./scripts/gen-secrets.sh)}
       PASS: ${TRANSMISSION_PASS:?TRANSMISSION_PASS est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      PEERPORT: 51413
+      TRANSMISSION_DHT: ${TRANSMISSION_DHT:-false}
+      TRANSMISSION_PEX: ${TRANSMISSION_PEX:-false}
+      TRANSMISSION_LIMIT_UP: ${TRANSMISSION_LIMIT_UP:-200}
+      TRANSMISSION_LIMIT_DOWN: ${TRANSMISSION_LIMIT_DOWN:-10000}
     volumes:
       - transmission-config:/config
       - ${DOWNLOADS_DIR:-downloads}:/downloads
+      - ./transmission/init-settings.sh:/custom-cont-init.d/10-homeflix.sh:ro
     healthcheck:
       # Le RPC répond 401 sans identifiants : le service est joignable.
       test: ["CMD-SHELL", "curl -s -o /dev/null http://127.0.0.1:9091/transmission/rpc"]
@@ -124,6 +135,8 @@ services:
 
 networks:
   internal:
+  # Acquisition <-> Transmission uniquement. Pas « internal: true » : Transmission doit pouvoir joindre ses pairs sur Internet.
+  torrent:
 
 volumes:
   pgdata:
