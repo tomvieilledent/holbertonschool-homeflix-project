@@ -1,10 +1,12 @@
 package com.homeflix.library.config;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,6 +19,7 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Library est un resource server : les jetons RS256 émis par Identity sont validés (signature, expiration,
@@ -53,11 +56,19 @@ public class SecurityConfig {
     /**
      * Les clés sont chargées à la première validation (Library démarre même si Identity est arrêté), mises en
      * cache, et rechargées quand un jeton porte un `kid` inconnu (rotation de clé).
+     *
+     * <p>La récupération du JWKS a un délai d'attente court (3 s par défaut, `identity.jwks-timeout`). Sans cela,
+     * le client par défaut attend 30 s : si Identity accepte la connexion sans répondre, chaque requête
+     * authentifiée bloquerait 30 s (risque R15 : un service en panne ne doit pas faire tomber les autres).
      */
     @Bean
-    JwtDecoder jwtDecoder(@Value("${identity.jwks-uri}") String jwksUri, @Value("${identity.issuer}") String issuer) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri)
-            .jwsAlgorithm(SignatureAlgorithm.RS256).build();
+    JwtDecoder jwtDecoder(@Value("${identity.jwks-uri}") String jwksUri, @Value("${identity.issuer}") String issuer,
+            @Value("${identity.jwks-timeout:3s}") Duration jwksTimeout) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(jwksTimeout);
+        factory.setReadTimeout(jwksTimeout);
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).jwsAlgorithm(SignatureAlgorithm.RS256)
+            .restOperations(new RestTemplate(factory)).build();
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
         return decoder;
     }

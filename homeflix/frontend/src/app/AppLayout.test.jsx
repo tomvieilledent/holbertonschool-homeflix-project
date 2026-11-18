@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -6,20 +7,30 @@ import { routes } from '@/app/router'
 import { AuthContext } from '@/features/auth/authContext'
 
 function open(role = 'USER') {
-  const logout = vi.fn().mockResolvedValue(undefined)
+  const logout = vi.fn()
   const router = createMemoryRouter(routes, { initialEntries: ['/'] })
+  const account = { id: '1', username: 'camille', email: 'c@maison.fr', role }
+
+  // Comme le vrai fournisseur : après la déconnexion, la session passe à « anonymous ».
+  function Session({ children }) {
+    const [status, setStatus] = useState('authenticated')
+    const value = {
+      status,
+      activeProfileId: 'p1', // sans profil actif, RequireProfile renverrait vers /profiles
+      account: status === 'authenticated' ? account : null,
+      login: vi.fn(),
+      logout: async () => {
+        logout()
+        setStatus('anonymous')
+      },
+    }
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  }
+
   render(
-    <AuthContext.Provider
-      value={{
-        status: 'authenticated',
-        activeProfileId: 'p1',
-        account: { id: '1', username: 'camille', email: 'c@maison.fr', role },
-        login: vi.fn(),
-        logout,
-      }}
-    >
+    <Session>
       <RouterProvider router={router} />
-    </AuthContext.Provider>,
+    </Session>,
   )
   return { router, logout }
 }

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { AuthContext } from '@/features/auth/authContext'
 import LoginPage from '@/features/auth/LoginPage'
 
 describe('écran de session expirée', () => {
@@ -10,7 +11,11 @@ describe('écran de session expirée', () => {
     const router = createMemoryRouter([{ path: '/login', element: <LoginPage /> }], {
       initialEntries: [{ pathname: '/login', search: '?next=%2Fadmin', state: { reason: 'session-expired' } }],
     })
-    render(<RouterProvider router={router} />)
+    render(
+      <AuthContext.Provider value={{ status: 'anonymous', login: vi.fn(), logout: vi.fn() }}>
+        <RouterProvider router={router} />
+      </AuthContext.Provider>,
+    )
 
     expect(screen.getByRole('status')).toHaveTextContent('Session expirée')
     await user.click(screen.getByRole('button', { name: 'Se reconnecter' }))

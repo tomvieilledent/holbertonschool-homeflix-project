@@ -1,0 +1,11 @@
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(100%, 24rem);
+}
+
+.auth-form__error {
+  margin: 0;
+  color: var(--color-danger);
+}
