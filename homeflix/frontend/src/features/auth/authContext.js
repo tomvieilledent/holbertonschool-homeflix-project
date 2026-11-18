@@ -11,6 +11,7 @@ export const AuthContext = createContext(null)
  *   sessionExpired: boolean,
  *   login: (username: string, password: string) => Promise<void>,
  *   logout: () => Promise<void>,
+ *   selectProfile: (profileId: string) => Promise<void>,
  * }}
  */
 export function useAuth() {

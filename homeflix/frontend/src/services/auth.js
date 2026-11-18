@@ -51,3 +51,15 @@ export async function signOut() {
     setAccessToken(null)
   }
 }
+
+/**
+ * Choisit le profil actif : le serveur renvoie un nouvel access token portant le claim `pid`.
+ * @param {string} profileId
+ * @returns {Promise<void>}
+ */
+export async function selectProfile(profileId) {
+  const token = await apiFetch('identity', `/v1/profiles/${encodeURIComponent(profileId)}/select`, {
+    method: 'POST',
+  })
+  setAccessToken(token.accessToken)
+}
