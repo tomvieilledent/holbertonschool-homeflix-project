@@ -72,6 +72,23 @@ Vérifier les contrastes WCAG AA (texte >= 4,5:1, éléments d'interface >= 3:1)
 npm run check:contrast
 ```
 
+## Tests
+
+Vitest + Testing Library + jest-dom, environnement jsdom (configuration dans `vite.config.js`, matchers dans `src/test/setup.js`).
+
+```bash
+npm test                              # une exécution (celle de la CI)
+npm run test:watch                    # relance les tests concernés à chaque modification
+npm test -- src/components/Button.test.jsx   # un seul fichier
+npm run lint                          # oxlint, y compris les règles des tests
+```
+
+- **Emplacement** : un fichier `Nom.test.jsx` à côté du code testé. `globals: true` : le nettoyage du DOM entre les tests est automatique.
+- **Exemple de test de composant** : `src/components/Button.test.jsx` (rendu, interactions clavier et souris avec `userEvent`, états `disabled` et `loading`). Les requêtes se font par rôle accessible (`getByRole`, `getByLabelText`), comme le ferait un utilisateur ; `Modal.test.jsx` et `Toast.test.jsx` montrent les cas plus complets (focus, minuteurs).
+- **Appels d'API** : MSW côté Node (`setupServer` de `msw/node`), voir `src/mocks/mocks.test.js`.
+- **Lint des tests** : un `it.only` ou `describe.only` oublié (qui ferait passer la CI en ne lançant presque rien) et deux tests au même titre sont des erreurs ; un test désactivé (`it.skip`) est signalé.
+- **Windows** : `npm test` passe par `scripts/vitest.mjs`, qui relance Vitest depuis le chemin canonique. Sans cela, un terminal ouvert en `c:\...` (lettre de lecteur en minuscule, fréquent dans VS Code) fait échouer tous les fichiers avec « Vitest failed to find the runner ». Si vous lancez `npx vitest` directement depuis un tel terminal, passez plutôt par `npm test`.
+
 ## Composants de base
 
 Dans `src/components/`, accessibles au clavier, stylés uniquement avec les tokens. Les props sont documentées en JSDoc dans chaque fichier.
