@@ -1,0 +1,82 @@
+# Téléchargement de test avec aria2 1.37.0 (client externe à HomeFlix), 2026-11-17
+# Lancement 19:19:58 (heure de Paris), fichier complet 19:21:03 : environ 1 min 05 s.
+# Torrent SANS web seed (entrée url-list retirée ; l'infohash ne change pas) : les données viennent uniquement de pairs BitTorrent.
+# Commande : aria2c --seed-time=0 --enable-dht=true -d dl sintel-noweb.torrent
+# Une ligne de suivi par seconde environ. CN = connexions, SD = seeders connectés, DL = débit.
+# Les 38 premières lignes (DL:0B, SD:0) correspondent à la recherche de pairs (trackers et DHT).
+
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:0 SD:0 DL:0B]
+[#563502 0B/123MiB(0%) CN:44 SD:0 DL:0B]
+[#563502 576KiB/123MiB(0%) CN:44 SD:5 DL:1.0MiB ETA:1m53s]
+[#563502 3.5MiB/123MiB(2%) CN:44 SD:5 DL:2.3MiB ETA:51s]
+[#563502 6.7MiB/123MiB(5%) CN:44 SD:5 DL:2.6MiB ETA:43s]
+[#563502 10MiB/123MiB(8%) CN:44 SD:6 DL:2.9MiB ETA:38s]
+[#563502 14MiB/123MiB(11%) CN:44 SD:6 DL:3.1MiB ETA:34s]
+[#563502 18MiB/123MiB(15%) CN:44 SD:6 DL:3.4MiB ETA:30s]
+[#563502 23MiB/123MiB(19%) CN:44 SD:5 DL:3.6MiB ETA:27s]
+[#563502 28MiB/123MiB(23%) CN:44 SD:5 DL:3.8MiB ETA:24s]
+[#563502 34MiB/123MiB(28%) CN:44 SD:5 DL:4.0MiB ETA:21s]
+[#563502 34MiB/123MiB(28%) CN:44 SD:5 DL:4.0MiB ETA:21s]
+[#563502 41MiB/123MiB(33%) CN:44 SD:5 DL:4.3MiB ETA:18s]
+[#563502 47MiB/123MiB(38%) CN:44 SD:5 DL:4.7MiB ETA:15s]
+[#563502 54MiB/123MiB(44%) CN:44 SD:5 DL:5.2MiB ETA:13s]
+[#563502 62MiB/123MiB(50%) CN:44 SD:5 DL:5.6MiB ETA:10s]
+[#563502 68MiB/123MiB(55%) CN:44 SD:5 DL:5.9MiB ETA:9s]
+[#563502 75MiB/123MiB(60%) CN:44 SD:5 DL:6.1MiB ETA:7s]
+[#563502 82MiB/123MiB(66%) CN:44 SD:5 DL:6.3MiB ETA:6s]
+[#563502 87MiB/123MiB(71%) CN:44 SD:5 DL:6.5MiB ETA:5s]
+[#563502 94MiB/123MiB(76%) CN:44 SD:5 DL:6.6MiB ETA:4s]
+[#563502 99MiB/123MiB(80%) CN:44 SD:5 DL:6.5MiB ETA:3s]
+[#563502 107MiB/123MiB(87%) CN:44 SD:5 DL:6.7MiB ETA:2s]
+[#563502 114MiB/123MiB(92%) CN:44 SD:5 DL:6.7MiB ETA:1s]
+[#563502 121MiB/123MiB(98%) CN:17 SD:5 DL:6.7MiB]
+[#563502 SEED(0.0) CN:12 SD:0]
+
+Download Results:
+gid   |stat|avg speed  |path/URI
+======+====+===========+=======================================================
+563502|OK  |   2.1MiB/s|dl/Sintel/Sintel.de.srt (10more)
+
+Status Legend:
+(OK):download completed.
+
+# Vérification d'intégrité du fichier reçu
+129241752 octets  Sintel.mp4
+1dc6f2ca9762dfcc7d1b1843129a3e4f351d1fe935dea2241c7b359c11ebc1d8  Sintel.mp4
+# SHA-256 attendu (docs/legal/DEMO_MEDIA.md) : 1dc6f2ca9762dfcc7d1b1843129a3e4f351d1fe935dea2241c7b359c11ebc1d8
