@@ -1,14 +1,18 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import PagePlaceholder from '@/components/PagePlaceholder'
-import { userMessage } from '@/services/errorMessages'
+import SessionExpiredNotice from '@/features/auth/SessionExpiredNotice'
 
 export default function LoginPage() {
-  const { state } = useLocation()
+  const { state, pathname, search, hash } = useLocation()
+  const navigate = useNavigate()
 
-  return (
-    <>
-      {state?.reason === 'session-expired' && <p role="status">{userMessage('SESSION_EXPIRED')}</p>}
-      <PagePlaceholder title="Connexion" />
-    </>
-  )
+  if (state?.reason === 'session-expired') {
+    // Même URL (donc `?next=`), sans l'état : l'écran d'expiration laisse place à la connexion.
+    return (
+      <SessionExpiredNotice
+        onReconnect={() => navigate(`${pathname}${search}${hash}`, { replace: true })}
+      />
+    )
+  }
+  return <PagePlaceholder title="Connexion" />
 }
