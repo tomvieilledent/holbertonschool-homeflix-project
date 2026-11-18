@@ -142,7 +142,15 @@ erDiagram
     }
 ```
 
-Règles : une entrée sans licence ni preuve ne peut pas être insérée (contraintes `NOT NULL`) ; un seul téléchargement actif par entrée ; l'acquittement du rappel des droits est requis avant le premier téléchargement d'un compte.
+Règles : une entrée sans licence ni preuve ne peut pas être insérée ; un seul téléchargement actif par entrée ; l'acquittement du rappel des droits est requis avant le premier téléchargement d'un compte.
+
+Comment la base les garantit (migration `V1__init.sql` d'Acquisition) :
+- **Droits** : `NOT NULL` **et** `CHECK` non vide sur `source`, `license` et `license_proof_url` (une chaîne vide ou faite d'espaces passe un simple `NOT NULL`) ; la preuve doit être une URL `http(s)` ; `infohash` est un SHA-1 hexadécimal en minuscules, unique ; `magnet_uri` commence par `magnet:?xt=urn:btih:` ; `size_bytes > 0`.
+- **Un seul téléchargement actif par entrée** : index unique partiel `ON downloads (entry_id) WHERE state IN ('QUEUED', 'DOWNLOADING')`. Il tient même si deux requêtes arrivent en même temps ; plusieurs téléchargements terminés, échoués ou annulés pour une même entrée restent permis.
+- **Un acquittement par compte et par version** : clé primaire `(account_id, notice_version)` ; un changement de version du texte demande un nouvel acquittement.
+- **Chemin du fichier téléchargé** : `file_relative_path` est relatif au dossier de téléchargements, jamais absolu, sans segment `..`.
+- **Seed** (`V2__seed_demo_catalogue.sql`) : *Sintel*, `ON CONFLICT (infohash) DO NOTHING` (idempotent). Source de la licence : `docs/legal/P2P_DEMO.md`.
+- `inLibrary` et `libraryMediaId` de l'API ne sont pas stockés : ils viendront de la synchronisation avec Library (issue #99).
 
 ## Cohérence entre services
 
