@@ -6,6 +6,7 @@ import RouteErrorPage from '@/app/RouteErrorPage'
 import LoginPage from '@/features/auth/LoginPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import RequireAuth from '@/features/auth/RequireAuth'
+import RequireProfile from '@/features/auth/RequireProfile'
 import RequireRole from '@/features/auth/RequireRole'
 import DetailPage from '@/features/catalogue/DetailPage'
 import HomePage from '@/features/catalogue/HomePage'
@@ -39,9 +40,15 @@ export const routes = [
           {
             element: <AppLayout />,
             children: [
-              { path: '/', element: <HomePage /> },
-              { path: '/media/:mediaId', element: <DetailPage /> },
-              { path: '/watch/:mediaId', element: <PlayerPage /> },
+              {
+                // Pas d'accueil, de fiche ni de lecture sans profil actif.
+                element: <RequireProfile />,
+                children: [
+                  { path: '/', element: <HomePage /> },
+                  { path: '/media/:mediaId', element: <DetailPage /> },
+                  { path: '/watch/:mediaId', element: <PlayerPage /> },
+                ],
+              },
               {
                 element: <RequireRole role="ADMIN" />,
                 children: [

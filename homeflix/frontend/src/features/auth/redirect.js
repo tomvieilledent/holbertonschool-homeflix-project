@@ -1,8 +1,14 @@
-/** URL de connexion qui mémorise la destination demandée (`?next=`), sauf pour l'accueil. */
-export function loginUrl({ pathname, search = '', hash = '' }) {
+/** URL de `base` qui mémorise la destination demandée (`?next=`), sauf pour l'accueil. */
+const withNext = (base, { pathname, search = '', hash = '' }) => {
   const next = `${pathname}${search}${hash}`
-  return next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`
+  return next === '/' ? base : `${base}?next=${encodeURIComponent(next)}`
 }
+
+/** URL de connexion qui mémorise la destination demandée. */
+export const loginUrl = (location) => withNext('/login', location)
+
+/** URL du choix de profil qui mémorise la destination demandée. */
+export const profilesUrl = (location) => withNext('/profiles', location)
 
 /**
  * Destination après connexion, limitée aux chemins internes : refuse les URL absolues, les URL

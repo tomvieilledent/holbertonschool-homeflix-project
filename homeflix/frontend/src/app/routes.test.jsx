@@ -10,8 +10,9 @@ const SESSIONS = {
   loading: { status: 'loading', account: null },
   anonymous: { status: 'anonymous', account: null },
   expired: { status: 'anonymous', account: null, sessionExpired: true },
-  user: { status: 'authenticated', account: account('USER') },
-  admin: { status: 'authenticated', account: account('ADMIN') },
+  user: { status: 'authenticated', account: account('USER'), activeProfileId: 'p1' },
+  admin: { status: 'authenticated', account: account('ADMIN'), activeProfileId: 'p1' },
+  noProfile: { status: 'authenticated', account: account('USER'), activeProfileId: null },
 }
 
 function open(path, session) {
@@ -64,6 +65,18 @@ describe('routes protégées', () => {
   it('laisse un utilisateur connecté accéder à l’accueil', () => {
     open('/', 'user')
     expect(screen.getByRole('heading', { name: 'Accueil' })).toBeInTheDocument()
+  })
+
+  it('renvoie vers « Qui regarde ? » sans profil actif, en gardant la destination', () => {
+    const router = open('/media/m1', 'noProfile')
+    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.search).toBe('?next=%2Fmedia%2Fm1')
+  })
+
+  it('l’accueil sans profil mène à /profiles sans paramètre', () => {
+    const router = open('/', 'noProfile')
+    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.search).toBe('')
   })
 
   it('refuse /admin à un USER', async () => {

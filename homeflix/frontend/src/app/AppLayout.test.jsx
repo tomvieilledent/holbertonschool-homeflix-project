@@ -12,6 +12,7 @@ function open(role = 'USER') {
     <AuthContext.Provider
       value={{
         status: 'authenticated',
+        activeProfileId: 'p1',
         account: { id: '1', username: 'camille', email: 'c@maison.fr', role },
         login: vi.fn(),
         logout,
