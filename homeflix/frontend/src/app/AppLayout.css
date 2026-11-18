@@ -1,0 +1,110 @@
+.skip-link {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 200;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-weight: var(--font-weight-medium);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header__logo {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+.app-nav {
+  display: flex;
+  flex: 1;
+  gap: var(--space-4);
+  font-family: var(--font-nav);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-nav a {
+  padding: var(--space-1) 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.app-nav a[aria-current='page'] {
+  border-bottom-color: var(--color-primary);
+}
+
+.app-main {
+  padding: var(--space-5);
+}
+
+.app-main:focus {
+  outline: none;
+}
+
+.profile-menu {
+  position: relative;
+}
+
+.profile-menu__toggle,
+.profile-menu__panel button {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  color: var(--color-text);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-menu__panel {
+  position: absolute;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-menu__panel a {
+  padding: var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.bare-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-7) var(--space-4);
+}
+
+.session-loading {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+}

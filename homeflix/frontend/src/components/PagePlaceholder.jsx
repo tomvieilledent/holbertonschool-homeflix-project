@@ -1,10 +1,7 @@
-import Logo from '@/components/Logo'
-
 export default function PagePlaceholder({ title }) {
   return (
-    <main>
-      <Logo />
+    <section>
       <h1>{title}</h1>
-    </main>
+    </section>
   )
 }

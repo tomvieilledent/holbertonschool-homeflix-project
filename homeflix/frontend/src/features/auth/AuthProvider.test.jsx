@@ -1,0 +1,115 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import AuthProvider from '@/features/auth/AuthProvider'
+import { useAuth } from '@/features/auth/authContext'
+
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+
+const ME = {
+  account: { id: '1', username: 'camille', email: 'c@maison.fr', role: 'ADMIN', enabled: true },
+  activeProfileId: 'p1',
+}
+
+function Probe() {
+  const { status, account, login, logout } = useAuth()
+  return (
+    <>
+      <p data-testid="status">{status}</p>
+      <p data-testid="user">{account?.username ?? '-'}</p>
+      <button type="button" onClick={() => login('camille', 'un-mot-de-passe-long')}>
+        login
+      </button>
+      <button type="button" onClick={logout}>
+        logout
+      </button>
+    </>
+  )
+}
+
+const urlsCalled = (fetchMock) => fetchMock.mock.calls.map(([url]) => url)
+
+describe('AuthProvider', () => {
+  let fetchMock
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('rouvre la session via le cookie de rafraîchissement', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ accessToken: 'jeton', expiresIn: 900, tokenType: 'Bearer' }))
+      .mockResolvedValueOnce(json(ME))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    expect(screen.getByTestId('status')).toHaveTextContent('loading')
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authenticated'))
+    expect(screen.getByTestId('user')).toHaveTextContent('camille')
+
+    const [refreshUrl, refreshInit] = fetchMock.mock.calls[0]
+    expect(refreshUrl).toBe('/api/identity/v1/auth/refresh')
+    expect(refreshInit.headers['X-Requested-With']).toBe('homeflix')
+    const [meUrl, meInit] = fetchMock.mock.calls[1]
+    expect(meUrl).toBe('/api/identity/v1/auth/me')
+    expect(meInit.headers.Authorization).toBe('Bearer jeton')
+  })
+
+  it('reste anonyme quand il n’y a pas de session', async () => {
+    fetchMock.mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    expect(screen.getByTestId('user')).toHaveTextContent('-')
+  })
+
+  it('ne rafraîchit qu’une fois sous StrictMode (jeton à usage unique)', async () => {
+    fetchMock.mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+    render(
+      <StrictMode>
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      </StrictMode>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    expect(urlsCalled(fetchMock).filter((u) => u.endsWith('/auth/refresh'))).toHaveLength(1)
+  })
+
+  it('connecte puis déconnecte', async () => {
+    const user = userEvent.setup()
+    fetchMock
+      .mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+      .mockResolvedValueOnce(json({ accessToken: 'jeton2', expiresIn: 900, tokenType: 'Bearer' }))
+      .mockResolvedValueOnce(json(ME))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+
+    await user.click(screen.getByRole('button', { name: 'login' }))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authenticated'))
+    const loginInit = fetchMock.mock.calls[1][1]
+    expect(JSON.parse(loginInit.body)).toEqual({
+      username: 'camille',
+      password: 'un-mot-de-passe-long',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'logout' }))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/identity/v1/auth/logout')
+    expect(fetchMock.mock.calls[3][1].headers['X-Requested-With']).toBe('homeflix')
+  })
+})
