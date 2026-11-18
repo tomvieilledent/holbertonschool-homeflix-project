@@ -35,9 +35,11 @@ import com.nimbusds.jwt.SignedJWT;
  * Identity qui accepte la connexion mais ne répond jamais (panne partielle) : la validation d'un jeton doit
  * échouer vite, pas bloquer 30 s (délai par défaut du client JWKS) et saturer les threads de Library.
  *
- * <p>Ce test ne fixe pas le statut final : quand Identity est injoignable, Spring relance une
- * AuthenticationServiceException (réponse 500 en production). Renvoyer un 401 déconnecterait à tort l'utilisateur ;
- * le bon statut (503 et son code) est une décision de contrat, hors de ce correctif.
+ * <p>Ce test ne fixe pas le statut final. Quand Identity est injoignable, Spring lève une
+ * AuthenticationServiceException : MockMvc la propage telle quelle, alors que sur un vrai serveur la réponse
+ * est un 401 SESSION_EXPIRED (constaté sur la pile Docker : 3 s si Identity est gelé, 0,2 s s'il est arrêté).
+ * Ce 401 est trompeur (la session n'a pas expiré) ; le bon statut (503 et son code) est une décision de
+ * contrat, hors de ce correctif.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
