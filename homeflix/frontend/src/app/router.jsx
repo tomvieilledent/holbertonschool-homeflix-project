@@ -9,6 +9,7 @@ import RequireAuth from '@/features/auth/RequireAuth'
 import RequireProfile from '@/features/auth/RequireProfile'
 import RequireRole from '@/features/auth/RequireRole'
 import SetupPage from '@/features/auth/SetupPage'
+import CataloguePage from '@/features/catalogue/CataloguePage'
 import DetailPage from '@/features/catalogue/DetailPage'
 import HomePage from '@/features/catalogue/HomePage'
 import PlayerPage from '@/features/player/PlayerPage'
@@ -47,7 +48,8 @@ export const routes = [
                 element: <RequireProfile />,
                 children: [
                   { path: '/', element: <HomePage /> },
-                  { path: '/media/:mediaId', element: <DetailPage /> },
+                  { path: '/catalogue', element: <CataloguePage /> },
+              { path: '/media/:mediaId', element: <DetailPage /> },
                   { path: '/watch/:mediaId', element: <PlayerPage /> },
                 ],
               },
