@@ -16,6 +16,7 @@ function open(role = 'USER') {
     const [status, setStatus] = useState('authenticated')
     const value = {
       status,
+      activeProfileId: 'p1', // sans profil actif, RequireProfile renverrait vers /profiles
       account: status === 'authenticated' ? account : null,
       login: vi.fn(),
       logout: async () => {
