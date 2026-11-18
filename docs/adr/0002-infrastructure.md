@@ -121,7 +121,12 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 
 - Volumes nommés : `pgdata` (bases), `downloads` (fichiers téléchargés), `transmission-config` (état du client).
 - `docker compose down` conserve les données ; `docker compose down -v` les supprime : l'avertissement figure dans le README et le guide de sauvegarde.
-- Sauvegarde et restauration : scripts de l'issue #75.
+- **Sauvegarde et restauration** (issue #75) : `homeflix/scripts/backup.sh`, `restore.sh` et le test `test-backup-restore.sh`.
+  - **Export logique (`pg_dump`) plutôt que copie du volume** : un export est cohérent même base en marche, portable d'une machine ou d'une version mineure de PostgreSQL à l'autre, et on peut l'inspecter. Copier à chaud le dossier d'un volume PostgreSQL risque de produire une copie corrompue.
+  - **Contenu de l'archive** : les 3 bases (comptes, catalogue, progression, favoris, téléchargements), un manifeste (date, lignes par table) et des sommes SHA-256, dans `homeflix-backup-AAAAMMJJ-HHMMSS.tar.gz` (droits 600, dossier `backups/` en 700, ignoré par Git).
+  - **Ce qui n'est pas sauvegardé, volontairement** : les médias (la bibliothèque de l'utilisateur, montée en lecture seule), les fichiers téléchargés (re-téléchargeables depuis le catalogue), l'état de Transmission, et le fichier `.env` : une nouvelle pile génère ses propres secrets, donc l'archive ne contient aucun secret. Conséquence : les sessions en cours sont invalidées si la clé JWT change, les utilisateurs se reconnectent.
+  - **Restauration** : refusée sans confirmation explicite (taper `RESTAURER`, ou `--yes`) ; l'archive est vérifiée (SHA-256) avant toute modification ; l'état actuel est sauvegardé (`pre-restore-…`) avant d'être remplacé ; fonctionne sur une pile vierge (la base est démarrée si besoin) ; le nombre de lignes de chaque table est contrôlé après coup. Une restauration vers une version plus ancienne du code est refusée par Flyway (schéma plus récent que le code).
+  - **Les archives contiennent des données personnelles** (mots de passe hachés, historique de visionnage) : à garder hors du dépôt et hors de portée des autres utilisateurs. Le guide utilisateur complet est l'issue #100 ; l'automatisation de la vérification du redémarrage est l'issue #89.
 
 ### 11. En-têtes de sécurité du proxy, CSP et exposition sur Internet
 
