@@ -151,6 +151,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Actif dès que le script existe sur la branche (issue #18) ; sinon l'étape est ignorée.
+      # KEEP_UP=1 : la pile reste démarrée pour l'étape suivante (elle est arrêtée à la fin).
       - name: Démarrer la pile et vérifier
         if: hashFiles('homeflix/scripts/smoke.sh') != ''
-        run: ./homeflix/scripts/smoke.sh
+        run: KEEP_UP=1 ./homeflix/scripts/smoke.sh
+      # En-têtes de sécurité, CSP, absence de CORS, routes internes bloquées et limite de taille du reverse proxy (#54).
+      - name: En-têtes de sécurité et blocages du proxy
+        if: hashFiles('homeflix/scripts/check-security-headers.sh') != ''
+        run: ./homeflix/scripts/check-security-headers.sh
+      - name: Arrêter la pile
+        if: always() && hashFiles('homeflix/scripts/smoke.sh') != ''
+        working-directory: homeflix
+        run: docker compose down -v || true

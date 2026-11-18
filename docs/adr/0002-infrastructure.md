@@ -123,6 +123,36 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 - `docker compose down` conserve les données ; `docker compose down -v` les supprime : l'avertissement figure dans le README et le guide de sauvegarde.
 - Sauvegarde et restauration : scripts de l'issue #75.
 
+### 11. En-têtes de sécurité du proxy, CSP et exposition sur Internet
+
+**Ce que le proxy envoie** (`homeflix/frontend/nginx.conf`, sur toutes les réponses, y compris les erreurs : `always`) :
+
+| En-tête | Valeur | Rôle |
+|---|---|---|
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; media-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'` | Réduit l'XSS : seuls les fichiers de l'application s'exécutent, aucun script ni style en ligne, aucune ressource externe ; `frame-ancestors 'none'` empêche l'affichage dans un cadre (clickjacking) |
+| `X-Content-Type-Options` | `nosniff` | Le navigateur ne devine pas le type des fichiers |
+| `X-Frame-Options` | `DENY` | Équivalent de `frame-ancestors` pour les vieux navigateurs |
+| `Referrer-Policy` | `same-origin` | Aucune adresse n'est envoyée à un autre site |
+| `Permissions-Policy` | caméra, micro, géolocalisation, paiement, USB désactivés | Aucune fonction sensible du navigateur n'est utilisée |
+| `Cross-Origin-Opener-Policy` / `Cross-Origin-Resource-Policy` | `same-origin` | Isole la page des autres origines |
+
+- **Pourquoi une CSP aussi stricte est possible** : le build du frontend n'a aucun code ni style en ligne, aucune ressource externe (polices servies en local), et tout est sur **la même origine** que l'API. `data:` n'est autorisé que pour les images et polices, car le build intègre une petite police dans le CSS.
+- **Lecteur vidéo** : `media-src 'self'` suffit, car l'URL du flux est relative (`/api/library/v1/stream/{id}?t=…`, voir le contrat). Si un jour le lecteur utilise des `blob:` (MediaSource), il faudra ajouter `blob:` à `media-src`.
+- **Pas de CORS** : l'interface et l'API partagent la même origine, donc aucun en-tête `Access-Control-Allow-*` n'est envoyé. Une origine étrangère reste rejetée par les services (403 « Invalid CORS request »).
+- **`Host $http_host` et non `$host`** : `$host` perd le port. Or le navigateur ajoute `Origin: http://localhost:8080` à tout `POST`, `PUT` ou `DELETE`, et Spring le compare à `Host`. Sans le port, une requête de la **même** origine était prise pour du CORS étranger et rejetée en 403 : la connexion aurait échoué. Défaut détecté par le test navigateur de #54.
+- **Routes jamais exposées** : `/api/<service>/internal…` et `/api/<service>/actuator…` (avec ou sans `/v1`, sans tenir compte de la casse), ainsi que `/internal` et `/actuator` à la racine, répondent 404 (ADR 0001 : `/internal/**` n'est jamais routé). `/actuator/health` reste joignable **entre conteneurs** (healthchecks), jamais par le proxy. Les variantes encodées (`%69nternal`), à double barre, avec point-virgule ou avec `./` sont aussi refusées.
+- **Taille des requêtes** : `client_max_body_size 1m` (l'application n'envoie que du JSON court) ; au-delà, 413. `server_tokens off` masque la version de nginx.
+- **Vérification** : `homeflix/scripts/check-security-headers.sh` (la pile doit tourner) contrôle tout cela avec `curl` : 68 vérifications, dont la preuve qu'elles **échouent** sur l'ancienne configuration.
+
+**Exigences HTTPS pour une exposition sur Internet** (hors périmètre du projet, qui vise un réseau domestique ; à respecter avant d'ouvrir HomeFlix à Internet) :
+1. **Terminer TLS devant nginx** (Caddy, Traefik ou nginx avec des certificats Let's Encrypt renouvelés automatiquement). Ne jamais publier le port 8080 tel quel sur Internet : il parle HTTP en clair.
+2. **Rediriger HTTP vers HTTPS** (80 vers 443) et ajouter **`Strict-Transport-Security`** (`max-age=31536000; includeSubDomains`) **seulement une fois HTTPS stable** : un navigateur qui l'a reçu refuse ensuite tout retour en HTTP.
+3. **Ajouter `upgrade-insecure-requests`** à la CSP.
+4. **Le cookie `refresh_token` doit rester `Secure`** (ADR 0001). Piège à connaître dès maintenant : un navigateur ne conserve pas un cookie `Secure` reçu en **HTTP** sur une autre adresse que `localhost` (par exemple `http://192.168.1.20:8080`). Sur un réseau local en HTTP, la session ne survivrait donc pas à un rechargement de page : soit utiliser HTTPS (même avec un certificat auto-signé de confiance), soit désactiver `Secure` **uniquement en développement** (profil `dev`).
+5. **Transmettre `X-Forwarded-Proto`** (déjà fait par nginx) pour que les services sachent que la requête d'origine est en HTTPS.
+6. **Limiter le débit de la connexion** au niveau du proxy (`limit_req`) et garder les autres ports fermés (pare-feu de l'hôte).
+7. Le jeton de **première configuration** (`SETUP_TOKEN`) doit être fort et la page de setup n'est utilisable qu'une fois ; vérifier qu'aucun administrateur n'a été créé par un tiers avant d'ouvrir l'accès.
+
 ## Conséquences
 
 - Une seule URL publique à protéger et à documenter ; les services ne sont jamais exposés directement.
