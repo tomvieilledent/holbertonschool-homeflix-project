@@ -63,6 +63,8 @@ class JwtResourceServerTests {
     private static HttpServer jwksServer;
 
     @MockitoBean MediaRootRepository mediaRootRepository;
+
+    @MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
     @MockitoBean MediaItemRepository mediaItemRepository;
     @MockitoBean MediaMetadataRepository mediaMetadataRepository;
 
