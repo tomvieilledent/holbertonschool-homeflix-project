@@ -98,6 +98,7 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 - Services Java : test TCP sur leur port en attendant que `/actuator/health` soit exposé par la configuration Security (#16) ; il sera ensuite remplacé par un test HTTP sur `/actuator/health`.
 - Library et Acquisition démarrent après Identity (JWKS joignable). Le frontend démarre après les trois services.
 - `restart: unless-stopped` sur tous les services.
+- **Délais et reprises, écart assumé avec l'ADR 0001** : la lecture du JWKS d'Identity par Library et Acquisition a un délai de 3 s (`identity.jwks-timeout`), mais **sans nouvelle tentative** : le décodeur de jetons n'en fait pas et un second essai doublerait l'attente (6 s) pour un service que le démarrage ordonné garantit déjà joignable. À ajouter seulement si une panne réelle le justifie. Quand Identity est injoignable, les services répondent aujourd'hui 401 `SESSION_EXPIRED`, alors que l'ADR 0001 prévoit un 503 `problem+json` : suivi dans l'issue #187.
 
 ### 8. Versions
 
