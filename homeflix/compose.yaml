@@ -36,6 +36,7 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY est obligatoire (lancez ./scripts/gen-secrets.sh)}
       JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64:?JWT_PRIVATE_KEY_BASE64 est obligatoire (lancez ./scripts/gen-secrets.sh)}
       SETUP_TOKEN: ${SETUP_TOKEN:?SETUP_TOKEN est obligatoire (lancez ./scripts/gen-secrets.sh)}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
     healthcheck: &javahc
       # /actuator/health est public et sans détail (SecurityConfig de chaque service).
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:$$SERVER_PORT/actuator/health > /dev/null"]
