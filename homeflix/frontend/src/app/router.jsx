@@ -7,6 +7,7 @@ import LoginPage from '@/features/auth/LoginPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import RequireAuth from '@/features/auth/RequireAuth'
 import RequireRole from '@/features/auth/RequireRole'
+import SetupPage from '@/features/auth/SetupPage'
 import DetailPage from '@/features/catalogue/DetailPage'
 import HomePage from '@/features/catalogue/HomePage'
 import PlayerPage from '@/features/player/PlayerPage'
@@ -25,6 +26,7 @@ export const routes = [
         element: <BareLayout />,
         children: [
           { path: '/login', element: <LoginPage /> },
+          { path: '/setup', element: <SetupPage /> },
           {
             element: <RequireAuth />,
             children: [{ path: '/profiles', element: <ProfilesPage /> }],
