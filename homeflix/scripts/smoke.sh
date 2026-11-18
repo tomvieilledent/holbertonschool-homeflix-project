@@ -69,6 +69,45 @@ for pair in "identity:$IDENTITY_DB_PASSWORD" "library:$LIBRARY_DB_PASSWORD" "acq
   done
 done
 
+echo "== Library valide les jetons d'Identity (appel interservices Library -> Identity, #19)"
+# Library n'a aucune clé : elle récupère le JWKS (clés publiques) d'Identity sur le réseau interne. On forge donc
+# des jetons avec la clé privée de l'environnement de test (.env) et on regarde ce que Library en fait. Un jeton
+# accepté PROUVE que Library a joint Identity (sinon elle n'aurait aucune clé pour vérifier la signature).
+smoke_tmp=$(mktemp -d)
+umask 077
+echo "$JWT_PRIVATE_KEY_BASE64" | base64 -d > "$smoke_tmp/identity.pem" 2> /dev/null
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$smoke_tmp/other.pem" 2> /dev/null
+b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+# mint_jwt <clé PEM> <rôles JSON> <émetteur> <secondes avant expiration (négatif = expiré)>
+mint_jwt() {
+  local now header payload sig
+  now=$(date +%s)
+  header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+  payload=$(printf '{"sub":"%s","iss":"%s","iat":%s,"exp":%s,"roles":%s}' \
+    "$(cat /proc/sys/kernel/random/uuid)" "$3" "$now" "$((now + $4))" "$2" | b64url)
+  sig=$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign "$1" -binary | b64url)
+  printf '%s.%s.%s' "$header" "$payload" "$sig"
+}
+library_code() { # <jeton ou vide> : code HTTP de GET /admin/media-roots, par le reverse proxy
+  curl -s -o /dev/null -w '%{http_code}' ${1:+-H "Authorization: Bearer $1"} "http://localhost:${FRONTEND_PORT}/api/library/v1/admin/media-roots"
+}
+if [ -s "$smoke_tmp/identity.pem" ]; then
+  check "sans jeton : 401" '[ "$(library_code)" = 401 ]'
+  check "jeton signé par la clé d'Identity, rôle ADMIN : 200 (Library a récupéré le JWKS d'Identity)" \
+    '[ "$(library_code "$(mint_jwt "$smoke_tmp/identity.pem" "[\"ADMIN\"]" homeflix-identity 300)")" = 200 ]'
+  check "jeton valide mais rôle USER sur une route ADMIN : 403" \
+    '[ "$(library_code "$(mint_jwt "$smoke_tmp/identity.pem" "[\"USER\"]" homeflix-identity 300)")" = 403 ]'
+  check "jeton signé par une autre clé : 401" \
+    '[ "$(library_code "$(mint_jwt "$smoke_tmp/other.pem" "[\"ADMIN\"]" homeflix-identity 300)")" = 401 ]'
+  check "jeton d'un autre émetteur : 401" \
+    '[ "$(library_code "$(mint_jwt "$smoke_tmp/identity.pem" "[\"ADMIN\"]" autre-emetteur 300)")" = 401 ]'
+  check "jeton expiré : 401" \
+    '[ "$(library_code "$(mint_jwt "$smoke_tmp/identity.pem" "[\"ADMIN\"]" homeflix-identity -3600)")" = 401 ]'
+else
+  fail "la clé privée de .env est illisible : impossible de forger un jeton de test"
+fi
+rm -rf "$smoke_tmp"
+
 echo "== Volumes et droits"
 dc() { docker compose exec -T "$@"; }
 check "Library ne peut pas écrire dans /media (lecture seule)" "! dc library-service sh -c 'touch /media/.smoke-ro'"
