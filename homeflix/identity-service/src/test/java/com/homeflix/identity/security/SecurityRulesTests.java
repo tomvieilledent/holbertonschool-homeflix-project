@@ -13,12 +13,17 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.homeflix.identity.setup.SetupService;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SecurityRulesTests {
+
+    @MockitoBean SetupService setupService;
 
     @Autowired
     MockMvc mvc;
@@ -54,7 +59,7 @@ class SecurityRulesTests {
 
     @Test
     void publicRoutesAreNotBlockedBySecurity() throws Exception {
-        mvc.perform(get("/api/v1/setup/status")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/setup/status")).andExpect(status().isOk());
         mvc.perform(get("/.well-known/jwks.json")).andExpect(status().isOk());
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
     }
