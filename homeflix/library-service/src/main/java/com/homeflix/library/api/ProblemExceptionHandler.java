@@ -68,16 +68,38 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(problem, headers, HttpStatus.BAD_REQUEST);
     }
 
-    /** Erreurs MVC standard (404, 405, 415…) : on ajoute le `code` attendu par le frontend. */
+    /** Erreurs MVC standard (404, 405, 406, 415…) : `code` stable attendu par le frontend et message fixe. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception e, Object body, HttpHeaders headers,
             HttpStatusCode status, WebRequest request) {
         ResponseEntity<Object> response = super.handleExceptionInternal(e, body, headers, status, request);
         if (response != null && response.getBody() instanceof ProblemDetail detail && detail.getProperties() == null) {
-            detail.setProperty("code", status.value() == 404 ? "NOT_FOUND"
-                    : status.is5xxServerError() ? "INTERNAL_ERROR" : "VALIDATION_ERROR");
+            detail.setProperty("code", codeFor(status));
+            detail.setDetail(detailFor(status));
         }
         return response;
+    }
+
+    /** Code stable (CONVENTIONS.md) d'une erreur MVC standard, d'après son statut HTTP. */
+    private static String codeFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 404 -> "NOT_FOUND";
+            case 405 -> "METHOD_NOT_ALLOWED";
+            case 406 -> "NOT_ACCEPTABLE";
+            case 415 -> "UNSUPPORTED_MEDIA_TYPE";
+            default -> status.is5xxServerError() ? "INTERNAL_ERROR" : "VALIDATION_ERROR";
+        };
+    }
+
+    /** Message fixe en français : le texte de Spring est en anglais et reprend des valeurs envoyées par le client. */
+    private static String detailFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 404 -> "La ressource demandée est introuvable.";
+            case 405 -> "Cette méthode HTTP n'est pas autorisée sur cette ressource.";
+            case 406 -> "Le format de réponse demandé n'est pas disponible.";
+            case 415 -> "Le type de contenu envoyé n'est pas pris en charge.";
+            default -> status.is5xxServerError() ? "Une erreur inattendue s'est produite." : "La requête est invalide.";
+        };
     }
 
     private ResponseEntity<ProblemDetail> build(HttpStatus status, String code, String title, String detail,

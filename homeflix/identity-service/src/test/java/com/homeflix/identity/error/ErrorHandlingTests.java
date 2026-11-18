@@ -82,4 +82,23 @@ class ErrorHandlingTests {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }
+
+    @Test
+    void clientErrorsHaveDedicatedCodesAndFixedFrenchDetail() throws Exception {
+        mvc.perform(post("/.well-known/jwks.json"))
+            .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+            .andExpect(jsonPath("$.detail").value("Cette méthode HTTP n'est pas autorisée sur cette ressource."));
+        mvc.perform(get("/.well-known/jwks.json").accept(MediaType.APPLICATION_XML))
+            .andExpect(jsonPath("$.code").value("NOT_ACCEPTABLE"));
+        mvc.perform(post("/api/v1/setup").contentType(MediaType.TEXT_PLAIN).content("x"))
+            .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+    }
+
+    @Test
+    void detailDoesNotEchoWhatTheClientSent() throws Exception {
+        mvc.perform(post("/api/v1/setup").contentType("text/x-valeur-du-client").content("x"))
+            .andExpect(status().isUnsupportedMediaType())
+            .andExpect(jsonPath("$.detail").value("Le type de contenu envoyé n'est pas pris en charge."))
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("valeur-du-client"))));
+    }
 }

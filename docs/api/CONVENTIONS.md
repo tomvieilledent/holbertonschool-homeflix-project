@@ -49,13 +49,16 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | 401 | Jeton absent, invalide ou expiré |
 | 403 | Authentifié mais rôle insuffisant |
 | 404 | Ressource inexistante **ou appartenant à un autre utilisateur** (pas de 403, pour éviter l'énumération) |
+| 405 | Méthode HTTP non prise en charge par la route (en-tête `Allow`) |
+| 406 | Format de réponse demandé (`Accept`) non disponible |
 | 409 | Conflit d'état (doublon, dernier administrateur, scan déjà en cours) |
 | 412 | Précondition non remplie (rappel des droits non acquitté) |
+| 415 | Type de contenu de la requête (`Content-Type`) non pris en charge |
 | 416 | Plage `Range` invalide |
 | 423 | Compte verrouillé ou désactivé temporairement (si utilisé) |
 | 429 | Trop de tentatives (`Retry-After` obligatoire) |
 | 500 | Erreur inattendue, message générique |
-| 503 | Dépendance indisponible (base, client BitTorrent, autre service) |
+| 503 | Dépendance indisponible (base, client BitTorrent, autre service, Identity pour la validation des jetons) |
 
 ### Codes d'erreur métier
 
@@ -82,13 +85,19 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `ROOT_OVERLAP` | 409 | Le dossier contient ou est contenu dans un dossier déjà configuré |
 | `INDEX_ALREADY_RUNNING` | 409 | Une indexation est déjà en cours |
 | `MEDIA_FILE_MISSING` | 404 | Fichier du média absent ou inaccessible |
+| `METHOD_NOT_ALLOWED` | 405 | Méthode HTTP non prise en charge par la route (erreur du client, pas de `errors`) |
+| `NOT_ACCEPTABLE` | 406 | Format de réponse demandé non disponible |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` de la requête non pris en charge (à ne pas confondre avec `MEDIA_UNSUPPORTED_FORMAT`, qui concerne un fichier vidéo) |
 | `MEDIA_UNAVAILABLE` | 409 | Média marqué indisponible |
 | `MEDIA_UNSUPPORTED_FORMAT` | 415 | Format non supporté pour la lecture |
 | `RIGHTS_NOT_ACKNOWLEDGED` | 412 | Rappel des droits non acquitté avant téléchargement |
 | `DOWNLOAD_ALREADY_ACTIVE` | 409 | Téléchargement déjà actif pour cette entrée |
 | `TORRENT_CLIENT_UNAVAILABLE` | 503 | Client BitTorrent injoignable |
 | `LIBRARY_UNAVAILABLE` | 503 | Library injoignable depuis un autre service |
+| `IDENTITY_UNAVAILABLE` | 503 | Identity injoignable : le jeton n'a pas pu être vérifié (ce n'est **pas** une session expirée : l'interface ne doit pas déconnecter l'utilisateur) |
 | `INTERNAL_ERROR` | 500 | Erreur inattendue (message générique) |
+
+Le champ `detail` des erreurs standard du serveur web (405, 406, 415, 400 non métier) est un **message fixe en français** : il ne reprend jamais ce que le client a envoyé.
 
 ### Codes d'échec d'un téléchargement
 

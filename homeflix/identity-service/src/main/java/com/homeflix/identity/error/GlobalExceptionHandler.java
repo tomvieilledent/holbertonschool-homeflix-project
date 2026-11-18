@@ -90,7 +90,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Toutes les autres erreurs MVC (405, 406, 415, paramètre manquant…) : le corps problem+json de Spring,
-     * complété du `code` attendu par le frontend (voir docs/api/CONVENTIONS.md). Les en-têtes utiles (par
+     * complété du `code` attendu par le frontend (voir docs/api/CONVENTIONS.md) et d'un `detail` fixe en français :
+     * le texte de Spring est en anglais et reprend des valeurs envoyées par le client. Les en-têtes utiles (par
      * exemple `Allow` pour un 405) sont conservés.
      */
     @Override
@@ -99,10 +100,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, status, request);
         if (response != null && response.getBody() instanceof ProblemDetail pd
                 && (pd.getProperties() == null || !pd.getProperties().containsKey("code"))) {
-            pd.setProperty("code", status.value() == 404 ? "NOT_FOUND"
-                : status.is5xxServerError() ? "INTERNAL_ERROR" : "VALIDATION_ERROR");
+            pd.setProperty("code", codeFor(status));
+            pd.setDetail(detailFor(status));
         }
         return response;
+    }
+
+    /** Code stable (CONVENTIONS.md) d'une erreur MVC standard, d'après son statut HTTP. */
+    private static String codeFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 404 -> "NOT_FOUND";
+            case 405 -> "METHOD_NOT_ALLOWED";
+            case 406 -> "NOT_ACCEPTABLE";
+            case 415 -> "UNSUPPORTED_MEDIA_TYPE";
+            default -> status.is5xxServerError() ? "INTERNAL_ERROR" : "VALIDATION_ERROR";
+        };
+    }
+
+    /** Message fixe en français : le texte de Spring est en anglais et reprend des valeurs envoyées par le client. */
+    private static String detailFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 404 -> "La ressource demandée est introuvable.";
+            case 405 -> "Cette méthode HTTP n'est pas autorisée sur cette ressource.";
+            case 406 -> "Le format de réponse demandé n'est pas disponible.";
+            case 415 -> "Le type de contenu envoyé n'est pas pris en charge.";
+            default -> status.is5xxServerError() ? "Une erreur inattendue s'est produite." : "La requête est invalide.";
+        };
     }
 
     private static String uri(WebRequest request) {
