@@ -64,6 +64,60 @@ public class AuthService {
         return openSession(account, UUID.randomUUID());
     }
 
+    /**
+     * Rotation : le refresh token présenté est révoqué et remplacé. Un jeton déjà révoqué (rejeu) révoque toute
+     * sa famille : le vol présumé coupe la session. Les refus ne doivent pas annuler cette révocation, d'où
+     * noRollbackFor.
+     */
+    @Transactional(noRollbackFor = ApiException.class)
+    public Session refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw sessionExpired();
+        }
+        RefreshToken current = refreshTokens.findForUpdateByTokenHash(RefreshTokens.hash(refreshToken)).orElse(null);
+        if (current == null) {
+            throw sessionExpired();
+        }
+        Instant now = clock.instant();
+        if (current.getRevokedAt() != null) {
+            revokeFamily(current.getFamilyId(), now);
+            throw sessionExpired();
+        }
+        if (!current.getExpiresAt().isAfter(now)) {
+            current.revoke(now);
+            throw sessionExpired();
+        }
+        Account account = current.getAccount();
+        if (!account.isEnabled()) {
+            revokeFamily(current.getFamilyId(), now);
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Compte désactivé",
+                "Ce compte est désactivé.");
+        }
+        current.revoke(now);
+        return openSession(account, current.getFamilyId());
+    }
+
+    /** Déconnexion idempotente : révoque le jeton présenté (et sa famille) s'il existe. */
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
+        }
+        refreshTokens.findForUpdateByTokenHash(RefreshTokens.hash(refreshToken))
+            .ifPresent(t -> revokeFamily(t.getFamilyId(), clock.instant()));
+    }
+
+    private void revokeFamily(UUID familyId, Instant now) {
+        refreshTokens.findByFamilyId(familyId).stream()
+            .filter(t -> t.getRevokedAt() == null)
+            .forEach(t -> t.revoke(now));
+    }
+
+    private static ApiException sessionExpired() {
+        return new ApiException(HttpStatus.UNAUTHORIZED, "SESSION_EXPIRED", "Session expirée",
+            "Votre session a expiré. Reconnectez-vous.");
+    }
+
     /** Émet un access token (sans profil actif) et enregistre un nouveau refresh token de la famille donnée. */
     Session openSession(Account account, UUID familyId) {
         String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), null);
