@@ -73,7 +73,7 @@ erDiagram
         text relative_path "UK avec root_id"
         bigint size_bytes
         timestamptz file_mtime
-        text fingerprint "empreinte pour les doublons"
+        text fingerprint "SHA-256 de taille, mtime et chemin relatif"
         text availability "AVAILABLE | UNAVAILABLE | DOWNLOADING"
         timestamptz last_seen_at
         boolean deleted "retiré par l'admin, jamais réindexé"
@@ -106,7 +106,7 @@ erDiagram
     }
 ```
 
-Contraintes : `UNIQUE (root_id, relative_path)` et empreinte de contenu pour éviter les doublons entre scans ; `UNIQUE (profile_id, media_id)` sur `favourites` et `progress`. Les lignes `favourites` et `progress` conservent `account_id` pour permettre la purge d'un compte entier.
+Contraintes : `UNIQUE (root_id, relative_path)` (c'est elle qui évite les doublons entre scans) ; `fingerprint` est le SHA-256 de `taille|mtime|chemin relatif` : elle sert à détecter qu'un fichier a changé, pas à reconnaître un fichier déplacé (voir #73) ; `UNIQUE (profile_id, media_id)` sur `favourites` et `progress`. Les lignes `favourites` et `progress` conservent `account_id` pour permettre la purge d'un compte entier.
 
 ## Acquisition
 
