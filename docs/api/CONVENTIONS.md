@@ -85,9 +85,6 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `ROOT_OVERLAP` | 409 | Le dossier contient ou est contenu dans un dossier déjà configuré |
 | `INDEX_ALREADY_RUNNING` | 409 | Une indexation est déjà en cours |
 | `MEDIA_FILE_MISSING` | 404 | Fichier du média absent ou inaccessible |
-| `METHOD_NOT_ALLOWED` | 405 | Méthode HTTP non prise en charge par la route (erreur du client, pas de `errors`) |
-| `NOT_ACCEPTABLE` | 406 | Format de réponse demandé non disponible |
-| `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` de la requête non pris en charge (à ne pas confondre avec `MEDIA_UNSUPPORTED_FORMAT`, qui concerne un fichier vidéo) |
 | `MEDIA_UNAVAILABLE` | 409 | Média marqué indisponible |
 | `MEDIA_UNSUPPORTED_FORMAT` | 415 | Format non supporté pour la lecture |
 | `RIGHTS_NOT_ACKNOWLEDGED` | 412 | Rappel des droits non acquitté avant téléchargement |
@@ -98,6 +95,16 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `INTERNAL_ERROR` | 500 | Erreur inattendue (message générique) |
 
 Le champ `detail` des erreurs standard du serveur web (405, 406, 415, 400 non métier) est un **message fixe en français** : il ne reprend jamais ce que le client a envoyé.
+
+### Codes des erreurs HTTP standard
+
+Erreurs de protocole du serveur web, **jamais déclenchées par l'interface** : le frontend n'a pas de message dédié et retombe sur son message générique. Utiles pour les clients tiers et les tests. Le `detail` est un message fixe en français, jamais une valeur envoyée par le client.
+
+| Code | Statut | Sens |
+|---|---|---|
+| `METHOD_NOT_ALLOWED` | 405 | Méthode HTTP non prise en charge par la route (en-tête `Allow`) |
+| `NOT_ACCEPTABLE` | 406 | Format de réponse demandé (`Accept`) non disponible |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` de la requête non pris en charge (à ne pas confondre avec `MEDIA_UNSUPPORTED_FORMAT`, qui concerne un fichier vidéo) |
 
 ### Codes d'échec d'un téléchargement
 

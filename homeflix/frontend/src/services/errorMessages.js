@@ -29,6 +29,7 @@ const BY_CODE = {
   DOWNLOAD_ALREADY_ACTIVE: 'Un téléchargement est déjà en cours pour ce contenu.',
   TORRENT_CLIENT_UNAVAILABLE: 'Le service de téléchargement est injoignable. Réessayez plus tard.',
   LIBRARY_UNAVAILABLE: 'La bibliothèque est momentanément indisponible. Réessayez plus tard.',
+  IDENTITY_UNAVAILABLE: 'Le service d’authentification est momentanément indisponible. Réessayez dans un instant.',
   INTERNAL_ERROR: 'Une erreur est survenue de notre côté. Réessayez dans un instant.',
   NETWORK_ERROR: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
 }
