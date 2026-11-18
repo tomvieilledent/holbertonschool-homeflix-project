@@ -10,6 +10,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.homeflix.identity.auth.AuthService;
 import com.homeflix.identity.setup.SetupService;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class IdentityServiceApplicationTests {
 
     @MockitoBean SetupService setupService;
+    @MockitoBean AuthService authService;
 
 	@Autowired
 	MockMvc mockMvc;
