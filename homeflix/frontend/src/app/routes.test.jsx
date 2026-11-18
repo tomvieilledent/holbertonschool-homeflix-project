@@ -9,6 +9,7 @@ const account = (role) => ({ id: '1', username: 'camille', email: 'c@maison.fr',
 const SESSIONS = {
   loading: { status: 'loading', account: null },
   anonymous: { status: 'anonymous', account: null },
+  expired: { status: 'anonymous', account: null, sessionExpired: true },
   user: { status: 'authenticated', account: account('USER') },
   admin: { status: 'authenticated', account: account('ADMIN') },
 }
@@ -30,6 +31,18 @@ describe('routes protégées', () => {
     expect(router.state.location.pathname).toBe('/login')
     expect(router.state.location.search).toBe('?next=%2Fwatch%2F12%3Ft%3D30')
     expect(screen.getByRole('heading', { name: 'Connexion' })).toBeInTheDocument()
+  })
+
+  it('une session expirée redirige vers /login avec un message explicatif', () => {
+    const router = open('/watch/12', 'expired')
+    expect(router.state.location.pathname).toBe('/login')
+    expect(router.state.location.state).toEqual({ reason: 'session-expired' })
+    expect(screen.getByRole('status')).toHaveTextContent('Votre session a expiré. Reconnectez-vous pour continuer.')
+  })
+
+  it('un anonyme ordinaire ne voit pas ce message', () => {
+    open('/watch/12', 'anonymous')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('redirige aussi le choix du profil et l’accueil', () => {

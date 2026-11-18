@@ -1,27 +1,157 @@
 import { config } from '@/app/config'
+import { ApiError } from '@/services/apiError'
+
+export { ApiError }
 
 /** Construit une URL relative : /api/<service>/v1/... (nginx en prod, proxy Vite en dev). */
 export const apiUrl = (service, path) =>
   `${config.apiBase}/${service}${path.startsWith('/') ? path : `/${path}`}`
 
-/** Erreur HTTP de l'API : `status` et `code` (code stable du problem+json, s'il est présent). */
-export class ApiError extends Error {
-  constructor(status, code) {
-    super(`HTTP ${status}`)
-    this.status = status
-    this.code = code
+/** En-tête exigé avec le cookie `refresh_token` (voir identity.openapi.yaml). */
+export const SESSION_HEADER = { 'X-Requested-With': 'homeflix' }
+
+// L'access token reste en mémoire : jamais dans localStorage ni dans un cookie lisible par le JS.
+let accessToken = null
+let refreshing = null
+let sessionExpiredHandler = () => {}
+
+export const getAccessToken = () => accessToken
+export const setAccessToken = (token) => {
+  accessToken = token
+}
+
+/** `true` si l'erreur vient d'une requête annulée (AbortController) : à ignorer, pas à afficher. */
+export const isAbortError = (error) => error?.name === 'AbortError'
+
+/**
+ * Enregistre ce qu'il faut faire quand la session est définitivement perdue (refresh refusé).
+ * @param {() => void} handler
+ * @returns {() => void} Fonction de désinscription.
+ */
+export function onSessionExpired(handler) {
+  sessionExpiredHandler = handler
+  return () => {
+    if (sessionExpiredHandler === handler) sessionExpiredHandler = () => {}
   }
 }
 
-export async function apiFetch(service, path, options = {}) {
-  const response = await fetch(apiUrl(service, path), {
-    credentials: 'same-origin',
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-  })
+const queryString = (query) => {
+  const entries = Object.entries(query ?? {}).filter(
+    ([, value]) => value !== undefined && value !== null && value !== '',
+  )
+  return entries.length ? `?${new URLSearchParams(entries)}` : ''
+}
+
+const serialize = (body) =>
+  body !== null && typeof body === 'object' && !(body instanceof FormData) ? JSON.stringify(body) : body
+
+/** Requête brute : ni jeton ni refresh. Convertit toute erreur en `ApiError`. */
+async function request(service, path, { method = 'GET', query, body, headers, signal } = {}) {
+  let response
+  try {
+    response = await fetch(`${apiUrl(service, path)}${queryString(query)}`, {
+      method,
+      credentials: 'same-origin',
+      signal,
+      headers: { ...(body !== undefined && { 'Content-Type': 'application/json' }), ...headers },
+      body: body === undefined ? undefined : serialize(body),
+    })
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    throw new ApiError(0, 'NETWORK_ERROR')
+  }
+
   if (!response.ok) {
     const problem = await response.json().catch(() => null)
-    throw new ApiError(response.status, problem?.code)
+    throw new ApiError(response.status, problem?.code, {
+      fieldErrors: problem?.errors,
+      retryAfter: Number(response.headers.get('Retry-After')) || undefined,
+    })
   }
-  return response.status === 204 ? null : response.json()
+  const text = await response.text()
+  return text ? JSON.parse(text) : null
+}
+
+/**
+ * Renouvelle l'access token via le cookie de rafraîchissement.
+ * Les appels concurrents partagent la même requête : le refresh token est à usage unique, et deux
+ * appels simultanés (ex. React StrictMode en développement) révoqueraient la session.
+ * @returns {Promise<string>} Le nouvel access token.
+ */
+export function refreshAccessToken() {
+  refreshing ??= (async () => {
+    try {
+      const token = await request('identity', '/v1/auth/refresh', {
+        method: 'POST',
+        headers: SESSION_HEADER,
+      })
+      accessToken = token.accessToken
+      return accessToken
+    } catch (error) {
+      accessToken = null
+      throw error
+    } finally {
+      refreshing = null
+    }
+  })()
+  return refreshing
+}
+
+// Un 401 d'identifiants incorrects ou de ticket de streaming n'est pas un jeton expiré.
+const NOT_A_TOKEN_PROBLEM = ['AUTH_INVALID_CREDENTIALS', 'TICKET_EXPIRED']
+
+const shouldRefresh = (error) =>
+  error instanceof ApiError && error.status === 401 && !NOT_A_TOKEN_PROBLEM.includes(error.code)
+
+function sessionLost() {
+  accessToken = null
+  sessionExpiredHandler()
+  return new ApiError(401, 'SESSION_EXPIRED')
+}
+
+/**
+ * Appel d'API : ajoute le jeton, convertit les erreurs en `ApiError` (message français), et sur un
+ * 401 tente un refresh puis rejoue la requête UNE fois. Si la session est perdue, appelle le handler
+ * de `onSessionExpired` et lève `SESSION_EXPIRED`.
+ *
+ * @param {'identity'|'library'|'acquisition'} service
+ * @param {string} path Chemin après le service, ex. `/v1/media`.
+ * @param {object} [options]
+ * @param {string} [options.method] `GET` par défaut.
+ * @param {object} [options.query] Paramètres d'URL ; les valeurs vides sont ignorées.
+ * @param {*} [options.body] Objet sérialisé en JSON.
+ * @param {Record<string,string>} [options.headers]
+ * @param {AbortSignal} [options.signal] Annulation : la promesse est rejetée avec une AbortError (voir `isAbortError`).
+ * @param {boolean} [options.auth] `false` pour un endpoint anonyme (pas de jeton, pas de refresh).
+ * @returns {Promise<*>} Le JSON de la réponse, ou `null` (204).
+ * @throws {ApiError}
+ */
+export async function apiFetch(service, path, { auth = true, headers, ...options } = {}) {
+  const send = () =>
+    request(service, path, {
+      ...options,
+      headers: { ...headers, ...(auth && accessToken && { Authorization: `Bearer ${accessToken}` }) },
+    })
+
+  try {
+    return await send()
+  } catch (error) {
+    if (!auth || !shouldRefresh(error)) throw error
+  }
+
+  try {
+    await refreshAccessToken()
+  } catch (error) {
+    // Refresh refusé : session perdue. Une panne réseau ou serveur ne l'est pas : on remonte l'erreur.
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) throw sessionLost()
+    throw error
+  }
+
+  try {
+    return await send()
+  } catch (error) {
+    // Rejeu refusé alors que le jeton vient d'être renouvelé : on s'arrête là (pas de boucle).
+    if (shouldRefresh(error)) throw sessionLost()
+    throw error
+  }
 }
