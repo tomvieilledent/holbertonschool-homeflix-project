@@ -17,7 +17,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 |---|---|
 | Services Spring Boot (identity, library, acquisition) | Spring Boot 4.1.2, Java 21 ; squelettes (classe principale + test `contextLoads`), Dockerfile multi-stage présent |
 | Frontend | React 19 + Vite, JavaScript ; architecture posée par la PR #135 ; Dockerfile multi-stage (Node 24 → nginx 1.27) |
-| `homeflix/compose.yaml` | Présent : db, 3 services, transmission, frontend ; réseau `internal` ; volumes `pgdata`, `downloads`, `transmission-config` |
+| `homeflix/compose.yaml` | Présent : db, 3 services, transmission, frontend ; réseaux `internal` et `torrent` ; volumes `pgdata`, `downloads`, `transmission-config` |
 | `homeflix/.env.example` | Présent, valeurs `CHANGE_ME` ; `scripts/gen-secrets.sh` génère un `.env` aléatoire |
 | `homeflix/initdb/01-create-databases.sh` | Crée un rôle et une base par service, `REVOKE CONNECT … FROM PUBLIC` |
 | `homeflix/frontend/nginx.conf` | Reverse proxy déjà écrit (préfixe retiré, `/internal` et `/actuator` en 404) |
@@ -27,7 +27,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 Écarts constatés pendant l'audit (à traiter par les issues indiquées) :
 
 - Node 20.20.2 en local alors que l'image de build utilise Node 24 : les versions doivent être alignées, voir décision 8 (#13).
-- L'image `transmission:latest` n'est pas épinglée (#61).
+- _Résolu par #61 :_ l'image de Transmission est épinglée (`4.1.4-r0-ls369`).
 - Les healthchecks des services Java testent seulement l'ouverture du port TCP, en attendant que `/actuator/health` soit ouvert par la configuration Security (#16, #81).
 - Le fichier `.env.example` ne contient pas encore tous les secrets prévus par l'ADR 0001 (clé de signature RSA, clé de ticket de streaming) (#28).
 
@@ -81,11 +81,16 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 
 ### 6. Client BitTorrent : Transmission, piloté en RPC, isolé
 
-- **Choix : Transmission** (image `lscr.io/linuxserver/transmission`, épinglée sur une version testée à la livraison de #61), piloté par son API RPC depuis `acquisition-service` uniquement.
+- **Choix : Transmission** (image `lscr.io/linuxserver/transmission`, **épinglée sur `4.1.4-r0-ls369`** ; empreinte testée `sha256:aaf349cd…1a85`), piloté par son API RPC depuis `acquisition-service` uniquement.
 - Aucune interface web ni port RPC n'est publié. Les utilisateurs ordinaires n'ont aucune route vers lui : ni port sur l'hôte, ni route nginx. Le RPC est protégé par un identifiant et un mot de passe (`TRANSMISSION_USER`/`TRANSMISSION_PASS`).
+- **Réseau dédié `torrent`** : Transmission n'est **que** sur ce réseau, avec Acquisition (qui est aussi sur `internal` pour sa base et Identity). Library, Identity, le frontend et la base ne peuvent donc ni le joindre ni même résoudre son nom ; seule Acquisition l'atteint. Ce réseau n'est pas `internal: true` : Transmission doit joindre ses pairs sur Internet. Vérifié par `scripts/smoke.sh`, et prouvé en rattachant volontairement Transmission à `internal` (Library l'atteint alors : le contrôle devient rouge).
+- **La liste d'hôtes du RPC (`rpc-host-whitelist`) n'est pas utilisée** : testée sur cette version, elle n'est pas appliquée (une requête avec `Host: evil.example` obtient un 200). Ne pas s'y fier ; la protection repose sur l'isolation réseau et l'authentification.
 - Acquisition n'accepte que des identifiants d'entrées du catalogue autorisé, jamais une URL ou un lien magnet fournis par l'utilisateur (voir l'issue #79 pour la protection SSRF).
-- **Réseau pair-à-pair** : par défaut, seul le trafic sortant est autorisé (le port de pairs 51413 n'est pas publié). Un téléchargement fonctionne avec des connexions sortantes (trackers, DHT, pairs joignables) mais peut être plus lent. La publication du port 51413 est une option documentée, pas un prérequis.
-- **Partage** : un client BitTorrent partage les morceaux qu'il a déjà. Comme seuls des contenus à redistribution autorisée sont téléchargeables (voir #46), ce partage est licite, mais on limite quand même la durée : arrêt du partage une fois le fichier terminé (`ratio-limit`, à configurer dans #61).
+- **Réseau pair-à-pair** : par défaut, seul le trafic sortant est autorisé (le port de pairs 51413 n'est pas publié). Un téléchargement fonctionne avec des connexions sortantes (trackers, pairs joignables) mais peut être plus lent. Le port de pairs est fixé à **51413** (`PEERPORT`) pour rester documenté même s'il n'est pas publié. La publication du port 51413 est une option documentée, pas un prérequis.
+- **Partage** : un client BitTorrent partage les morceaux qu'il a déjà. Comme seuls des contenus à redistribution autorisée sont téléchargeables (voir #46), ce partage est licite, mais on limite quand même la durée : **arrêt du partage dès que le fichier est complet** (`ratio-limit` à 0, état « Finished », vérifié) et débit d'envoi plafonné à 200 ko/s pendant le téléchargement.
+- **Découverte de pairs** : **DHT et PEX désactivés par défaut** (issue #61 : « si non nécessaire »). Mesure du 2026-11-17 avec Sintel : 38 s sans, 45 s avec (les trackers suffisent). **Plan B** si aucun tracker ne répond : `TRANSMISSION_DHT=true` et `TRANSMISSION_PEX=true` dans `.env`. Les téléchargements de test sont plafonnés à 10 000 ko/s en réception.
+- **Réglages appliqués à chaque démarrage** par `homeflix/transmission/init-settings.sh` (monté dans `/custom-cont-init.d`) : Transmission réécrit `settings.json` à l'arrêt, donc on le corrige avec `jq` plutôt que de le monter. Scripts « torrent terminé », dossier surveillé et redirection de port (UPnP) désactivés.
+- **Dossier des fichiers terminés : `/downloads/complete`** (les partiels sont dans `/downloads/incomplete`, suffixe `.part`). C'est ce dossier qu'il faut déclarer comme racine dans Library : les fichiers incomplets n'apparaissent jamais dans le catalogue.
 
 ### 7. Healthchecks et démarrage ordonné
 
@@ -103,7 +108,7 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 | PostgreSQL | 17 (`alpine`) | |
 | Node (build du frontend) | 24 (image Docker) | Node 20 local suffit pour les outils de dev ; la version de référence est celle de l'image |
 | nginx | 1.27 (`alpine`) | |
-| Transmission | à épingler (#61) | Pas de `latest` en livraison |
+| Transmission | `4.1.4-r0-ls369` (linuxserver) | Épinglé (#61) ; mise à jour volontaire, jamais `latest` |
 | Docker / Compose | Docker ≥ 29, Compose ≥ v5 (testés) | Versions minimales à confirmer lors de la recette (#112) |
 
 ### 9. Configuration et secrets
@@ -143,7 +148,7 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 
 ## Points ouverts
 
-1. **Version exacte de Transmission** et ses réglages de partage : à fixer dans #61.
+1. ~~Version exacte de Transmission et ses réglages de partage~~ : fait dans #61.
 2. **Healthcheck HTTP** `/actuator/health` à la place du test TCP, quand la configuration Security de Tom (#16) est livrée.
-3. **Publication du port de pairs 51413** : à décider selon les résultats du test réel (#111). Par défaut, non publié.
+3. **Publication du port de pairs 51413** : le téléchargement sortant seul a abouti en 38 à 45 s (test #61), donc **non publié**. À réévaluer seulement si le test sur le réseau de la soutenance (#111, #125) est trop lent.
 4. **Environnements supportés** : seuls Docker Engine sur Linux et Docker Desktop (Windows via WSL2) sont à tester ; NAS et partages SMB/NFS à documenter comme prérequis, sans garantie (#112, #116).

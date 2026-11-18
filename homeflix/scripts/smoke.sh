@@ -5,6 +5,7 @@
 #   ./scripts/smoke.sh            # démarre, vérifie, arrête (les volumes sont conservés)
 #   KEEP_UP=1 ./scripts/smoke.sh  # laisse la pile démarrée
 #   CHECK_PERSISTENCE=1 ./scripts/smoke.sh  # vérifie aussi que les données survivent à down puis up
+#   CHECK_P2P=1 ./scripts/smoke.sh          # télécharge réellement Sintel par BitTorrent (Internet requis)
 #
 # Prérequis : Docker Compose, curl, un fichier .env (créé ou complété par ./scripts/gen-secrets.sh).
 set -uo pipefail
@@ -79,6 +80,51 @@ check "Acquisition écrit dans /downloads" "dc acquisition-service sh -c 'touch 
 # /media existe (vide) dans les images de base : ce qui compte, c'est que la bibliothèque n'y soit pas montée.
 check "Acquisition et Transmission n'ont pas la bibliothèque montée (/media)" "! dc acquisition-service grep -q ' /media ' /proc/mounts && ! dc transmission grep -q ' /media ' /proc/mounts"
 check "Library a bien /media montée" "dc library-service grep -q ' /media ' /proc/mounts"
+
+echo "== Transmission : isolation et réglages"
+RPC=http://transmission:9091/transmission/rpc
+check "l'interface de Transmission est injoignable depuis l'hôte (9091 et 51413 non publiés)" "! curl -s -m 3 -o /dev/null http://localhost:9091/transmission/rpc && ! curl -s -m 3 -o /dev/null http://localhost:51413/"
+check "Library ne peut pas joindre Transmission" "! dc library-service curl -s -m 3 -o /dev/null $RPC"
+check "Identity ne peut pas joindre Transmission" "! dc identity-service curl -s -m 3 -o /dev/null $RPC"
+check "le frontend ne peut pas joindre Transmission" "dc frontend sh -c 'command -v wget > /dev/null && ! wget -q -T 3 -O /dev/null $RPC'"
+check "la base ne peut pas joindre Transmission" "dc db sh -c 'command -v wget > /dev/null && ! wget -q -T 3 -O /dev/null $RPC'"
+# Code HTTP du RPC vu depuis Acquisition : « ok » = bons identifiants, « faux » = mauvais mot de passe, autre = aucun.
+rpc_code() {
+  dc acquisition-service sh -c 'case "$1" in
+    ok) set -- -u "$TRANSMISSION_USER:$TRANSMISSION_PASS" ;;
+    faux) set -- -u "$TRANSMISSION_USER:faux" ;;
+    *) set -- ;;
+  esac
+  curl -s -m 5 -o /dev/null -w "%{http_code}" "$@" http://transmission:9091/transmission/rpc' _ "$1"
+}
+check "Acquisition atteint le RPC, qui exige un mot de passe (401 sans)" '[ "$(rpc_code aucun)" = 401 ]'
+check "Acquisition s'authentifie auprès du RPC (409 = poignée de main de session)" '[ "$(rpc_code ok)" = 409 ]'
+check "un mauvais mot de passe est refusé (401)" '[ "$(rpc_code faux)" = 401 ]'
+settings() { dc transmission jq -e "$1" /config/settings.json; }
+check "authentification du RPC exigée" "settings '.[\"rpc-authentication-required\"] == true'"
+check "arrêt du partage à la fin du téléchargement (ratio 0)" "settings '.[\"ratio-limit-enabled\"] == true and .[\"ratio-limit\"] == 0'"
+check "débits d'envoi et de réception plafonnés" "settings '.[\"speed-limit-up-enabled\"] == true and .[\"speed-limit-down-enabled\"] == true'"
+check "DHT et PEX désactivés par défaut" "[ \"\${TRANSMISSION_DHT:-false}\" = true ] || settings '.[\"dht-enabled\"] == false and .[\"pex-enabled\"] == false'"
+check "port de pairs fixe (51413)" "settings '.[\"peer-port\"] == 51413'"
+check "version de Transmission épinglée (pas de latest)" "docker compose config --images | grep transmission | grep -v ':latest'"
+
+if [ "${CHECK_P2P:-0}" = "1" ]; then
+  echo "== Téléchargement P2P réel (Sintel, voir docs/legal/P2P_DEMO.md) : besoin d'Internet et de pairs"
+  magnet='magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337'
+  tr() { dc transmission sh -c "transmission-remote localhost:9091 -n \"\$USER:\$PASS\" $1"; }
+  tr '-t all --remove-and-delete' > /dev/null 2>&1
+  tr "-a '$magnet'" > /dev/null 2>&1
+  done_=no
+  for _ in $(seq 1 36); do   # 3 minutes au plus
+    tr '-l' 2> /dev/null | sed -n 2p | grep -q ' 100%' && { done_=yes; break; }
+    sleep 5
+  done
+  [ "$done_" = yes ] && pass "Sintel téléchargé par BitTorrent" || fail "Sintel n'a pas fini de se télécharger en 3 minutes (réseau bloquant ? pairs ?)"
+  sum=$(dc transmission sha256sum /downloads/complete/Sintel/Sintel.mp4 2> /dev/null | cut -d' ' -f1)
+  [ "$sum" = 1dc6f2ca9762dfcc7d1b1843129a3e4f351d1fe935dea2241c7b359c11ebc1d8 ] && pass "le fichier reçu est identique à celui dont la licence est documentée (SHA-256)" || fail "SHA-256 inattendu : ${sum:-aucun fichier}"
+  check "Library lit le fichier téléchargé" "dc library-service test -r /downloads/complete/Sintel/Sintel.mp4"
+  tr '-t all --remove-and-delete' > /dev/null 2>&1   # remet l'environnement propre
+fi
 
 if [ "${CHECK_PERSISTENCE:-0}" = "1" ]; then
   echo "== Persistance des données (docker compose down puis up)"

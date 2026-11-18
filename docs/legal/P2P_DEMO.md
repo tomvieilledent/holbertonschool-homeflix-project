@@ -104,7 +104,8 @@ Deux trackers sur quatre ne répondent pas : c'est normal (trackers publics, cer
 ## Utilisation dans HomeFlix
 
 - **Le lien magnet n'est jamais envoyé au navigateur** : il reste côté serveur, dans le catalogue d'acquisition (#60). Les utilisateurs ne choisissent qu'un identifiant d'entrée du catalogue.
-- **Le torrent contient 11 fichiers** (vidéo, affiche, sous-titres). Transmission les télécharge tous dans `/downloads/Sintel/`. Library n'indexe que les vidéos (`mp4`, `mkv`, `webm`) : l'affiche et les sous-titres sont ignorés.
+- **Le torrent contient 11 fichiers** (vidéo, affiche, sous-titres). Transmission les télécharge tous dans `/downloads/complete/Sintel/` (les fichiers partiels sont dans `/downloads/incomplete/`, suffixe `.part`). **La racine à déclarer dans Library est donc `/downloads/complete`.** Library n'indexe que les vidéos (`mp4`, `mkv`, `webm`) : l'affiche et les sous-titres sont ignorés.
+- **Test avec notre propre Transmission (issue #61)** : le même torrent, ajouté par `transmission-remote` dans le conteneur de la pile, est terminé en 38 s (DHT et PEX désactivés) et 45 s (activés), SHA-256 identique. `CHECK_P2P=1 ./homeflix/scripts/smoke.sh` rejoue ce téléchargement.
 - **Point à trancher en équipe : doublon avec le film de démonstration.** *Sintel* est aussi dans `homeflix/demo-media/` (lecture locale). Une fois le téléchargement terminé, Library verrait deux entrées « Sintel » (une sous `/media`, une sous `/downloads`). Choix possibles : ne pas mettre Sintel dans `demo-media/` pour la démonstration, utiliser *Big Buck Bunny* comme film P2P, ou accepter le doublon et l'expliquer. Voir aussi #73 (doublons).
 - **Partage pendant le téléchargement** : le client BitTorrent renvoie aussi des morceaux aux autres pairs. C'est permis ici (licence CC BY, redistribution autorisée). Le client doit s'arrêter de partager une fois le fichier terminé (risque R10, #61).
 
@@ -129,4 +130,4 @@ python3 homeflix/scripts/p2p-seeders.py            # au moins un tracker doit r�
 
 ## Relecture
 
-- [ ] Relu par un second développeur (critère de l'issue #46) : _à compléter lors de la relecture de la PR._
+- [x] Relu par Tom (PR #165, approuvée le 2026-11-18).
