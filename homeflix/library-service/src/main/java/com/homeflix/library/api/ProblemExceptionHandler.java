@@ -32,7 +32,9 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ProblemDetail> handleApi(ApiException e, HttpServletRequest request) {
-        return build(e.getStatus(), e.getCode(), e.getTitle(), e.getMessage(), e.getErrors(), request.getRequestURI());
+        ResponseEntity<ProblemDetail> response = build(e.getStatus(), e.getCode(), e.getTitle(), e.getMessage(),
+                e.getErrors(), request.getRequestURI());
+        return ResponseEntity.status(response.getStatusCode()).headers(e.getHeaders()).body(response.getBody());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
