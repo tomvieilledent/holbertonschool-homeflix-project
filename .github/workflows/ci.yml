@@ -65,11 +65,14 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
-      # Les tests (Vitest, issue #32) seront lancés dès que le script « test » existera.
+      # Sans « --if-present » : si le script « test » disparaît par erreur, la CI doit échouer.
       - name: Tests
-        run: npm test --if-present
+        run: npm test
       - name: Build
         run: npm run build
+      # Garde-fou : aucun mock (MSW, jeton ou mot de passe factices) ne doit se trouver dans le build de production.
+      - name: Aucun mock dans le build
+        run: npm run check:no-mocks
 
   secrets:
     name: Scan de secrets (gitleaks)
