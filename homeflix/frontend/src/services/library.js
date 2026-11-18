@@ -15,3 +15,22 @@ export const addFavourite = (mediaId) => apiFetch('library', favouritePath(media
 
 /** Retire un média de « Ma liste » (idempotent). */
 export const removeFavourite = (mediaId) => apiFetch('library', favouritePath(mediaId), { method: 'DELETE' })
+
+/**
+ * Progression du profil actif sur un média (`GET /media/{id}/progress`) : `NOT_STARTED` (position 0),
+ * `STARTED` ou `COMPLETED`.
+ * @param {string} mediaId
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{mediaId: string, positionSeconds: number, durationSeconds?: number|null,
+ *   state: 'NOT_STARTED'|'STARTED'|'COMPLETED', updatedAt?: string|null}>}
+ */
+export const getProgress = (mediaId, signal) =>
+  apiFetch('library', `/v1/media/${encodeURIComponent(mediaId)}/progress`, { signal })
+
+/**
+ * « Ma liste » du profil actif (`GET /me/favourites`), les ajouts les plus récents en premier.
+ * @param {{page?: number, size?: number}} [query]
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{items: object[], page: number, size: number, total: number, totalPages: number}>}
+ */
+export const listFavourites = (query = {}, signal) => apiFetch('library', '/v1/me/favourites', { query, signal })

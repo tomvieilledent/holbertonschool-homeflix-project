@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import ErrorState from '@/components/ErrorState'
 import Spinner from '@/components/Spinner'
 import VideoPlayer from '@/features/player/VideoPlayer'
@@ -9,6 +9,12 @@ import { getStreamTicket } from '@/services/streaming'
 
 const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
 
+/** Position de départ de l'URL (`?t=312`, en secondes) ; toute valeur invalide ou négative donne 0. */
+export const startFromParams = (params) => {
+  const seconds = Number(params.get('t'))
+  return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0
+}
+
 /** Message d'un échec de lecture du navigateur (le format non pris en charge est le cas utile à dire). */
 const playbackMessage = (mediaError) =>
   mediaError?.code === MEDIA_ERR_SRC_NOT_SUPPORTED
@@ -17,11 +23,13 @@ const playbackMessage = (mediaError) =>
 
 /**
  * Lecture d'un film : demande un ticket de streaming (`POST /media/{id}/stream-ticket`) puis charge le
- * flux dans le lecteur. Si le flux est refusé en cours de route (ticket expiré), un nouveau ticket est
+ * flux dans le lecteur, à la position `?t=` si elle est donnée. Si le flux est refusé en cours de route (ticket expiré), un nouveau ticket est
  * demandé une fois et la lecture reprend à la même position.
  */
 export default function PlayerPage() {
   const { mediaId } = useParams()
+  const [params] = useSearchParams()
+  const startParam = startFromParams(params)
   const [ticket, setTicket] = useState(null) // null = chargement
   const [error, setError] = useState('')
   const resumeAt = useRef(0)
@@ -41,12 +49,12 @@ export default function PlayerPage() {
   )
 
   useEffect(() => {
-    resumeAt.current = 0
+    resumeAt.current = startParam // reprise demandée par la fiche (« Reprendre à … »)
     refreshes.current = 0
     const controller = new AbortController()
     load(controller.signal)
     return () => controller.abort()
-  }, [load])
+  }, [load, startParam])
 
   const onPlaybackError = (mediaError, currentTime) => {
     if (refreshes.current < 1) {

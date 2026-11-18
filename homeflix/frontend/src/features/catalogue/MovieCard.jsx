@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Button from '@/components/Button'
 import AvailabilityBadge from '@/features/catalogue/AvailabilityBadge'
+import Poster from '@/features/catalogue/Poster'
 import { formatDuration } from '@/features/catalogue/format'
 import '@/features/catalogue/MovieCard.css'
 
@@ -30,15 +31,7 @@ export default function MovieCard({
   return (
     <article className="movie-card">
       <Link to={`/media/${encodeURIComponent(id)}`} className="movie-card__link">
-        <div className="movie-card__poster">
-          {posterUrl ? (
-            <img src={posterUrl} alt="" loading="lazy" />
-          ) : (
-            <span className="movie-card__placeholder" aria-hidden="true">
-              ▶
-            </span>
-          )}
-        </div>
+        <Poster url={posterUrl} />
         <h3 className="movie-card__title">{title}</h3>
         {details && <p className="movie-card__meta">{details}</p>}
         {progress?.durationSeconds > 0 && (
