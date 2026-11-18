@@ -1,0 +1,22 @@
+.catalogue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.catalogue h1 {
+  margin: 0;
+}
+
+.catalogue h1:focus {
+  outline: none;
+}
+
+.catalogue__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-5) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
