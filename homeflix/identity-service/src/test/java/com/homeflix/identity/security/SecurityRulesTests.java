@@ -55,7 +55,7 @@ class SecurityRulesTests {
     @Test
     void publicRoutesAreNotBlockedBySecurity() throws Exception {
         mvc.perform(get("/api/v1/setup/status")).andExpect(status().isNotFound());
-        mvc.perform(get("/.well-known/jwks.json")).andExpect(status().isNotFound());
+        mvc.perform(get("/.well-known/jwks.json")).andExpect(status().isOk());
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
     }
 

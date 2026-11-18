@@ -23,7 +23,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * Migrations Flyway et repositories sur un vrai PostgreSQL (Testcontainers).
  * Le démarrage du contexte vérifie aussi `ddl-auto=validate` : les entités correspondent au schéma.
  */
-@SpringBootTest
+@SpringBootTest(properties = "homeflix.jwt.generate-if-missing=true")
 @Testcontainers
 class PersistenceIntegrationTests {
 

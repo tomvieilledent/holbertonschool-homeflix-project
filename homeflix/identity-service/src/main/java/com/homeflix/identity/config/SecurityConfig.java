@@ -22,7 +22,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+
 import com.homeflix.identity.error.ProblemResponses;
+import com.homeflix.identity.security.JwtProperties;
+import com.homeflix.identity.security.SigningKeyProvider;
 
 /**
  * Chaîne de sécurité stateless. Routes publiques : setup, connexion, refresh, JWKS et santé ; le reste
@@ -31,6 +42,7 @@ import com.homeflix.identity.error.ProblemResponses;
  */
 @Configuration
 @EnableMethodSecurity
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     private static final AuthenticationEntryPoint ENTRY_POINT = (req, res, ex) -> ProblemResponses.write(res,
@@ -55,6 +67,10 @@ public class SecurityConfig {
                     .permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
+            .oauth2ResourceServer(o -> o
+                .jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                .authenticationEntryPoint(ENTRY_POINT)
+                .accessDeniedHandler(DENIED_HANDLER))
             .exceptionHandling(e -> e
                 .authenticationEntryPoint(ENTRY_POINT)
                 .accessDeniedHandler(DENIED_HANDLER))
@@ -67,6 +83,26 @@ public class SecurityConfig {
                 .referrerPolicy(r -> r.policy(ReferrerPolicy.NO_REFERRER))
                 .contentSecurityPolicy(c -> c.policyDirectives("default-src 'none'; frame-ancestors 'none'")));
         return http.build();
+    }
+
+    /** Valide les jetons émis par ce service (signature RS256, expiration, émetteur). */
+    @Bean
+    JwtDecoder jwtDecoder(SigningKeyProvider keys, JwtProperties props) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(keys.publicKey())
+            .signatureAlgorithm(SignatureAlgorithm.RS256).build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(props.issuer()));
+        return decoder;
+    }
+
+    /** Le claim `roles` (USER/ADMIN) devient les autorités ROLE_USER / ROLE_ADMIN. */
+    private static JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            List<String> roles = jwt.getClaimAsStringList("roles");
+            return roles == null ? List.<GrantedAuthority>of()
+                : roles.stream().<GrantedAuthority>map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
+        });
+        return converter;
     }
 
     /** Argon2id (paramètres recommandés par Spring Security 5.8+). */
