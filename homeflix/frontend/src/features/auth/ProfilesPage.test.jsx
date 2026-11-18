@@ -23,8 +23,8 @@ function Home() {
 }
 
 /** Fournisseur minimal : `selectProfile` met à jour le profil actif comme le vrai. */
-function Session({ children, selectProfile }) {
-  const [activeProfileId, setActive] = useState(null)
+function Session({ children, selectProfile, initialProfileId = null }) {
+  const [activeProfileId, setActive] = useState(initialProfileId)
   const value = {
     status: 'authenticated',
     account: { id: 'a', username: 'camille', role: 'USER' },
@@ -39,7 +39,11 @@ function Session({ children, selectProfile }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-function renderFlow({ selectProfile = vi.fn().mockResolvedValue(undefined), url = '/profiles' } = {}) {
+function renderFlow({
+  selectProfile = vi.fn().mockResolvedValue(undefined),
+  url = '/profiles',
+  initialProfileId = null,
+} = {}) {
   const router = createMemoryRouter(
     [
       { path: '/profiles', element: <ProfilesPage /> },
@@ -48,7 +52,7 @@ function renderFlow({ selectProfile = vi.fn().mockResolvedValue(undefined), url 
     { initialEntries: [url] },
   )
   render(
-    <Session selectProfile={selectProfile}>
+    <Session selectProfile={selectProfile} initialProfileId={initialProfileId}>
       <RouterProvider router={router} />
     </Session>,
   )
@@ -113,5 +117,35 @@ describe('ProfilesPage', () => {
     await router.navigate('/profiles')
     await user.click(await screen.findByRole('button', { name: 'Léo' }))
     await waitFor(() => expect(loads).toBe(2))
+  })
+
+  describe('compte à un seul profil', () => {
+    const ONE = [PROFILES[0]]
+
+    it('sélectionne le profil automatiquement et passe l’écran « Qui regarde ? »', async () => {
+      fetchMock.mockImplementation(async () => json(ONE))
+      const { router, selectProfile } = renderFlow()
+      await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+      expect(selectProfile).toHaveBeenCalledTimes(1)
+      expect(selectProfile).toHaveBeenCalledWith('p1')
+    })
+
+    it('garde l’écran affiché quand un profil est déjà actif (menu « Changer de profil »)', async () => {
+      fetchMock.mockImplementation(async () => json(ONE))
+      const { selectProfile } = renderFlow({ initialProfileId: 'p1' })
+      expect(await screen.findByRole('button', { name: 'Camille' })).toBeInTheDocument()
+      expect(selectProfile).not.toHaveBeenCalled()
+    })
+
+    it('affiche la liste et l’erreur si la sélection automatique échoue', async () => {
+      fetchMock.mockImplementation(async () => json(ONE))
+      const { router, selectProfile } = renderFlow({
+        selectProfile: vi.fn().mockRejectedValue(new ApiError(404, 'NOT_FOUND')),
+      })
+      expect(await screen.findByRole('alert')).toHaveTextContent('introuvable')
+      expect(screen.getByRole('button', { name: 'Camille' })).toBeEnabled()
+      expect(router.state.location.pathname).toBe('/profiles')
+      expect(selectProfile).toHaveBeenCalledTimes(1)
+    })
   })
 })

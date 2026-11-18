@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
@@ -38,6 +38,7 @@ export default function ProfilesPage() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [selectError, setSelectError] = useState('')
+  const autoSelected = useRef(false)
 
   const load = useCallback((signal) => {
     setLoadFailed(false)
@@ -66,8 +67,21 @@ export default function ProfilesPage() {
     }
   }
 
+  // Un seul profil et aucun actif : inutile de demander « Qui regarde ? ». Une seule tentative (ref) :
+  // si elle échoue, on affiche la liste avec l'erreur. Avec un profil déjà actif (menu « Changer de
+  // profil »), l'écran reste affiché.
+  const onlyProfile = profiles?.length === 1 && !activeProfileId ? profiles[0] : null
+  useEffect(() => {
+    if (onlyProfile && !autoSelected.current) {
+      autoSelected.current = true
+      onSelect(onlyProfile)
+    }
+  }, [onlyProfile]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loadFailed) return <ErrorState onRetry={() => load()} />
-  if (profiles === null) return <Spinner size="lg" label="Chargement des profils…" />
+  if (profiles === null || (onlyProfile && !selectError)) {
+    return <Spinner size="lg" label="Chargement des profils…" />
+  }
   if (profiles.length === 0) {
     return (
       <EmptyState
