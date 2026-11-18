@@ -12,6 +12,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+    boolean existsByRoleName(String roleName);
 
     long countByRoleNameAndEnabledTrue(String roleName);
 }

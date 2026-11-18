@@ -24,6 +24,12 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(ApiException.class)
+    ResponseEntity<ProblemDetail> api(ApiException ex, HttpServletRequest req) {
+        return respond(ex.status(), ProblemResponses.problem(ex.status(), ex.code(), ex.title(),
+            ex.getMessage(), req.getRequestURI()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ProblemDetail> validation(MethodArgumentNotValidException ex, HttpServletRequest req) {
         List<ProblemResponses.FieldError> errors = ex.getBindingResult().getFieldErrors().stream()

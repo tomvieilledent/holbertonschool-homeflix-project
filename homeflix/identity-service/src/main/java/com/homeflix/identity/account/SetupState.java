@@ -32,6 +32,11 @@ public class SetupState {
     public Instant getCompletedAt() { return completedAt; }
     public boolean isCompleted() { return completedAt != null; }
 
+    /** Remplace le jeton (redémarrage tant que la configuration n'est pas terminée). */
+    public void changeToken(String tokenHash) {
+        this.tokenHash = tokenHash;
+    }
+
     /** Le jeton de setup n'est plus valide une fois la configuration terminée. */
     public void complete(Instant when) {
         this.completedAt = when;
