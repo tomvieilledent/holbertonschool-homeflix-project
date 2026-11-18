@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -78,15 +79,33 @@ class JwksTimeoutTests {
 
         long start = System.nanoTime();
         boolean rejected;
+        Exception failure = null;
         try {
             rejected = mvc.perform(get("/api/v1/anything").header("Authorization", "Bearer " + jwt.serialize()))
                 .andReturn().getResponse().getStatus() >= 400;
         } catch (Exception identityUnreachable) {
-            rejected = true; // AuthenticationServiceException : Identity injoignable (délai dépassé)
+            rejected = true;
+            failure = identityUnreachable;
         }
         Duration elapsed = Duration.ofNanos(System.nanoTime() - start);
 
         assertThat(rejected).as("le jeton ne doit pas être accepté").isTrue();
+        if (failure != null) {
+            // Seule la panne d'Identity est attendue ici : une autre erreur (URI mal formée, bug) ne doit pas
+            // passer pour un succès.
+            assertThat(causedByIdentityUnreachable(failure))
+                .as("l'exception doit venir d'Identity injoignable, pas d'une autre erreur : %s", failure)
+                .isTrue();
+        }
         assertThat(elapsed).as("temps de réponse avec Identity muet").isLessThan(Duration.ofSeconds(10));
+    }
+
+    private static boolean causedByIdentityUnreachable(Throwable failure) {
+        for (Throwable t = failure; t != null; t = t.getCause()) {
+            if (t instanceof AuthenticationServiceException) {
+                return true;
+            }
+        }
+        return false;
     }
 }
