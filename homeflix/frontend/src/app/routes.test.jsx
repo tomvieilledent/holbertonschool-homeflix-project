@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '@/app/router'
 import { AuthContext } from '@/features/auth/authContext'
 
@@ -27,6 +27,15 @@ function open(path, session) {
 }
 
 describe('routes protégées', () => {
+  // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
   it('redirige un anonyme vers /login en conservant la destination', () => {
     const router = open('/watch/12?t=30', 'anonymous')
     expect(router.state.location.pathname).toBe('/login')

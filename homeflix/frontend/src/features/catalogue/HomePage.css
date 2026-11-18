@@ -1,0 +1,31 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.home__hint h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+.home__hint p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.home__skeleton,
+.home__skeleton-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.home__skeleton {
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.home__skeleton-row {
+  overflow: hidden;
+}
