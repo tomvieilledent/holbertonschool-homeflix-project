@@ -5,7 +5,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +16,23 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-/** Erreurs problem+json sans fuite d'information (ni pile, ni classe, ni SQL). */
+/**
+ * Erreurs problem+json sans fuite d'information (ni pile, ni classe, ni SQL).
+ *
+ * <p>Hérite de {@link ResponseEntityExceptionHandler} : les erreurs normales de Spring MVC (méthode non
+ * supportée 405, type de contenu 415, réponse non acceptable 406, paramètre manquant 400…) gardent leur vrai
+ * statut. Sans cela, le gestionnaire générique {@code Exception} les transformait en 500 « erreur interne »,
+ * avec une erreur dans les journaux pour une simple faute du client.
+ */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -28,28 +40,6 @@ public class GlobalExceptionHandler {
     ResponseEntity<ProblemDetail> api(ApiException ex, HttpServletRequest req) {
         return respond(ex.status(), ProblemResponses.problem(ex.status(), ex.code(), ex.title(),
             ex.getMessage(), req.getRequestURI()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<ProblemDetail> validation(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        List<ProblemResponses.FieldError> errors = ex.getBindingResult().getFieldErrors().stream()
-            .map(e -> new ProblemResponses.FieldError(e.getField(), e.getDefaultMessage()))
-            .toList();
-        ProblemDetail pd = ProblemResponses.problem(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
-            "Requête invalide", "Un ou plusieurs champs sont invalides.", req.getRequestURI());
-        return respond(HttpStatus.BAD_REQUEST, ProblemResponses.withFieldErrors(pd, errors));
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    ResponseEntity<ProblemDetail> unreadable(HttpServletRequest req) {
-        return respond(HttpStatus.BAD_REQUEST, ProblemResponses.problem(HttpStatus.BAD_REQUEST,
-            "VALIDATION_ERROR", "Requête invalide", "Corps de requête illisible.", req.getRequestURI()));
-    }
-
-    @ExceptionHandler(NoResourceFoundException.class)
-    ResponseEntity<ProblemDetail> notFound(HttpServletRequest req) {
-        return respond(HttpStatus.NOT_FOUND, ProblemResponses.problem(HttpStatus.NOT_FOUND,
-            "NOT_FOUND", "Ressource introuvable", "La ressource demandée est introuvable.", req.getRequestURI()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -69,6 +59,58 @@ public class GlobalExceptionHandler {
         log.error("Erreur inattendue sur {}", req.getRequestURI(), ex);
         return respond(HttpStatus.INTERNAL_SERVER_ERROR, ProblemResponses.problem(HttpStatus.INTERNAL_SERVER_ERROR,
             "INTERNAL_ERROR", "Erreur interne", "Une erreur inattendue s'est produite.", req.getRequestURI()));
+    }
+
+    // --- Erreurs MVC standard : mêmes réponses qu'avant pour 400 et 404, le vrai statut pour le reste ---
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<ProblemResponses.FieldError> errors = ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> new ProblemResponses.FieldError(e.getField(), e.getDefaultMessage()))
+            .toList();
+        ProblemDetail pd = ProblemResponses.problem(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
+            "Requête invalide", "Un ou plusieurs champs sont invalides.", uri(request));
+        return respondObject(HttpStatus.BAD_REQUEST, ProblemResponses.withFieldErrors(pd, errors));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return respondObject(HttpStatus.BAD_REQUEST, ProblemResponses.problem(HttpStatus.BAD_REQUEST,
+            "VALIDATION_ERROR", "Requête invalide", "Corps de requête illisible.", uri(request)));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return respondObject(HttpStatus.NOT_FOUND, ProblemResponses.problem(HttpStatus.NOT_FOUND,
+            "NOT_FOUND", "Ressource introuvable", "La ressource demandée est introuvable.", uri(request)));
+    }
+
+    /**
+     * Toutes les autres erreurs MVC (405, 406, 415, paramètre manquant…) : le corps problem+json de Spring,
+     * complété du `code` attendu par le frontend (voir docs/api/CONVENTIONS.md). Les en-têtes utiles (par
+     * exemple `Allow` pour un 405) sont conservés.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, status, request);
+        if (response != null && response.getBody() instanceof ProblemDetail pd
+                && (pd.getProperties() == null || !pd.getProperties().containsKey("code"))) {
+            pd.setProperty("code", status.value() == 404 ? "NOT_FOUND"
+                : status.is5xxServerError() ? "INTERNAL_ERROR" : "VALIDATION_ERROR");
+        }
+        return response;
+    }
+
+    private static String uri(WebRequest request) {
+        return request instanceof ServletWebRequest servlet ? servlet.getRequest().getRequestURI() : null;
+    }
+
+    private static ResponseEntity<Object> respondObject(HttpStatus status, ProblemDetail pd) {
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_PROBLEM_JSON).body(pd);
     }
 
     private static ResponseEntity<ProblemDetail> respond(HttpStatus status, ProblemDetail pd) {
