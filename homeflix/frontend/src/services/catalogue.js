@@ -8,3 +8,10 @@ import { apiFetch } from '@/services/api'
  * @returns {Promise<{items: object[], page: number, size: number, total: number, totalPages: number}>}
  */
 export const listMedia = (query = {}, signal) => apiFetch('library', '/v1/media', { query, signal })
+
+/**
+ * Genres ayant au moins un média disponible (`GET /genres`), pour le sélecteur de filtre.
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<string[]>}
+ */
+export const listGenres = (signal) => apiFetch('library', '/v1/genres', { signal })
