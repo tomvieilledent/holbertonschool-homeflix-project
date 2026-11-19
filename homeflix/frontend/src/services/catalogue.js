@@ -19,3 +19,10 @@ export const listMedia = (query = {}, signal) => apiFetch('library', '/v1/media'
  */
 export const getMedia = (mediaId, signal) =>
   apiFetch('library', `/v1/media/${encodeURIComponent(mediaId)}`, { signal })
+
+/**
+ * Genres ayant au moins un média disponible (`GET /genres`), pour le sélecteur de filtre.
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<string[]>}
+ */
+export const listGenres = (signal) => apiFetch('library', '/v1/genres', { signal })
