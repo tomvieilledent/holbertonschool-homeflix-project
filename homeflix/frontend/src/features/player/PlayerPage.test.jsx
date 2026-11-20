@@ -2,16 +2,16 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ticketFixture from '@fixtures/library/stream-ticket.json'
-import PlayerPage from '@/features/player/PlayerPage'
+import PlayerPage, { startFromParams } from '@/features/player/PlayerPage'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
 const MEDIA_ID = '304212f0-ed3f-518e-9417-9bd99f4e2ea3'
 
-function renderPlayer() {
+function renderPlayer(search = '') {
   const router = createMemoryRouter([{ path: '/watch/:mediaId', element: <PlayerPage /> }], {
-    initialEntries: [`/watch/${MEDIA_ID}`],
+    initialEntries: [`/watch/${MEDIA_ID}${search}`],
   })
   render(<RouterProvider router={router} />)
 }
@@ -84,5 +84,35 @@ describe('PlayerPage', () => {
     renderPlayer()
     fireEvent.click(await screen.findByRole('button', { name: 'Réessayer' }))
     await waitFor(() => expect(video()).not.toBeNull())
+  })
+
+  it('démarre à la position demandée dans l’URL (« Reprendre à … » depuis la fiche)', async () => {
+    renderPlayer('?t=212')
+    await waitFor(() => expect(video()).not.toBeNull())
+    Object.defineProperty(video(), 'duration', { value: 596, configurable: true })
+    fireEvent.loadedMetadata(video())
+    expect(video().currentTime).toBe(212)
+  })
+
+  it('démarre au début sans position dans l’URL', async () => {
+    renderPlayer()
+    await waitFor(() => expect(video()).not.toBeNull())
+    Object.defineProperty(video(), 'duration', { value: 596, configurable: true })
+    fireEvent.loadedMetadata(video())
+    expect(video().currentTime).toBe(0)
+  })
+})
+
+describe('startFromParams', () => {
+  it.each([
+    ['', 0],
+    ['t=212', 212],
+    ['t=12.9', 12],
+    ['t=0', 0],
+    ['t=-5', 0],
+    ['t=abc', 0],
+    ['t=Infinity', 0],
+  ])('?%s → %s s', (query, expected) => {
+    expect(startFromParams(new URLSearchParams(query))).toBe(expected)
   })
 })

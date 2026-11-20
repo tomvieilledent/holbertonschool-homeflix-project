@@ -10,6 +10,17 @@ import { apiFetch } from '@/services/api'
 export const listMedia = (query = {}, signal) => apiFetch('library', '/v1/media', { query, signal })
 
 /**
+ * Détail d'un média (`GET /media/{id}`). Lève une `ApiError` `NOT_FOUND` s'il n'existe pas ou a été supprimé.
+ * @param {string} mediaId
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{id: string, title: string, description?: string|null, posterUrl?: string|null,
+ *   genres: string[], year?: number|null, durationSeconds?: number|null,
+ *   availability: 'AVAILABLE'|'UNAVAILABLE'|'DOWNLOADING', addedAt: string}>}
+ */
+export const getMedia = (mediaId, signal) =>
+  apiFetch('library', `/v1/media/${encodeURIComponent(mediaId)}`, { signal })
+
+/**
  * Genres ayant au moins un média disponible (`GET /genres`), pour le sélecteur de filtre.
  * @param {AbortSignal} [signal]
  * @returns {Promise<string[]>}
