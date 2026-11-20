@@ -14,6 +14,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByUsername(String username);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Account a where a.id = :id")
+    Optional<Account> findForUpdateById(@org.springframework.data.repository.query.Param("id") UUID id);
+
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);

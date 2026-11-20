@@ -92,6 +92,15 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 - **Réglages appliqués à chaque démarrage** par `homeflix/transmission/init-settings.sh` (monté dans `/custom-cont-init.d`) : Transmission réécrit `settings.json` à l'arrêt, donc on le corrige avec `jq` plutôt que de le monter. Scripts « torrent terminé », dossier surveillé et redirection de port (UPnP) désactivés.
 - **Dossier des fichiers terminés : `/downloads/complete`** (les partiels sont dans `/downloads/incomplete`, suffixe `.part`). C'est ce dossier qu'il faut déclarer comme racine dans Library : les fichiers incomplets n'apparaissent jamais dans le catalogue.
 
+- **Adaptateur dans Acquisition (#74)** : le reste du service ne connaît que l'interface `TorrentClient` (`add`, `status`, `cancel`) ; `TransmissionClient` en est l'implémentation RPC.
+  - Le torrent est identifié par son **infohash** (minuscules, stocké dans `downloads.torrent_id`, jamais exposé).
+  - **Destination imposée** par la configuration (`/downloads/complete`) à chaque ajout ; l'appelant ne la choisit pas.
+  - **Magnet uniquement** (`magnet:?xt=urn:btih:…`) : Transmission suit aussi des URL et des chemins de fichiers locaux, ce qui donnerait accès à des services internes (SSRF). Tout autre texte est refusé sans appel au client.
+  - Poignée de main `X-Transmission-Session-Id` (409 puis une nouvelle tentative), délais de 3 s, identifiants jamais journalisés ; client arrêté, lent ou qui refuse les identifiants : 503 `TORRENT_CLIENT_UNAVAILABLE`.
+  - **États** : 100 % n'est affiché qu'à la fin (`COMPLETED`) ; un lien magnet sans métadonnées n'est pas « terminé » (sa taille est nulle). `NO_PEERS` se décide dans la synchronisation (#99), qui connaît la durée d'attente.
+  - **Annulation** : un téléchargement non terminé perd ses données partielles ; un torrent **terminé est retiré sans effacer son fichier** (il peut être indexé par Library).
+  - **Fichiers terminés** : chemins relatifs à `/downloads` (par exemple `complete/Sintel/Sintel.mp4`) ; un torrent peut contenir plusieurs fichiers (sous-titres) : la synchronisation choisit la vidéo.
+
 ### 7. Healthchecks et démarrage ordonné
 
 - `db` : `pg_isready`. Les services dépendent de `db` avec `condition: service_healthy`.
