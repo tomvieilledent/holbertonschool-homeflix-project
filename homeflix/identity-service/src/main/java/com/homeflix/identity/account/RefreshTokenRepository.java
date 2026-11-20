@@ -1,11 +1,13 @@
 package com.homeflix.identity.account;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,4 +23,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     Optional<RefreshToken> findForUpdateByTokenHash(@Param("hash") String hash);
 
     List<RefreshToken> findByFamilyId(UUID familyId);
+
+    /** Révoque d'un coup toutes les sessions encore valides d'un compte. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update RefreshToken t set t.revokedAt = :now where t.account.id = :accountId and t.revokedAt is null")
+    int revokeAllOfAccount(@Param("accountId") UUID accountId, @Param("now") Instant now);
 }

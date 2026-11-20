@@ -1,5 +1,6 @@
 package com.homeflix.identity.account;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,4 +24,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsByRoleName(String roleName);
 
     long countByRoleNameAndEnabledTrue(String roleName);
+
+    /** Verrouille tous les administrateurs : sérialise les opérations qui peuvent supprimer le dernier. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a.id from Account a where a.role.name = 'ADMIN'")
+    List<UUID> lockAdmins();
 }
