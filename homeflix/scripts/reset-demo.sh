@@ -66,8 +66,18 @@ fi
 if [ "${#demo_password}" -lt 12 ] || [ "${#demo_password}" -gt 128 ]; then
   die "DEMO_PASSWORD doit faire entre 12 et 128 caractères."
 fi
+# Le mot de passe est inséré tel quel dans du JSON : ces caractères casseraient la création des comptes, APRÈS l'effacement.
+case "$demo_password" in
+  *\"* | *\\*) die "DEMO_PASSWORD ne doit contenir ni guillemet (\") ni barre oblique inverse (\\). Rien n'a été effacé." ;;
+esac
+if [[ "$demo_password" =~ [[:cntrl:]] ]]; then
+  die "DEMO_PASSWORD ne doit contenir aucun caractère de contrôle (retour à la ligne, tabulation…). Rien n'a été effacé."
+fi
 
 echo "Reset de la pile « ${COMPOSE_PROJECT_NAME:-homeflix} » (http://localhost:$FRONTEND_PORT) : TOUTES ses données vont être effacées."
+if [ "${COMPOSE_PROJECT_NAME:-homeflix}" = homeflix ]; then
+  echo "ATTENTION : c'est la pile PRINCIPALE « homeflix ». Si elle sert pour de vrai, tous ses comptes, profils, favoris et progressions seront perdus, sans retour possible."
+fi
 if [ "$assume_yes" != 1 ]; then
   [ -t 0 ] || die "pas de terminal pour confirmer : relancez avec --yes pour continuer sans confirmation. Rien n'a été effacé."
   read -r -p "Taper RESET pour continuer : " answer
@@ -101,6 +111,9 @@ expect() {
   sed 's/^/         /' "$work/body" 2> /dev/null | head -5 >&2
   exit 1
 }
+
+# Un ancien fichier de mots de passe ne correspondrait plus à rien si le script échoue en route : on le supprime d'abord.
+rm -f .demo-credentials
 
 step "1. Effacement des données (docker compose down -v)"
 dc down -v --remove-orphans > /dev/null 2>&1 || die "docker compose down -v a échoué."

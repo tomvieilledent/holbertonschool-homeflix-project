@@ -38,13 +38,13 @@ Le script déclare aussi les dossiers `/media` (films de démonstration) et `/do
 
 ### Le mot de passe de démonstration
 
-Il n'est écrit nulle part dans le dépôt : le script en tire un **au hasard à chaque reset**, le même pour les trois comptes. Il l'affiche à la fin et l'enregistre dans `homeflix/.demo-credentials` (droits 600, ignoré par Git). Pour en imposer un, de 12 à 128 caractères : `DEMO_PASSWORD=... ./scripts/reset-demo.sh --yes`.
+Il n'est écrit nulle part dans le dépôt : le script en tire un **au hasard à chaque reset**, le même pour les trois comptes. Il l'affiche à la fin et l'enregistre dans `homeflix/.demo-credentials` (droits 600, ignoré par Git). Pour en imposer un, de 12 à 128 caractères, sans guillemet (`"`), sans barre oblique inverse (`\`) ni caractère de contrôle : `DEMO_PASSWORD=... ./scripts/reset-demo.sh --yes`. Le fichier `.demo-credentials` est supprimé au début de chaque reset : s'il existe, il correspond au dernier reset réussi.
 
 Conséquence pratique : après chaque reset, relire le mot de passe (affiché par le script, ou `cat homeflix/.demo-credentials`).
 
 ## Garde-fous
 
-Le script refuse de continuer, **sans rien effacer**, dans ces cas : pas de confirmation (ou réponse autre que `RESET`), aucun film dans `MEDIA_DIR`, mot de passe imposé hors des 12 à 128 caractères, option inconnue. Il avertit si `demo-media/` contient Sintel : pour la démonstration du téléchargement P2P ([`legal/P2P_DEMO.md`](legal/P2P_DEMO.md)), Sintel doit arriver par BitTorrent.
+Le script refuse de continuer, **sans rien effacer**, dans ces cas : pas de confirmation (ou réponse autre que `RESET`), aucun film dans `MEDIA_DIR`, mot de passe imposé hors des 12 à 128 caractères ou contenant un guillemet, une barre oblique inverse ou un caractère de contrôle, option inconnue. Il avertit si `demo-media/` contient Sintel : pour la démonstration du téléchargement P2P ([`legal/P2P_DEMO.md`](legal/P2P_DEMO.md)), Sintel doit arriver par BitTorrent.
 
 Il agit sur le projet Docker courant (`homeflix` par défaut). Pour l'essayer sans toucher à votre vraie pile : `COMPOSE_PROJECT_NAME=autre-nom FRONTEND_PORT=8097 ./scripts/reset-demo.sh --yes`.
 
@@ -56,7 +56,7 @@ Mesures sur un portable de développement, images déjà construites, 6 resets c
 
 ## Incident observé : un service Java qui plante au démarrage
 
-Sur la machine de développement, un démarrage sur trois environ a vu un service Java (Identity ou Acquisition) s'arrêter avec le code 139 (plantage de la JVM, une fois précédé d'une erreur de lecture d'un fichier de classe). La politique de redémarrage le relance et il devient `healthy`, mais `docker compose up --wait` abandonne dès le premier échec. Le script réessaie donc jusqu'à 5 fois, 20 secondes d'écart. La cause du plantage n'est pas établie (le test de fumée de la CI ne l'a jamais montré) ; c'est un point à surveiller avant la soutenance.
+Sur la machine de développement, 2 démarrages sur 7 ont vu un service Java (Identity ou Acquisition) s'arrêter avec le code 139 (plantage de la JVM, une fois précédé d'une erreur de lecture d'un fichier de classe). La politique de redémarrage le relance et il devient `healthy`, mais `docker compose up --wait` abandonne dès le premier échec. Le script réessaie donc jusqu'à 5 fois, 20 secondes d'écart. La cause du plantage n'est pas établie (le test de fumée de la CI ne l'a jamais montré) ; c'est un point à surveiller avant la soutenance.
 
 ## Ce qui a été vérifié
 
