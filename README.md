@@ -136,12 +136,14 @@ curl -s -X POST "$BASE/api/identity/v1/profiles" -H "Authorization: Bearer $TOKE
 
 ### Ajouter un proche
 
-L'administrateur crée un compte (rôle `USER`) ; la personne se connecte ensuite sur http://localhost:8080 et crée son profil avec la commande ci-dessus, en utilisant **son** jeton :
+L'administrateur crée un compte (rôle `USER`) ; la personne se connecte ensuite sur http://localhost:8080 et crée son profil avec la commande ci-dessus, en utilisant **son** jeton. Le mot de passe (12 caractères minimum) est saisi sans s'afficher et n'est écrit nulle part :
 
 ```bash
+read -r -p "Identifiant du proche : " NEWUSER; read -r -p "Adresse e-mail : " NEWMAIL
+read -r -s -p "Mot de passe (12 caractères minimum) : " NEWPASS; echo
 curl -s -X POST "$BASE/api/identity/v1/admin/accounts" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"username":"lea","email":"lea@example.com","password":"un-mot-de-passe-de-12-car","role":"USER"}'
+  -d "{\"username\":\"$NEWUSER\",\"email\":\"$NEWMAIL\",\"password\":\"$NEWPASS\",\"role\":\"USER\"}"
 ```
 
 ### Regarder un film

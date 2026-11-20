@@ -11,5 +11,6 @@ useDefault = true
 description = "Valeurs factices des exemples OpenAPI et des fixtures"
 regexes = [
   '''un-mot-de-passe-long-12''',
+  '''un-mot-de-passe-de-12-car''',  # exemple factice de la première version du README (historique du commit)
   '''eyJhbGciOiJSUzI1NiJ9\.fixture\.signature''',
 ]
