@@ -55,6 +55,7 @@ class JwksTimeoutTests {
 
     @MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
     @MockitoBean MediaItemRepository mediaItemRepository;
+    @MockitoBean com.homeflix.library.viewing.ProgressRepository progressRepository;
     @MockitoBean MediaMetadataRepository mediaMetadataRepository;
     @MockitoBean com.homeflix.library.viewing.FavouriteRepository favouriteRepository;
 
