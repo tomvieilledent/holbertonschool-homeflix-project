@@ -159,6 +159,10 @@ jobs:
       - name: En-têtes de sécurité et blocages du proxy
         if: hashFiles('homeflix/scripts/check-security-headers.sh') != ''
         run: ./homeflix/scripts/check-security-headers.sh
+      # Montages, utilisateurs, ports, réseaux, secrets et durcissement des conteneurs (#90). Trivy n'est pas lancé ici.
+      - name: Audit de sécurité des conteneurs
+        if: hashFiles('homeflix/scripts/security-audit.sh') != ''
+        run: ./homeflix/scripts/security-audit.sh
       - name: Arrêter la pile
         if: always() && hashFiles('homeflix/scripts/smoke.sh') != ''
         working-directory: homeflix

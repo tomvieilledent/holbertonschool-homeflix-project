@@ -1,6 +1,16 @@
 name: homeflix
 
+# Durcissement commun (audit : docs/SECURITY_AUDIT.md) : aucune capacité Linux, pas d'élévation de privilèges, système
+# de fichiers en lecture seule (seul /tmp, en mémoire, est inscriptible). PostgreSQL et Transmission en sont exclus :
+# leurs images démarrent en root pour préparer leurs dossiers puis abandonnent leurs privilèges.
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  read_only: true
+  tmpfs: ["/tmp"]
+
 x-service: &service
+  <<: *hardening
   restart: unless-stopped
   networks: [internal]
   depends_on:
@@ -124,6 +134,7 @@ services:
       start_period: 20s
 
   frontend:
+    <<: *hardening
     build: ./frontend
     restart: unless-stopped
     networks: [internal]
