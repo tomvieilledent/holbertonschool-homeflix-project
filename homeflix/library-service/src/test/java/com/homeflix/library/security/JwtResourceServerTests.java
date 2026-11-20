@@ -66,6 +66,7 @@ class JwtResourceServerTests {
 
     @MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
     @MockitoBean MediaItemRepository mediaItemRepository;
+    @MockitoBean com.homeflix.library.viewing.ProgressRepository progressRepository;
     @MockitoBean MediaMetadataRepository mediaMetadataRepository;
 
     @Autowired MockMvc mvc;

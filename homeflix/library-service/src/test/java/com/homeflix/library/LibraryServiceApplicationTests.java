@@ -28,6 +28,7 @@ class LibraryServiceApplicationTests {
 	@MockitoBean MediaRootRepository mediaRootRepository;
 	@MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
 	@MockitoBean MediaItemRepository mediaItemRepository;
+	@MockitoBean com.homeflix.library.viewing.ProgressRepository progressRepository;
 	@MockitoBean MediaMetadataRepository mediaMetadataRepository;
 
 	@Test
