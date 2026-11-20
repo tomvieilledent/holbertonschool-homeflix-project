@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /** Règles de détection des vidéos : extension reconnue et titre dérivé du nom de fichier. */
-final class VideoFiles {
+public final class VideoFiles {
 
     /** mp4 est le format documenté ; mkv et webm sont indexés mais la lecture n'est pas garantie par tous les navigateurs. */
     static final Set<String> EXTENSIONS = Set.of("mp4", "mkv", "webm");
@@ -15,7 +15,7 @@ final class VideoFiles {
     private VideoFiles() {
     }
 
-    static boolean isVideo(Path file) {
+    public static boolean isVideo(Path file) {
         String name = file.getFileName().toString();
         if (name.startsWith(".")) {
             return false; // fichiers cachés et métadonnées système (« ._film.mp4 » de macOS)
@@ -25,7 +25,7 @@ final class VideoFiles {
     }
 
     /** « big_buck_bunny.2008.mp4 » devient « big buck bunny 2008 » : le nom sans extension, séparateurs en espaces. */
-    static String titleFrom(String relativePath) {
+    public static String titleFrom(String relativePath) {
         String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
         int dot = name.lastIndexOf('.');
         String base = dot > 0 ? name.substring(0, dot) : name;
