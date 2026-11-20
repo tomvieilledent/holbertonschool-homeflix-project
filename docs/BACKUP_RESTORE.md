@@ -103,4 +103,4 @@ Le script [`test-backup-restore.sh`](../homeflix/scripts/test-backup-restore.sh)
 ./scripts/test-backup-restore.sh      # quelques minutes (la pile démarre deux fois)
 ```
 
-Voir aussi : le script `test-persistence.sh` (issue #89), qui vérifie que les données survivent à un simple redémarrage des conteneurs, sans sauvegarde.
+Voir aussi : le script [`test-persistence.sh`](../homeflix/scripts/test-persistence.sh) (issue #89), qui vérifie que les données survivent à un simple redémarrage des conteneurs, sans sauvegarde.
