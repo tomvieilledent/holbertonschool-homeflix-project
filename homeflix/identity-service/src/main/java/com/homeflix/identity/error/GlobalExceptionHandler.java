@@ -42,6 +42,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             ex.getMessage(), req.getRequestURI()));
     }
 
+    @ExceptionHandler(RateLimitedException.class)
+    ResponseEntity<ProblemDetail> rateLimited(RateLimitedException ex, HttpServletRequest req) {
+        return ResponseEntity.status(ex.status()).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+            .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds()))
+            .body(ProblemResponses.problem(ex.status(), ex.code(), ex.title(), ex.getMessage(), req.getRequestURI()));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> conflict(HttpServletRequest req) {
         return respond(HttpStatus.CONFLICT, ProblemResponses.problem(HttpStatus.CONFLICT,
