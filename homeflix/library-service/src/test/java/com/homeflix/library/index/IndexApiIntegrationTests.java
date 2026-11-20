@@ -182,6 +182,60 @@ class IndexApiIntegrationTests {
 		assertThat(count()).isEqualTo(2);
 	}
 
+	private Instant lastSeen(String relativePath) {
+		return jdbc.queryForObject("select last_seen_at from media_items where relative_path = ?",
+				java.sql.Timestamp.class, relativePath).toInstant();
+	}
+
+	@Test
+	void everyScanRefreshesLastSeenAtOfTheFilesItSees() throws Exception {
+		video("a.mp4", "1");
+		scan();
+		Instant firstScan = lastSeen("a.mp4");
+
+		scan(); // fichier inchangé : seule la date de passage doit bouger
+		Instant secondScan = lastSeen("a.mp4");
+
+		assertThat(secondScan).isAfter(firstScan);
+		assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'a.mp4'", String.class)).isEqualTo("AVAILABLE");
+	}
+
+	@Test
+	void aMissingFileKeepsItsLastSeenAtThenRefreshesItWhenItComesBack() throws Exception {
+		Path file = video("a.mp4", "1");
+		video("b.mp4", "2");
+		scan();
+		Instant seenBeforeDeletion = lastSeen("a.mp4");
+
+		Files.delete(file);
+		scan();
+		scan();
+		// Absent : on garde la date de la dernière fois où il a été vu, pour savoir depuis quand il manque.
+		assertThat(lastSeen("a.mp4")).isEqualTo(seenBeforeDeletion);
+		assertThat(lastSeen("b.mp4")).isAfter(seenBeforeDeletion);
+
+		video("a.mp4", "1");
+		scan();
+		assertThat(lastSeen("a.mp4")).isAfter(seenBeforeDeletion);
+	}
+
+	@Test
+	void anEditedTitleSurvivesUnavailabilityAndReturn() throws Exception {
+		Path file = video("a.mp4", "1");
+		scan();
+		jdbc.update("update media_metadata set title = 'Titre corrigé', edited = true");
+
+		Files.delete(file);
+		scan();
+		assertThat(jdbc.queryForObject("select title from media_metadata", String.class)).isEqualTo("Titre corrigé");
+		assertThat(jdbc.queryForObject("select count(*) from media_metadata", Integer.class)).isEqualTo(1);
+
+		video("a.mp4", "1");
+		scan();
+		assertThat(jdbc.queryForObject("select title from media_metadata", String.class)).isEqualTo("Titre corrigé");
+		assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'a.mp4'", String.class)).isEqualTo("AVAILABLE");
+	}
+
 	@Test
 	void aFileWhoseProcessingFailedIsNotDeclaredUnavailable() throws Exception {
 		video("a.mp4", "1");
