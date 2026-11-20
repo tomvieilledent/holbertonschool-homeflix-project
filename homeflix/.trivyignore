@@ -4,5 +4,6 @@
 # CVE-2025-68121 : bibliothèque standard Go (crypto/tls) du binaire « gosu » de l'image postgres:17-alpine.
 # gosu ne sert qu'à abandonner les privilèges au démarrage du conteneur : il n'ouvre aucune connexion TLS, ni entrante ni
 # sortante. La base n'est de toute façon publiée sur aucun port. Pas de correctif dans l'image publiée (la plus récente
-# date du 2026-11-18). À réexaminer à chaque nouvelle image PostgreSQL 17.
+# date du 2026-11-18).
+# Réexamen prévu le 2026-11-26 (veille de la soutenance), puis à chaque nouvelle image PostgreSQL 17.
 CVE-2025-68121
