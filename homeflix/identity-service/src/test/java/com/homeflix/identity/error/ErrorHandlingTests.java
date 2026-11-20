@@ -31,6 +31,7 @@ class ErrorHandlingTests {
 
     @MockitoBean SetupService setupService;
     @MockitoBean AuthService authService;
+    @MockitoBean com.homeflix.identity.admin.AdminAccountService adminAccountService;
 
     @Autowired
     MockMvc mvc;

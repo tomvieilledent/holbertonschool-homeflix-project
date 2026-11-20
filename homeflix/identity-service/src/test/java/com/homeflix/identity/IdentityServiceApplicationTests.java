@@ -21,6 +21,7 @@ class IdentityServiceApplicationTests {
 
     @MockitoBean SetupService setupService;
     @MockitoBean AuthService authService;
+    @MockitoBean com.homeflix.identity.admin.AdminAccountService adminAccountService;
 
 	@Autowired
 	MockMvc mockMvc;

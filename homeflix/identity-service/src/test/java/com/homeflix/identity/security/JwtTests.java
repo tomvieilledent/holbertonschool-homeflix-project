@@ -35,6 +35,7 @@ class JwtTests {
 
     @MockitoBean SetupService setupService;
     @MockitoBean AuthService authService;
+    @MockitoBean com.homeflix.identity.admin.AdminAccountService adminAccountService;
 
     @Autowired JwtService jwtService;
     @Autowired SigningKeyProvider keys;
@@ -92,7 +93,7 @@ class JwtTests {
         String admin = jwtService.issueAccessToken(UUID.randomUUID(), List.of("ADMIN"), null);
         mvc.perform(get("/api/v1/admin/accounts").header("Authorization", "Bearer " + user))
             .andExpect(status().isForbidden());
-        mvc.perform(get("/api/v1/admin/accounts").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/admin/inconnu").header("Authorization", "Bearer " + admin))
             .andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/profiles").header("Authorization", "Bearer garbage"))
             .andExpect(status().isUnauthorized());
