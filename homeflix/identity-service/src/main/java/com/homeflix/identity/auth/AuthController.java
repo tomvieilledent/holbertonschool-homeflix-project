@@ -44,21 +44,20 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
             HttpServletRequest http) {
-        String ip = clientIp(http);
-        Duration wait = throttle.retryAfter(request.username(), ip);
-        if (wait != null) {
-            throw new RateLimitedException(wait);
+        LoginThrottle.Attempt attempt = throttle.begin(request.username(), clientIp(http));
+        if (attempt.blocked()) {
+            throw new RateLimitedException(attempt.retryAfter());
         }
         AuthService.Session session;
         try {
             session = auth.login(request);
         } catch (ApiException e) {
-            if ("AUTH_INVALID_CREDENTIALS".equals(e.code())) {
-                throttle.recordFailure(request.username(), ip);
+            if (!"AUTH_INVALID_CREDENTIALS".equals(e.code())) {
+                throttle.succeed(attempt); // mot de passe correct (ex. compte désactivé) : pas un échec
             }
             throw e;
         }
-        throttle.reset(request.username());
+        throttle.succeed(attempt);
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, refreshCookie(session.refreshToken()).toString())
             .body(session.tokens());

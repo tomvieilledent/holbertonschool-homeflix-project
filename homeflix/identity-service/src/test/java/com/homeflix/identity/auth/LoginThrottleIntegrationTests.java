@@ -102,6 +102,37 @@ class LoginThrottleIntegrationTests {
     }
 
     @Test
+    void aBurstOfConcurrentAttemptsCannotExceedTheLimit() throws Exception {
+        int attempts = 40;
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(attempts);
+        var ready = new java.util.concurrent.CountDownLatch(attempts);
+        var go = new java.util.concurrent.CountDownLatch(1);
+        try {
+            java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+            for (int i = 0; i < attempts; i++) {
+                results.add(pool.submit(() -> {
+                    ready.countDown();
+                    go.await();
+                    return login("alice", WRONG).andReturn().getResponse().getStatus();
+                }));
+            }
+            ready.await();
+            go.countDown();
+            int unauthorized = 0;
+            int limited = 0;
+            for (var f : results) {
+                int status = f.get();
+                if (status == 401) unauthorized++;
+                if (status == 429) limited++;
+            }
+            assertThat(unauthorized).isEqualTo(5);
+            assertThat(limited).isEqualTo(attempts - 5);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
     void afterFiveFailuresTheSixthAttemptGets429WithRetryAfter() throws Exception {
         failFiveTimes("alice");
         login("alice", WRONG).andExpect(status().isTooManyRequests())
@@ -176,6 +207,6 @@ class LoginThrottleIntegrationTests {
             login("cible" + i, WRONG).andExpect(status().isUnauthorized());
         }
         login("cible-nouvelle", WRONG).andExpect(status().isTooManyRequests());
-        assertThat(throttle.retryAfter("autre", ip)).isNotNull();
+        assertThat(throttle.begin("autre", ip).blocked()).isTrue();
     }
 }

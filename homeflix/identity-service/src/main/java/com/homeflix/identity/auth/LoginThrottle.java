@@ -12,13 +12,21 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * Limitation des tentatives de connexion, en mémoire : 5 échecs en 5 minutes pour un même identifiant, 20 pour une
- * même adresse IP (plus large : plusieurs foyers peuvent partager une adresse). Au-delà, les tentatives sont
- * refusées jusqu'à ce que l'échec le plus ancien sorte de la fenêtre.
+ * Limitation des tentatives de connexion, en mémoire : 5 tentatives en 5 minutes pour un même identifiant, 20 pour
+ * une même adresse IP (plus large : plusieurs foyers peuvent partager une adresse). Au-delà, les tentatives sont
+ * refusées jusqu'à ce que la plus ancienne sorte de la fenêtre.
+ *
+ * <p>La tentative est <b>comptée avant</b> la vérification du mot de passe, dans la même section synchronisée que le
+ * contrôle de la limite : une rafale de requêtes simultanées ne peut pas dépasser la limite (sinon toutes verraient
+ * « 0 échec »). Une connexion réussie annule sa propre tentative et remet à zéro le compteur de l'identifiant.
  *
  * <p>Le refus ne dépend que de l'identifiant saisi, jamais de l'existence du compte : la réponse est la même pour
  * un compte inconnu. Une connexion réussie remet à zéro le compteur de l'identifiant (pas celui de l'IP, sinon un
  * attaquant le réinitialiserait avec son propre compte).
+ *
+ * <p>Compromis connus : n'importe qui peut verrouiller un compte (5 essais depuis n'importe quelle adresse refusent
+ * aussi le bon mot de passe, 5 minutes, renouvelable) ; après 20 tentatives, toutes les connexions de la même adresse
+ * sont refusées ; « Lea » et « lea » partagent la même clé de verrou (minuscules).
  *
  * <p>Limite assumée (MVP) : l'état est perdu au redémarrage et n'est pas partagé entre instances ; une seule
  * instance d'Identity tourne.
@@ -40,24 +48,43 @@ public class LoginThrottle {
         this.clock = clock;
     }
 
-    /** Durée à attendre avant une nouvelle tentative, ou {@code null} si elle est autorisée. */
-    public synchronized Duration retryAfter(String username, String ip) {
+    /** Résultat de {@link #begin} : tentative refusée (délai d'attente) ou comptée (à annuler en cas de succès). */
+    public record Attempt(Duration retryAfter, Instant at, String username, String ip) {
+        public boolean blocked() {
+            return retryAfter != null;
+        }
+    }
+
+    /**
+     * Contrôle la limite et, si la tentative est permise, la compte aussitôt (opération atomique). Une tentative
+     * refusée n'est pas comptée.
+     */
+    public synchronized Attempt begin(String username, String ip) {
         Instant now = clock.instant();
         Duration user = remaining(byUser, userKey(username), MAX_FAILURES_PER_USER, now);
         Duration addr = remaining(byIp, ip, MAX_FAILURES_PER_IP, now);
-        if (user == null) {
-            return addr;
+        if (user != null || addr != null) {
+            Duration wait = user == null ? addr : addr == null || user.compareTo(addr) >= 0 ? user : addr;
+            return new Attempt(wait, now, username, ip);
         }
-        return addr == null || user.compareTo(addr) >= 0 ? user : addr;
-    }
-
-    public synchronized void recordFailure(String username, String ip) {
-        Instant now = clock.instant();
         if (byUser.size() > MAX_KEYS || byIp.size() > MAX_KEYS) {
             purge(now);
         }
         byUser.computeIfAbsent(userKey(username), k -> new ArrayDeque<>()).addLast(now);
         byIp.computeIfAbsent(ip, k -> new ArrayDeque<>()).addLast(now);
+        return new Attempt(null, now, username, ip);
+    }
+
+    /** Mot de passe correct : la tentative ne compte pas pour l'IP et le compteur de l'identifiant repart à zéro. */
+    public synchronized void succeed(Attempt attempt) {
+        byUser.remove(userKey(attempt.username()));
+        Deque<Instant> failures = byIp.get(attempt.ip());
+        if (failures != null) {
+            failures.removeFirstOccurrence(attempt.at());
+            if (failures.isEmpty()) {
+                byIp.remove(attempt.ip());
+            }
+        }
     }
 
     public synchronized void reset(String username) {
