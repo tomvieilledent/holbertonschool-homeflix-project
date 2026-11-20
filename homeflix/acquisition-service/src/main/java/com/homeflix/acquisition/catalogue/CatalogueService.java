@@ -12,12 +12,20 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+
+import com.homeflix.acquisition.api.ApiException;
 import com.homeflix.acquisition.download.Download;
 import com.homeflix.acquisition.download.DownloadRepository;
 import com.homeflix.acquisition.download.DownloadState;
+import com.homeflix.acquisition.source.MagnetSource;
 
 @Service
 public class CatalogueService {
+
+    private static final Logger log = LoggerFactory.getLogger(CatalogueService.class);
 
     private final CatalogueEntryRepository entries;
     private final DownloadRepository downloads;
@@ -51,5 +59,36 @@ public class CatalogueService {
         // n'est encore remis à Library, donc aucune entrée n'est « déjà dans la bibliothèque ».
         return new CatalogueEntryResponse(entry.getId(), entry.getTitle(), entry.getSource(), entry.getLicense(),
                 entry.getLicenseProofUrl(), entry.getSizeBytes(), false, null, activeDownloadId);
+    }
+
+    /**
+     * Source d'un téléchargement : la seule entrée possible est un identifiant du catalogue autorisé. Le lien magnet
+     * est lu en base (jamais fourni par le client) et revalidé : format strict et cohérence avec l'infohash.
+     *
+     * @throws ApiException 404 si l'identifiant est inconnu ; 409 si l'entrée en base est corrompue (jamais téléchargée)
+     */
+    @Transactional(readOnly = true)
+    public DownloadSource sourceFor(UUID entryId) {
+        CatalogueEntry entry = entries.findById(entryId)
+                .orElseThrow(() -> ApiException.notFound("Cette entrée du catalogue est introuvable."));
+        if (!MagnetSource.isConsistent(entry.getMagnetUri(), entry.getInfohash())) {
+            log.error("Entrée de catalogue {} refusée : lien magnet ou infohash invalide", entry.getId());
+            throw new ApiException(HttpStatus.CONFLICT, "CONFLICT", "Entrée indisponible",
+                    "Cette entrée du catalogue ne peut pas être téléchargée.");
+        }
+        return new DownloadSource(entry.getId(), entry.getTitle(), entry.getMagnetUri(), entry.getInfohash());
+    }
+
+    /** Contrôle au démarrage : les entrées dont la source est invalide sont signalées dans les journaux. */
+    @Transactional(readOnly = true)
+    public int countInvalidSources() {
+        int invalid = 0;
+        for (CatalogueEntry entry : entries.findAll()) {
+            if (!MagnetSource.isConsistent(entry.getMagnetUri(), entry.getInfohash())) {
+                invalid++;
+                log.error("Catalogue : l'entrée {} a un lien magnet ou un infohash invalide", entry.getId());
+            }
+        }
+        return invalid;
     }
 }

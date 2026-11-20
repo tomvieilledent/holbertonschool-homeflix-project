@@ -51,10 +51,13 @@ class JwksTimeoutTests {
     private static ServerSocket silentIdentity;
 
     @MockitoBean MediaRootRepository mediaRootRepository;
+    @MockitoBean com.homeflix.library.internal.InternalService internalService;
 
     @MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
     @MockitoBean MediaItemRepository mediaItemRepository;
+    @MockitoBean com.homeflix.library.viewing.ProgressRepository progressRepository;
     @MockitoBean MediaMetadataRepository mediaMetadataRepository;
+    @MockitoBean com.homeflix.library.viewing.FavouriteRepository favouriteRepository;
 
     @Autowired MockMvc mvc;
 

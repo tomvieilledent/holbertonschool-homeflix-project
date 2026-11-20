@@ -26,9 +26,12 @@ class LibraryServiceApplicationTests {
 	// Profil « test » : pas de base de données, donc pas de repositories JPA. Les dossiers autorisés et
 	// leurs règles sont testés avec un vrai PostgreSQL dans MediaRootApiIntegrationTests.
 	@MockitoBean MediaRootRepository mediaRootRepository;
+	@MockitoBean com.homeflix.library.internal.InternalService internalService;
 	@MockitoBean com.homeflix.library.catalogue.MediaCatalogueRepository mediaCatalogueRepository;
 	@MockitoBean MediaItemRepository mediaItemRepository;
+	@MockitoBean com.homeflix.library.viewing.ProgressRepository progressRepository;
 	@MockitoBean MediaMetadataRepository mediaMetadataRepository;
+	@MockitoBean com.homeflix.library.viewing.FavouriteRepository favouriteRepository;
 
 	@Test
 	void contextLoads() {

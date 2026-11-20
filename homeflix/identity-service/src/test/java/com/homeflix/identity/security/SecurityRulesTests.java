@@ -26,6 +26,8 @@ class SecurityRulesTests {
 
     @MockitoBean SetupService setupService;
     @MockitoBean AuthService authService;
+    @MockitoBean com.homeflix.identity.admin.AdminAccountService adminAccountService;
+    @MockitoBean com.homeflix.identity.profile.ProfileService profileService;
 
     @Autowired
     MockMvc mvc;
@@ -53,8 +55,8 @@ class SecurityRulesTests {
     @Test
     @WithMockUser(roles = "ADMIN")
     void adminPassesSecurityOnAdminRoute() throws Exception {
-        // Aucun contrôleur encore : 404 problem+json (et non 401/403) prouve que la sécurité a laissé passer.
-        mvc.perform(get("/api/v1/admin/accounts"))
+        // Route inexistante sous /admin : 404 problem+json (et non 401/403) prouve que la sécurité a laissé passer.
+        mvc.perform(get("/api/v1/admin/inconnu"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }

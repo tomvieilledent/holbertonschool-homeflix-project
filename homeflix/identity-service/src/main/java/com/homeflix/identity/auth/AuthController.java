@@ -1,5 +1,7 @@
 package com.homeflix.identity.auth;
 
+import java.time.Duration;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.homeflix.identity.error.ApiException;
+import com.homeflix.identity.error.RateLimitedException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -29,15 +33,31 @@ public class AuthController {
 
     private final AuthService auth;
     private final AuthProperties props;
+    private final LoginThrottle throttle;
 
-    public AuthController(AuthService auth, AuthProperties props) {
+    public AuthController(AuthService auth, AuthProperties props, LoginThrottle throttle) {
         this.auth = auth;
         this.props = props;
+        this.throttle = throttle;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthService.Session session = auth.login(request);
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
+            HttpServletRequest http) {
+        LoginThrottle.Attempt attempt = throttle.begin(request.username(), clientIp(http));
+        if (attempt.blocked()) {
+            throw new RateLimitedException(attempt.retryAfter());
+        }
+        AuthService.Session session;
+        try {
+            session = auth.login(request);
+        } catch (ApiException e) {
+            if (!"AUTH_INVALID_CREDENTIALS".equals(e.code())) {
+                throttle.succeed(attempt); // mot de passe correct (ex. compte désactivé) : pas un échec
+            }
+            throw e;
+        }
+        throttle.succeed(attempt);
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, refreshCookie(session.refreshToken()).toString())
             .body(session.tokens());
@@ -69,6 +89,22 @@ public class AuthController {
         return ResponseEntity.noContent()
             .header(HttpHeaders.SET_COOKIE, refreshCookie("").mutate().maxAge(0).build().toString())
             .build();
+    }
+
+    /**
+     * Adresse du client : le reverse proxy écrase `X-Forwarded-For` avec l'adresse réelle (nginx.conf), le service
+     * n'est joignable que par lui ; sans l'en-tête (appel direct sur le réseau interne), l'adresse de la connexion.
+     */
+    private static String clientIp(HttpServletRequest http) {
+        String forwarded = http.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            String[] hops = forwarded.split(",");
+            String last = hops[hops.length - 1].trim();
+            if (!last.isEmpty() && last.length() <= 64) {
+                return last;
+            }
+        }
+        return http.getRemoteAddr();
     }
 
     /** Protection CSRF : un formulaire inter-sites ne peut pas envoyer cet en-tête (voir ADR 0001). */
