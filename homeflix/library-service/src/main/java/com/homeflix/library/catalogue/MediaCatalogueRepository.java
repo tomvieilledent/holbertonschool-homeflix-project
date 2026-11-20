@@ -71,6 +71,21 @@ public class MediaCatalogueRepository {
             .stream().findFirst();
     }
 
+    /** « Ma liste » d'un profil : médias non retirés, ajoutés en dernier en premier. */
+    public List<MediaView> findFavourites(UUID profileId, int limit, long offset) {
+        return jdbc.query(SELECT + " JOIN favourites f ON f.media_id = i.id"
+            + " WHERE i.deleted = false AND f.profile_id = :profileId"
+            + " ORDER BY f.added_at DESC, i.id LIMIT :limit OFFSET :offset",
+            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), MAPPER);
+    }
+
+    public long countFavourites(UUID profileId) {
+        Long total = jdbc.queryForObject("""
+            SELECT count(*) FROM favourites f JOIN media_items i ON i.id = f.media_id
+            WHERE i.deleted = false AND f.profile_id = :profileId""", new MapSqlParameterSource("profileId", profileId), Long.class);
+        return total == null ? 0 : total;
+    }
+
     /** Genres d'au moins un média disponible (les entrées retirées ne comptent pas). */
     public List<String> genres() {
         return jdbc.getJdbcOperations().queryForList("""
