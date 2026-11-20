@@ -10,4 +10,6 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
     List<Profile> findByAccountId(UUID accountId);
 
     long countByAccountId(UUID accountId);
+
+    boolean existsByIdAndAccountId(UUID id, UUID accountId);
 }

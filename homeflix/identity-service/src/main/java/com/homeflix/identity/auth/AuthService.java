@@ -7,16 +7,19 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.homeflix.identity.account.Account;
 import com.homeflix.identity.account.AccountRepository;
+import com.homeflix.identity.account.ProfileRepository;
 import com.homeflix.identity.account.RefreshToken;
 import com.homeflix.identity.account.RefreshTokenRepository;
 import com.homeflix.identity.error.ApiException;
 import com.homeflix.identity.security.JwtProperties;
 import com.homeflix.identity.security.JwtService;
+import com.homeflix.identity.setup.AccountResponse;
 
 /** Connexion : vérifie les identifiants, émet l'access token et ouvre une session de refresh. */
 @Service
@@ -28,6 +31,7 @@ public class AuthService {
 
     private final AccountRepository accounts;
     private final RefreshTokenRepository refreshTokens;
+    private final ProfileRepository profiles;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     private final JwtProperties jwtProps;
@@ -36,10 +40,11 @@ public class AuthService {
     /** Haché une fois : sert à dépenser le même temps de calcul quand le compte n'existe pas. */
     private final String dummyHash;
 
-    public AuthService(AccountRepository accounts, RefreshTokenRepository refreshTokens, PasswordEncoder encoder,
+    public AuthService(AccountRepository accounts, RefreshTokenRepository refreshTokens, ProfileRepository profiles, PasswordEncoder encoder,
             JwtService jwt, JwtProperties jwtProps, AuthProperties props, Clock clock) {
         this.accounts = accounts;
         this.refreshTokens = refreshTokens;
+        this.profiles = profiles;
         this.encoder = encoder;
         this.jwt = jwt;
         this.jwtProps = jwtProps;
@@ -116,6 +121,37 @@ public class AuthService {
     private static ApiException sessionExpired() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "SESSION_EXPIRED", "Session expirée",
             "Votre session a expiré. Reconnectez-vous.");
+    }
+
+    /**
+     * Compte et profil actif de la session (`GET /auth/me`). Le compte vient de la base (rôle, activation à jour),
+     * le profil actif du claim `pid` : il n'est renvoyé que s'il appartient encore à ce compte (un profil supprimé
+     * depuis la sélection redevient « aucun profil », l'interface redemande alors le choix).
+     *
+     * @throws ApiException 401 SESSION_EXPIRED si le compte n'existe plus ; 403 ACCOUNT_DISABLED s'il est désactivé
+     */
+    @Transactional(readOnly = true)
+    public MeResponse me(Jwt jwt) {
+        UUID accountId = parseUuid(jwt.getSubject());
+        Account account = accountId == null ? null : accounts.findById(accountId).orElse(null);
+        if (account == null) {
+            throw sessionExpired();
+        }
+        if (!account.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Compte désactivé",
+                "Ce compte est désactivé.");
+        }
+        UUID profileId = parseUuid(jwt.getClaimAsString("pid"));
+        UUID active = profileId != null && profiles.existsByIdAndAccountId(profileId, accountId) ? profileId : null;
+        return new MeResponse(AccountResponse.from(account), active);
+    }
+
+    private static UUID parseUuid(String value) {
+        try {
+            return value == null ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Émet un access token (sans profil actif) et enregistre un nouveau refresh token de la famille donnée. */
