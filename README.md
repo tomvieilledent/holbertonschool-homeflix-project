@@ -4,7 +4,7 @@ HomeFlix est une plateforme de streaming **auto-hébergée** pour un foyer : vou
 
 Projet de groupe Holberton School : microservices Java (Spring Boot), PostgreSQL, interface React, le tout lancé par Docker Compose.
 
-> **Droits d'auteur.** HomeFlix ne fournit aucun film. N'indexez et ne téléchargez que des contenus dont vous avez le droit (vos propres fichiers, films sous licence libre). Le P2P n'accorde **aucun droit** sur un contenu : voir [`docs/legal/`](docs/legal/).
+> **Droits d'auteur.** HomeFlix ne fournit aucun film. N'indexez et ne téléchargez que des contenus dont vous avez le droit (vos propres fichiers, films sous licence libre). Le P2P n'accorde **aucun droit** sur un contenu : voir [`docs/COPYRIGHT_AND_P2P.md`](docs/COPYRIGHT_AND_P2P.md) et [`docs/legal/`](docs/legal/).
 
 ## Sommaire
 
@@ -227,7 +227,7 @@ Vos comptes, profils, favoris et progressions sont conservés dans un volume Doc
 ./scripts/restore.sh backups/homeflix-backup-….tar.gz   # demande de taper RESTAURER avant d'écraser quoi que ce soit
 ```
 
-L'archive **ne contient ni vos films, ni les fichiers téléchargés, ni le fichier `.env`**. Elle contient des **données personnelles** (comptes, mots de passe hachés, historique de visionnage) : droits 600, ne la partagez pas. Détails dans l'en-tête de [`backup.sh`](homeflix/scripts/backup.sh) et [`restore.sh`](homeflix/scripts/restore.sh).
+L'archive **ne contient ni vos films, ni les fichiers téléchargés, ni le fichier `.env`**. Elle contient des **données personnelles** (comptes, mots de passe hachés, historique de visionnage) : droits 600, ne la partagez pas. Guide complet (étapes, cas particuliers, perte du `.env`) : [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md). Détails aussi dans l'en-tête de [`backup.sh`](homeflix/scripts/backup.sh) et [`restore.sh`](homeflix/scripts/restore.sh).
 
 ## 8. Dépannage
 
@@ -271,5 +271,7 @@ Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose
 | [`docs/adr/`](docs/adr/) | Décisions d'architecture (authentification et sécurité, infrastructure) |
 | [`docs/api/`](docs/api/) | Contrats OpenAPI des services et conventions d'erreur |
 | [`docs/RISKS.md`](docs/RISKS.md) | Registre des risques |
+| [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) | Sauvegarde et restauration des données, cas particuliers |
+| [`docs/COPYRIGHT_AND_P2P.md`](docs/COPYRIGHT_AND_P2P.md) | Droit d'auteur et P2P : ce que le P2P n'autorise pas, mesures de HomeFlix, rappel des droits |
 | [`docs/legal/`](docs/legal/) | Licences des films de démonstration et du fichier P2P |
 | [`docs/AI_AGENT_ROLE.md`](docs/AI_AGENT_ROLE.md) | Rôle de l'agent IA relecteur |
