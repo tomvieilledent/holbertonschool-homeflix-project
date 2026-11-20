@@ -35,6 +35,7 @@ class JwtTests {
 
     @MockitoBean SetupService setupService;
     @MockitoBean AuthService authService;
+    @MockitoBean com.homeflix.identity.profile.ProfileService profileService;
 
     @Autowired JwtService jwtService;
     @Autowired SigningKeyProvider keys;
