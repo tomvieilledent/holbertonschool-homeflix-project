@@ -1,7 +1,96 @@
-# API interne de Library (`/internal/**`)
+# Communications entre services
 
-Appels de service à service (ADR 0001, décision 6). **Jamais exposée à l'extérieur** : le reverse proxy répond 404 à
-tout chemin `/internal` (avec ou sans préfixe `/api/<service>`).
+Tous les appels de service à service de HomeFlix : qui appelle qui, avec quelle authentification, ce qui se passe en cas de panne. Les appels passent par le réseau Docker `internal` ; le reverse proxy ne route **jamais** `/internal` ni `/actuator` (404, voir ADR 0001 et 0002). Les routes de Library sont détaillées plus bas.
+
+## Vue d'ensemble
+
+| # | Émetteur | Récepteur | Appel | Authentification | Délais | Si le récepteur est en panne | État |
+|---|---|---|---|---|---|---|---|
+| 1 | Library, Acquisition | Identity | `GET /.well-known/jwks.json` (clés publiques, mises en cache) | aucune (clés publiques) | 3 s (`IDENTITY_JWKS_TIMEOUT`) | `503 IDENTITY_UNAVAILABLE` sur la requête en cours ; un jeton déjà vérifié avec une clé en cache continue de passer | fait |
+| 2 | Identity | Library | `POST /internal/purge` portée `PROFILE` (suppression d'un profil) | `X-Internal-Key` | 2 s connexion, 5 s lecture, 1 tentative | `503 LIBRARY_UNAVAILABLE` : **rien n'est supprimé**, l'appel se rejoue tel quel | fait (#59) |
+| 3 | Identity | Library | `POST /internal/purge` portée `ACCOUNT` (suppression d'un compte) | `X-Internal-Key` | idem | idem | fait (#97) |
+| 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | à fixer avec #99 | le téléchargement continue ; la synchronisation (#99) réessaie | côté Library fait (#72), client Acquisition : #99 |
+| 5 | Acquisition | Library | `POST /internal/downloads/completed` (téléchargement terminé) | `X-Internal-Key` | à fixer avec #99 | le fichier reste dans `/downloads` ; la synchronisation (#99) réessaie jusqu'à succès (idempotent) | côté Library fait (#72), client Acquisition : #99 |
+| 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | à fixer avec #99 | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), client Acquisition : #99 |
+| 7 | Acquisition | Transmission | RPC HTTP (`/transmission/rpc`) | identifiants Transmission (`TRANSMISSION_USER`, `TRANSMISSION_PASS`) | 3 s (`TRANSMISSION_TIMEOUT`) | `503 TORRENT_CLIENT_UNAVAILABLE`, sans détail technique | fait (#74) |
+| 8 | Identity | Acquisition | purge des données d'un compte (acquittements, historique) | `X-Internal-Key` | — | — | **pas encore** : Acquisition n'a pas d'API interne |
+
+Le frontend ne parle qu'au reverse proxy, jamais directement à un service ; les services ne se font jamais confiance sur l'identité de l'utilisateur à partir d'un en-tête : elle vient du jeton (JWT), vérifié localement.
+
+## Sécurité commune
+
+- **Un secret partagé par destinataire** : `INTERNAL_API_KEY`, envoyé dans l'en-tête `X-Internal-Key`, comparé en temps constant. **Refus par défaut** : un service sans secret configuré refuse tout appel interne.
+- Un jeton JWT d'utilisateur ne donne **aucun** accès aux routes `/internal/**` (401), et le secret n'est **jamais** accepté sur `/api/v1/**`.
+- Le secret n'est écrit dans aucun fichier du dépôt : il est généré dans `.env` (`gen-secrets.sh`) et injecté par `compose.yaml` uniquement aux services concernés (vérifié par l'audit de sécurité des conteneurs).
+- Les erreurs sont toujours au format `problem+json` avec un `code` stable (`docs/api/CONVENTIONS.md`), sans adresse, chemin, trace ni secret.
+- Les identifiants de Transmission ne sont connus que d'Acquisition et de Transmission ; Transmission est seul sur le réseau `torrent` avec Acquisition.
+
+## Séquences
+
+### Suppression d'un profil (Identity → Library)
+
+```text
+Frontend ─ DELETE /profiles/{id} ─▶ Identity
+  Identity : vérifie que le profil appartient au compte du jeton (sinon 404) et qu'il n'est pas le dernier (409)
+  Identity ─ POST /internal/purge {PROFILE, profileId} + X-Internal-Key ─▶ Library
+     Library : supprime favoris et progression du profil (jamais les médias ni les fichiers) → 204
+  Identity : supprime le profil → 204
+  ── Library injoignable ou en erreur : Identity répond 503 LIBRARY_UNAVAILABLE, le profil est conservé.
+```
+
+### Suppression d'un compte (Identity → Library)
+
+```text
+Frontend ─ DELETE /accounts/me {password} ─▶ Identity          (ou DELETE /admin/accounts/{id}, ADMIN)
+  Identity : mot de passe incorrect → 401 ; dernier administrateur actif → 409 LAST_ADMIN
+  Identity ─ POST /internal/purge {ACCOUNT, accountId} + X-Internal-Key ─▶ Library
+     Library : supprime favoris et progression de tous les profils du compte → 204
+  Identity : supprime le compte ; profils et sessions partent en cascade → 204
+  ── Library injoignable : 503 LIBRARY_UNAVAILABLE, rien n'est supprimé ; l'utilisateur ou l'administrateur réessaie.
+```
+
+La purge est **idempotente** : rejouer l'appel après un échec partiel ne produit pas d'erreur.
+
+### Validation d'un jeton (Library ou Acquisition → Identity)
+
+```text
+Client ─ requête + Authorization: Bearer <JWT> ─▶ Library / Acquisition
+  Service : lit l'en-tête `kid`, cherche la clé publique dans son cache
+     clé inconnue → GET /.well-known/jwks.json ─▶ Identity (3 s maximum) puis remise en cache
+  Service : vérifie signature RS256, émetteur, expiration, `sub` (UUID) → autorise selon `roles` et `pid`
+  ── Identity injoignable au moment de charger les clés : 503 IDENTITY_UNAVAILABLE (et non 401, qui ferait croire à une session expirée).
+```
+
+### Téléchargement terminé (Acquisition → Library)
+
+```text
+Admin ─ POST /downloads ─▶ Acquisition ─ RPC ─▶ Transmission           (téléchargement lancé, état DOWNLOADING)
+  Acquisition ─ POST /internal/downloads {relativePath} ─▶ Library      (l'entrée apparaît « en téléchargement »)
+  … Transmission télécharge dans /downloads/complete …
+  Acquisition (synchronisation) : Transmission annonce « terminé »
+  Acquisition ─ POST /internal/downloads/completed {relativePath} ─▶ Library
+     Library : le fichier existe dans /downloads et c'est une vidéo → l'entrée passe à AVAILABLE → 200 {mediaId}
+     fichier absent → 404 MEDIA_FILE_MISSING ; chemin invalide (absolu, `..`) → 400 ; dossier non déclaré → 409
+  Acquisition : enregistre le média (`libraryMediaId`) et passe le téléchargement à COMPLETED
+```
+
+Ce flux complet sera livré avec #99 (le côté Library existe, le client d'Acquisition et la synchronisation non).
+
+## Gestion des pannes
+
+| Panne | Ce que voit l'appelant | Ce qui est garanti |
+|---|---|---|
+| Library injoignable pendant une purge | `503 LIBRARY_UNAVAILABLE` | rien n'est supprimé côté Identity ; l'opération se rejoue |
+| Identity injoignable pour charger les clés | `503 IDENTITY_UNAVAILABLE` | pas de faux 401 ; les clés déjà en cache restent utilisables |
+| Transmission injoignable | `503 TORRENT_CLIENT_UNAVAILABLE` | le téléchargement concerné passe `FAILED` (code `TORRENT_CLIENT_UNAVAILABLE`), l'entrée du catalogue n'est pas bloquée |
+| Secret interne absent, faux ou jeton utilisateur sur `/internal` | `401` | aucun traitement, aucune fuite d'information |
+| Appel interne rejoué | même résultat que le premier | purge, « téléchargement démarré » et « terminé » sont idempotents |
+
+Écart connu avec l'ADR 0001 (décision 6, « 3 s et 2 tentatives ») : les appels d'Identity vers Library ont aujourd'hui 2 s de délai de connexion, 5 s de lecture et **une seule tentative** ; l'échec est rendu à l'utilisateur, qui peut réessayer. Les appels d'Acquisition suivront la même règle (#99).
+
+---
+
+# Référence : API interne de Library (`/internal/**`)
 
 ## Authentification
 
