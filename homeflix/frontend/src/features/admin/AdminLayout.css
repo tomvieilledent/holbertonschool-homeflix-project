@@ -1,0 +1,81 @@
+.admin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.admin__title {
+  margin: 0;
+}
+
+.admin__body {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.admin-nav {
+  position: sticky;
+  top: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.admin-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-nav a {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-nav);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.admin-nav a:hover {
+  background: var(--color-border);
+}
+
+.admin-nav a:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.admin-nav a[aria-current='page'] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.admin__content {
+  min-width: 0;
+}
+
+.admin__content h2:first-child {
+  margin-top: 0;
+}
+
+/* Petit écran : la navigation passe au-dessus du contenu, en ligne. */
+@media (max-width: 48rem) {
+  .admin__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-nav {
+    position: static;
+  }
+
+  .admin-nav__list {
+    flex-flow: row wrap;
+  }
+}
