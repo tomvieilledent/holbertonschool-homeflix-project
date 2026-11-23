@@ -51,6 +51,7 @@ describe('AppLayout', () => {
     expect(screen.getAllByRole('main')).toHaveLength(1)
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' })
     expect(nav).toHaveTextContent('Accueil')
+    expect(screen.getByRole('link', { name: 'Ma liste' })).toHaveAttribute('href', '/ma-liste')
   })
 
   it('marque la page courante dans la navigation', () => {

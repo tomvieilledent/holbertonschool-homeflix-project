@@ -29,6 +29,7 @@ export default function AppLayout() {
             Accueil
           </NavLink>
           <NavLink to="/catalogue">Catalogue</NavLink>
+          <NavLink to="/ma-liste">Ma liste</NavLink>
           {account?.role === 'ADMIN' && <NavLink to="/admin">Administration</NavLink>}
         </nav>
         <ProfileMenu />
