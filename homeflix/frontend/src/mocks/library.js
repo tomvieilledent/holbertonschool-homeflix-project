@@ -100,7 +100,10 @@ export function libraryHandlers(db) {
 
     http.get(`${BASE}/me/favourites`, ({ request }) => {
       const auth = authenticate(db, request, { profile: true })
-      return auth.error ?? HttpResponse.json(favouriteItems(auth.profileId))
+      if (auth.error) return auth.error
+      // Contrat : une page (MediaPage), les ajouts les plus récents en premier.
+      const items = favouriteItems(auth.profileId).sort((a, b) => b.addedAt.localeCompare(a.addedAt))
+      return HttpResponse.json(paginate(items, new URL(request.url)))
     }),
 
     http.put(`${BASE}/me/favourites/:mediaId`, ({ request, params }) => {

@@ -175,9 +175,9 @@ describe('favoris, progression et lecture', () => {
     await login('famille')
     const target = mediaPage.items.find((m) => m.title === 'Spring').id
     expect((await call(`${LIBRARY}/me/favourites/${target}`, { method: 'PUT' })).status).toBe(204)
-    expect((await call(`${LIBRARY}/me/favourites`)).body.some((m) => m.id === target)).toBe(true)
+    expect((await call(`${LIBRARY}/me/favourites`)).body.items.some((m) => m.id === target)).toBe(true)
     await call(`${LIBRARY}/me/favourites/${target}`, { method: 'DELETE' })
-    expect((await call(`${LIBRARY}/me/favourites`)).body.some((m) => m.id === target)).toBe(false)
+    expect((await call(`${LIBRARY}/me/favourites`)).body.items.some((m) => m.id === target)).toBe(false)
   })
 
   it('enregistre la progression et calcule l’état', async () => {
