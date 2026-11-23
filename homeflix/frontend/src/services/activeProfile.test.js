@@ -20,7 +20,7 @@ describe('profil actif retenu', () => {
   it('reste dans sessionStorage (propre à l’onglet), pas dans localStorage', () => {
     rememberProfile('p1')
     expect(Object.keys(localStorage)).toHaveLength(0)
-    expect(sessionStorage.length).toBe(1)
+    expect(sessionStorage.getItem('homeflix:active-profile')).toBe('p1')
   })
 
   it('ne plante pas quand le stockage est indisponible', () => {
