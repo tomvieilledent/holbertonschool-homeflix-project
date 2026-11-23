@@ -272,6 +272,7 @@ Variables internes fixées par `compose.yaml` (pas dans `.env`) : `SERVER_PORT`,
 | `homeflix/scripts/check-security-headers.sh` | vérifie les en-têtes du proxy |
 | `homeflix/scripts/backup.sh`, `restore.sh` | sauvegarde et restauration des bases (`pg_dump`) ; jamais de `.env` dans l'archive |
 | `homeflix/scripts/test-backup-restore.sh` | prouve qu'une sauvegarde se restaure |
+| `homeflix/scripts/reset-demo.sh` | remet la démonstration à zéro (pile vierge, comptes de démo, catalogue) ; voir [`DEMO.md`](DEMO.md) |
 | `homeflix/scripts/test-persistence.sh` | prouve que les données survivent à `docker compose restart` et à `down` puis `up` (lancé par la CI, dans l'étape du test de fumée) ; `--simulate-loss` prouve que le test détecte une perte |
 
 Intégration continue : GitHub Actions, 12 vérifications (tests des trois services, frontend, contrats OpenAPI, Docker Compose, images, scan de secrets, test de fumée et de persistance).

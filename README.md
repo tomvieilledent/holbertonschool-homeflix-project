@@ -220,6 +220,8 @@ docker compose down -v         # supprime AUSSI les données (comptes, catalogue
 
 Vos comptes, profils, favoris et progressions sont conservés dans un volume Docker : ils survivent à un redémarrage et à `down` (c'est vérifié automatiquement par `./scripts/test-persistence.sh`).
 
+**Remettre la démonstration à zéro** (efface TOUT, puis recrée des comptes de démonstration, leurs profils et le catalogue) : `./scripts/reset-demo.sh`. À réserver à une démonstration, jamais à une vraie installation. Procédure, comptes et mot de passe : [`docs/DEMO.md`](docs/DEMO.md).
+
 **Sauvegarde et restauration** des données (les trois bases, via `pg_dump`) :
 
 ```bash
@@ -275,3 +277,4 @@ Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose
 | [`docs/COPYRIGHT_AND_P2P.md`](docs/COPYRIGHT_AND_P2P.md) | Droit d'auteur et P2P : ce que le P2P n'autorise pas, mesures de HomeFlix, rappel des droits |
 | [`docs/legal/`](docs/legal/) | Licences des films de démonstration et du fichier P2P |
 | [`docs/AI_AGENT_ROLE.md`](docs/AI_AGENT_ROLE.md) | Rôle de l'agent IA relecteur |
+| [`docs/DEMO.md`](docs/DEMO.md) | Environnement de démonstration : remise à zéro, comptes de démonstration |
