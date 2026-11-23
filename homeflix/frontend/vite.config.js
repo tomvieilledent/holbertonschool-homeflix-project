@@ -28,11 +28,14 @@ export default defineConfig(({ mode }) => {
     changeOrigin: true,
   })
 
-  // Reproduit nginx : /api/<service>/x -> <service>:<port>/api/x
+  // Reproduit nginx : /api/<service>/x -> <service>:<port>/api/x, et le chemin des cookies
+  // (le refresh_token est posé avec Path=/api/v1/auth, le navigateur appelle /api/identity/v1/auth).
   const proxyService = (name, port) => ({
     [`/api/${name}`]: {
       ...target(port),
       rewrite: (path) => path.replace(new RegExp(`^/api/${name}`), '/api'),
+      // http-proxy compare le chemin entier (pas un préfixe) : seul le cookie de refresh est concerné.
+      cookiePathRewrite: { '/api/v1/auth': `/api/${name}/v1/auth` },
     },
   })
 
