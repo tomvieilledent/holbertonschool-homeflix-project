@@ -194,5 +194,16 @@ export function identityHandlers(db) {
       account.mustChangePassword = true
       return noContent()
     }),
+
+    http.get(`${BASE}/admin/system/status`, ({ request }) => {
+      const auth = authenticate(db, request, { admin: true })
+      if (auth.error) return auth.error
+      const services = ['identity', 'library', 'acquisition'].map((name) => ({ name, status: db.services[name] ?? 'UP' }))
+      return HttpResponse.json({
+        status: services.every((service) => service.status === 'UP') ? 'UP' : 'DEGRADED',
+        checkedAt: nowIso(),
+        services,
+      })
+    }),
   ]
 }
