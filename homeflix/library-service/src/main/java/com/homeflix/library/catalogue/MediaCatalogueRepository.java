@@ -3,6 +3,7 @@ package com.homeflix.library.catalogue;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +85,52 @@ public class MediaCatalogueRepository {
             SELECT count(*) FROM favourites f JOIN media_items i ON i.id = f.media_id
             WHERE i.deleted = false AND f.profile_id = :profileId""", new MapSqlParameterSource("profileId", profileId), Long.class);
         return total == null ? 0 : total;
+    }
+
+    /** Titre commencé par un profil : le média et sa progression (voir `ContinueWatching`). */
+    public record ContinueWatching(MediaView media, int positionSeconds, int durationSeconds, String state,
+            Instant updatedAt) {
+    }
+
+    /** Un média dans la section d'un genre. */
+    public record GenreEntry(String genre, MediaView media) {
+    }
+
+    /** Titres de ce profil à l'état STARTED (médias non retirés), dernière lecture en premier. */
+    public List<ContinueWatching> findContinueWatching(UUID profileId, int limit) {
+        return jdbc.query("""
+            SELECT i.id, m.title, m.description, m.poster_path, m.genres, m.year, m.duration_seconds,
+                   i.availability, i.added_at,
+                   p.position_seconds AS p_position, p.duration_seconds AS p_duration, p.state AS p_state,
+                   p.updated_at AS p_updated
+            FROM progress p
+            JOIN media_items i ON i.id = p.media_id
+            JOIN media_metadata m ON m.media_id = i.id
+            WHERE p.profile_id = :profileId AND p.state = 'STARTED' AND i.deleted = false
+            ORDER BY p.updated_at DESC, i.id LIMIT :limit""",
+            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit),
+            (rs, row) -> new ContinueWatching(map(rs, row), rs.getInt("p_position"), rs.getInt("p_duration"),
+                rs.getString("p_state"), rs.getTimestamp("p_updated").toInstant()));
+    }
+
+    /** Médias disponibles, ajoutés en dernier en premier. */
+    public List<MediaView> findRecentlyAdded(int limit) {
+        return jdbc.query(SELECT + " WHERE i.deleted = false AND i.availability = 'AVAILABLE'"
+            + " ORDER BY i.added_at DESC, i.id LIMIT :limit", new MapSqlParameterSource("limit", limit), MAPPER);
+    }
+
+    /** Pour chaque genre ayant au moins un média disponible, ses `perGenre` médias les plus récents (une seule requête). */
+    public List<GenreEntry> findByGenre(int perGenre) {
+        return jdbc.query("""
+            SELECT * FROM (
+                SELECT g AS genre, i.id, m.title, m.description, m.poster_path, m.genres, m.year, m.duration_seconds,
+                       i.availability, i.added_at,
+                       row_number() OVER (PARTITION BY g ORDER BY i.added_at DESC, i.id) AS rn
+                FROM media_items i JOIN media_metadata m ON m.media_id = i.id, unnest(m.genres) AS g
+                WHERE i.deleted = false AND i.availability = 'AVAILABLE') t
+            WHERE rn <= :perGenre ORDER BY genre, rn""",
+            new MapSqlParameterSource("perGenre", perGenre),
+            (rs, row) -> new GenreEntry(rs.getString("genre"), map(rs, row)));
     }
 
     /** Genres d'au moins un média disponible (les entrées retirées ne comptent pas). */
