@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import accountsFixture from '@fixtures/identity/accounts-page.json'
 import { routes } from '@/app/router'
 import { AuthContext } from '@/features/auth/authContext'
 
@@ -30,9 +31,11 @@ function open(path, session) {
 describe('routes protégées', () => {
   // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
   beforeEach(() => {
+    const respond = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    const emptyHome = { continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
+      vi.fn(async (url) => respond(String(url).includes('/admin/accounts') ? accountsFixture : emptyHome)),
     )
   })
   afterEach(() => vi.unstubAllGlobals())

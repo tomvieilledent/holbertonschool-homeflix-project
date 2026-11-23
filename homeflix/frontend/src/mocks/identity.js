@@ -135,14 +135,16 @@ export function identityHandlers(db) {
       if (!email?.includes('@')) return invalid('email', 'Adresse e-mail invalide.')
       if (!password || password.length < 12) return invalid('password', 'Au moins 12 caractères.')
       if (!['USER', 'ADMIN'].includes(role)) return invalid('role', 'Rôle invalide.')
-      if (db.accounts.some((a) => a.username === username)) return problem('conflict')
+      if (db.accounts.some((a) => sameName(a.username, username) || sameName(a.email, email))) {
+        return problem('conflict') // identifiant ou e-mail déjà utilisé (contrat)
+      }
       const account = {
         id: crypto.randomUUID(),
         username,
         email,
         role,
         enabled: true,
-        mustChangePassword: true,
+        mustChangePassword: false, // comme le vrai service : seule une réinitialisation l'active
         createdAt: nowIso(),
       }
       db.accounts.push(account)
@@ -183,11 +185,13 @@ export function identityHandlers(db) {
     http.post(`${BASE}/admin/accounts/:accountId/password-reset`, async ({ request, params }) => {
       const auth = authenticate(db, request, { admin: true })
       if (auth.error) return auth.error
-      if (!db.accounts.some((a) => a.id === params.accountId)) return problem('not-found')
+      const account = db.accounts.find((a) => a.id === params.accountId)
+      if (!account) return problem('not-found')
       const { temporaryPassword } = await readJson(request)
       if (!temporaryPassword || temporaryPassword.length < 12) {
         return invalid('temporaryPassword', 'Au moins 12 caractères.')
       }
+      account.mustChangePassword = true
       return noContent()
     }),
   ]
