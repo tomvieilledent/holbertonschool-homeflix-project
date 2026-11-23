@@ -8,6 +8,7 @@ import progressCompleted from '@fixtures/library/progress-completed.json'
 import progressNotStarted from '@fixtures/library/progress-not-started.json'
 import progressStarted from '@fixtures/library/progress-started.json'
 import DetailPage from '@/features/catalogue/DetailPage'
+import ProfileScope from '@/features/favourites/ProfileScope'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -45,7 +46,11 @@ function renderDetail(id = mediaDetail.id) {
     ],
     { initialEntries: [`/media/${id}`] },
   )
-  render(<RouterProvider router={router} />)
+  render(
+    <ProfileScope>
+      <RouterProvider router={router} />
+    </ProfileScope>,
+  )
   return router
 }
 
@@ -179,7 +184,29 @@ describe('DetailPage', () => {
       expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true)
     })
 
-    it('affiche l’erreur et garde l’état si la mise à jour échoue', async () => {
+    it('met le bouton à jour tout de suite, avant la réponse du serveur', async () => {
+      const user = userEvent.setup()
+      const respond = serve()
+      let release
+      fetchMock.mockImplementation(async (url, init) => {
+        if (init?.method !== 'PUT') return respond(url, init)
+        await new Promise((resolve) => {
+          release = resolve
+        })
+        return noContent()
+      })
+      renderDetail()
+      await user.click(await screen.findByRole('button', { name: 'Ajouter à ma liste' }))
+
+      // La requête n'est pas terminée : l'état est déjà celui du succès, et le bouton est bloqué.
+      const pressed = screen.getByRole('button', { name: 'Dans ma liste' })
+      expect(pressed).toHaveAttribute('aria-pressed', 'true')
+      expect(pressed).toBeDisabled()
+      release()
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Dans ma liste' })).toBeEnabled())
+    })
+
+    it('restaure l’état précédent avec un message si la mise à jour échoue', async () => {
       const user = userEvent.setup()
       const respond = serve()
       fetchMock.mockImplementation(async (url, init) =>
@@ -188,8 +215,12 @@ describe('DetailPage', () => {
       renderDetail()
       await user.click(await screen.findByRole('button', { name: 'Ajouter à ma liste' }))
 
-      expect(await screen.findByRole('alert')).toHaveTextContent('introuvable')
-      expect(screen.getByRole('button', { name: 'Ajouter à ma liste' })).toBeEnabled()
+      const alert = await screen.findByRole('alert')
+      expect(alert).toHaveTextContent('Impossible d’ajouter « Big Buck Bunny » à votre liste.')
+      expect(alert).toHaveTextContent('introuvable')
+      const restored = screen.getByRole('button', { name: 'Ajouter à ma liste' })
+      expect(restored).toHaveAttribute('aria-pressed', 'false')
+      expect(restored).toBeEnabled()
     })
 
     it('masque le bouton si l’état de la liste est inconnu, sans bloquer la fiche', async () => {
