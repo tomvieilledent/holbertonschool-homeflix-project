@@ -37,6 +37,8 @@ Cinq étapes. Toutes les commandes se lancent dans le dossier `homeflix/` du dé
 
 **1. Récupérer le code**
 
+Le dépôt est **privé** : il faut un compte GitHub qui y a accès (identifiants ou clé SSH). Sans accès, le clonage s'arrête sur une demande d'identifiant.
+
 ```bash
 git clone https://github.com/tomvieilledent/holbertonschool-homeflix-project.git
 cd holbertonschool-homeflix-project/homeflix
@@ -60,7 +62,7 @@ MEDIA_DIR=/chemin/vers/mes/films
 
 Ce dossier est monté **en lecture seule** : HomeFlix ne modifie, ne déplace et ne supprime jamais vos fichiers. Le format conseillé est le **MP4 (H.264 / AAC)**, qui se lit dans tous les navigateurs. Les fichiers `.mkv` et `.webm` sont indexés, mais leur lecture dépend du navigateur.
 
-*Pour essayer sans vos propres films :* `./scripts/fetch-demo-media.sh` télécharge dans `demo-media/` des films libres (Blender Foundation, licence CC BY 3.0) ; c'est la valeur par défaut de `MEDIA_DIR`. Le script demande `curl`, `unzip`, `ffmpeg`, `ffprobe` et `sha256sum`.
+*Pour essayer sans vos propres films :* `./scripts/fetch-demo-media.sh` télécharge dans `demo-media/` des films libres (Blender Foundation, licence CC BY 3.0) ; c'est la valeur par défaut de `MEDIA_DIR`. Le script demande `curl`, `unzip`, `ffmpeg`, `ffprobe` et `sha256sum`, télécharge environ **250 Mo** et prend environ **1 minute** (mesuré).
 
 **4. Démarrer**
 
@@ -68,7 +70,7 @@ Ce dossier est monté **en lecture seule** : HomeFlix ne modifie, ne déplace et
 docker compose up --build -d --wait
 ```
 
-Le premier démarrage compile les trois services et l'interface : comptez **environ 3 minutes** sur une machine récente (2 min 50 s mesurées sur GitHub Actions) ; une fois les images construites, environ une minute. La commande rend la main quand tous les services sont en bonne santé. Vérifiez :
+Le premier démarrage compile les trois services et l'interface : comptez **de 3 à 5 minutes** (2 min 50 s sur GitHub Actions ; 4 min 40 s mesurées à froid sur un poste Linux sous WSL 2) ; une fois les images construites, environ une minute et demie. La commande rend la main quand tous les services sont en bonne santé. Vérifiez :
 
 ```bash
 docker compose ps
@@ -92,6 +94,7 @@ Ouvrez **http://localhost:8080/setup** (écran « Première configuration ») et
 | Identifiant | 3 à 40 caractères : lettres, chiffres, `.`, `-`, `_` |
 | Adresse e-mail | la vôtre |
 | Mot de passe | 12 à 128 caractères |
+| Confirmation | le même mot de passe, saisi une seconde fois |
 
 Après l'envoi, vous arrivez sur la page de connexion (« Administrateur créé. Connectez-vous pour continuer. »). Cette étape ne se fait qu'**une fois** : ensuite, l'adresse `/setup` renvoie vers la connexion.
 
@@ -149,15 +152,18 @@ curl -s -X POST "$BASE/api/identity/v1/admin/accounts" -H "Authorization: Bearer
 ### Regarder un film
 
 1. Ouvrez **http://localhost:8080** et connectez-vous.
-2. Choisissez votre profil (« Qui regarde ? »).
-3. Ouvrez le **Catalogue** (recherche par titre, filtre par genre), choisissez un film, puis lancez la lecture.
-4. Vous pouvez avancer et reculer ; la position est enregistrée et reprise à la prochaine lecture.
+2. Choisissez votre profil (« Qui regarde ? »). Si vous n'en avez qu'un, il est choisi automatiquement.
+3. Ouvrez le **Catalogue** (recherche par titre), choisissez un film, puis lancez la lecture.
+4. Vous pouvez avancer et reculer dans la vidéo.
 
-> **À savoir.** La page d'**Accueil** (rangées « Continuer à regarder », « Ma liste »…) est en cours de développement : elle peut afficher une erreur tant que le service Library ne fournit pas son contenu. Passez par le **Catalogue**.
+> **À savoir.**
+> - Les titres affichés sont les **noms de fichier** (par exemple `big-buck-bunny-2008-640`) tant qu'un administrateur n'a pas corrigé les métadonnées, ce qui ne se fait pour l'instant que par l'API.
+> - Le lecteur **n'enregistre pas encore la position** : « Reprendre à… » et la rangée « Continuer à regarder » de l'Accueil restent donc vides (issue #65).
+> - L'**Accueil** fonctionne (récents, catégories, « Ma liste »), mais ses rangées sont vides tant qu'il n'y a pas de média ou de favori.
 
 ### Télécharger un film autorisé en P2P (administrateur)
 
-> **En cours de développement.** Le lancement d'un téléchargement depuis l'application n'est pas encore disponible de bout en bout (ni l'écran d'administration, ni la route qui l'orchestre).
+> **En cours de développement.** Par l'API, l'administrateur peut déjà lire et acquitter le rappel des droits, démarrer, suivre et annuler un téléchargement du catalogue fermé. Il n'y a pas encore d'écran d'administration, et l'état d'un téléchargement n'avance pas tout seul : il reste « DOWNLOADING » à 0 % tant que la synchronisation avec le client BitTorrent n'est pas livrée (issue #99). Le fichier reçu n'est donc pas encore indexé automatiquement.
 
 Ce qui est déjà en place : le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur ; le catalogue des contenus téléchargeables est **fermé** (seules des entrées avec une source et une licence documentées y figurent, voir [`docs/legal/P2P_DEMO.md`](docs/legal/P2P_DEMO.md)). Les fichiers terminés arrivent dans `/downloads/complete`. Pour que Library les voie, déclarez le dossier **`/downloads`** (et non `/downloads/complete`) : même appel que pour `/media`, avec `"path":"/downloads"`.
 
