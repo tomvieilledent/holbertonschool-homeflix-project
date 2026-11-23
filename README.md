@@ -267,7 +267,7 @@ Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose
   docker compose -f compose.yaml -f compose.dev.yaml up --build
   ```
 
-- **Tests :** `./mvnw test` dans chaque service (Docker est requis pour Testcontainers) ; `npm test` dans `homeflix/frontend` (voir son [README](homeflix/frontend/README.md)).
+- **Tests :** `./mvnw test` dans chaque service (Docker est requis pour Testcontainers) ; `npm test` dans `homeflix/frontend` (voir son [README](homeflix/frontend/README.md)) ; tests de bout en bout du parcours principal avec Playwright dans `homeflix/e2e` (voir son [README](homeflix/e2e/README.md)).
 - **Scripts** (dans `homeflix/scripts/`) : `smoke.sh` (test de fumée de la pile complète), `test-persistence.sh` (les données survivent au redémarrage), `test-backup-restore.sh` (une sauvegarde se restaure), `check-security-headers.sh` (en-têtes du proxy), `check-secrets.sh`.
 - **Conventions :** commits [Conventional Commits](https://www.conventionalcommits.org/) (`feat(identity): …`), une issue = une branche = une PR vers `main`. Détails dans [`CONTRIBUTING.md`](CONTRIBUTING.md) et [`docs/WORKING_AGREEMENT.md`](docs/WORKING_AGREEMENT.md).
 
