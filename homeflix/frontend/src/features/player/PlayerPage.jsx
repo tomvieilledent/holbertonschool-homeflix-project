@@ -4,14 +4,12 @@ import Button from '@/components/Button'
 import ErrorState from '@/components/ErrorState'
 import Spinner from '@/components/Spinner'
 import { playAction } from '@/features/catalogue/format'
+import { resolvePlaybackFailure } from '@/features/player/playbackErrors'
 import useProgressSaver from '@/features/player/useProgressSaver'
 import VideoPlayer from '@/features/player/VideoPlayer'
 import { isAbortError } from '@/services/api'
-import { userMessage } from '@/services/errorMessages'
 import { getProgress, resetProgress } from '@/services/library'
-import { getStreamTicket } from '@/services/streaming'
-
-const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
+import { diagnoseStream, getStreamTicket } from '@/services/streaming'
 
 /** Position de départ de l'URL (`?t=312`, en secondes) ; toute valeur invalide ou négative donne 0. */
 export const startFromParams = (params) => {
@@ -19,18 +17,13 @@ export const startFromParams = (params) => {
   return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0
 }
 
-/** Message d'un échec de lecture du navigateur (le format non pris en charge est le cas utile à dire). */
-const playbackMessage = (mediaError) =>
-  mediaError?.code === MEDIA_ERR_SRC_NOT_SUPPORTED
-    ? userMessage('MEDIA_UNSUPPORTED_FORMAT')
-    : 'La lecture a échoué. Réessayez dans un instant.'
-
 /**
  * Lecture d'un film : demande un ticket de streaming (`POST /media/{id}/stream-ticket`) puis charge le
  * flux dans le lecteur, à la position `?t=` si elle est donnée, sinon à la dernière position du profil
  * (un film terminé repart du début). La position est sauvegardée pendant la lecture (voir `useProgressSaver`),
- * et « Recommencer » l'efface. Si le flux est refusé en cours de route (ticket expiré), un nouveau ticket est
- * demandé une fois et la lecture reprend à la même position.
+ * et « Recommencer » l'efface. Si la lecture échoue en cours de route, on cherche pourquoi (voir
+ * `resolvePlaybackFailure`) : ticket expiré → nouveau ticket demandé une fois et reprise à la même position ;
+ * sinon un message clair (fichier manquant, accès refusé, format non supporté, connexion perdue…).
  */
 export default function PlayerPage() {
   const { mediaId } = useParams()
@@ -43,6 +36,7 @@ export default function PlayerPage() {
   const [error, setError] = useState('')
   const resumeAt = useRef(0)
   const refreshes = useRef(0)
+  const diagnosing = useRef(null) // AbortController du diagnostic en cours
   const { track, discard } = useProgressSaver(mediaId)
 
   const load = useCallback(
@@ -76,7 +70,10 @@ export default function PlayerPage() {
         .then(setStart)
     }
     load(controller.signal)
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+      diagnosing.current?.abort()
+    }
   }, [load, mediaId, explicitStart, startParam])
 
   const restart = () => {
@@ -87,15 +84,36 @@ export default function PlayerPage() {
     setPlayerKey((key) => key + 1)
   }
 
-  const onPlaybackError = (mediaError, currentTime) => {
-    if (refreshes.current < 1) {
-      refreshes.current += 1
-      resumeAt.current = currentTime
-      load()
-      return
+  const onPlaybackError = async (mediaError, currentTime) => {
+    if (diagnosing.current) return // un diagnostic est déjà en cours pour cet échec
+    const controller = new AbortController()
+    diagnosing.current = controller
+    resumeAt.current = currentTime // la reprise (nouveau ticket ou « Réessayer ») repart d'ici
+    let failure
+    try {
+      failure = await diagnoseStream(ticket.url, controller.signal)
+    } catch {
+      return // page quittée pendant le diagnostic
+    } finally {
+      diagnosing.current = null
     }
-    setTicket(null)
-    setError(playbackMessage(mediaError))
+    const result = resolvePlaybackFailure({
+      mediaErrorCode: mediaError?.code,
+      failure,
+      canRefresh: refreshes.current < 1,
+    })
+    if (result.type === 'refresh') {
+      refreshes.current += 1
+      load()
+    } else if (result.type === 'error') {
+      setTicket(null)
+      setError(result.message)
+    }
+  }
+
+  const retry = () => {
+    refreshes.current = 0
+    load()
   }
 
   const back = <Link to={`/media/${encodeURIComponent(mediaId)}`}>Retour à la fiche</Link>
@@ -103,7 +121,7 @@ export default function PlayerPage() {
   let content
   if (error) {
     content = (
-      <ErrorState title="Lecture impossible" description={error} onRetry={() => load()}>
+      <ErrorState title="Lecture impossible" description={error} onRetry={retry}>
         {back}
       </ErrorState>
     )

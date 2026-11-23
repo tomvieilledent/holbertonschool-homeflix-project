@@ -25,6 +25,9 @@ const BY_CODE = {
   MEDIA_FILE_MISSING: 'Le fichier de ce film est introuvable.',
   MEDIA_UNAVAILABLE: 'Ce film n’est pas disponible pour le moment.',
   MEDIA_UNSUPPORTED_FORMAT: 'Le format de cette vidéo n’est pas pris en charge.',
+  // Propres au lecteur (erreurs de la balise <video>, sans code serveur).
+  MEDIA_DECODE_FAILED: 'Cette vidéo ne peut pas être lue : le fichier semble endommagé.',
+  MEDIA_PLAYBACK_FAILED: 'La lecture a échoué. Réessayez dans un instant.',
   RIGHTS_NOT_ACKNOWLEDGED: 'Confirmez d’abord le rappel des droits avant de télécharger.',
   DOWNLOAD_ALREADY_ACTIVE: 'Un téléchargement est déjà en cours pour ce contenu.',
   TORRENT_CLIENT_UNAVAILABLE: 'Le service de téléchargement est injoignable. Réessayez plus tard.',
