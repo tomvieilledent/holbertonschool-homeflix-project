@@ -5,6 +5,7 @@ import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Skeleton from '@/components/Skeleton'
 import AddRootModal from '@/features/admin/AddRootModal'
+import IndexingPanel from '@/features/admin/IndexingPanel'
 import { isAbortError } from '@/services/api'
 import { addMediaRoot, deleteMediaRoot, listMediaRoots } from '@/services/library'
 import '@/features/admin/LibraryPage.css'
@@ -107,6 +108,8 @@ export default function LibraryPage() {
           </ul>
         )}
       </section>
+
+      <IndexingPanel />
 
       {dialog?.type === 'add' && (
         <AddRootModal
