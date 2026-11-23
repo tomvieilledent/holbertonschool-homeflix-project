@@ -101,7 +101,7 @@ describe('routes protégées', () => {
       expect(router.state.location.pathname).toBe('/admin')
     })
 
-    it.each(['/admin/comptes', '/admin/acquisition'])('refuse aussi %s à un USER par URL directe', async (path) => {
+    it.each(['/admin/comptes', '/admin/bibliotheque', '/admin/acquisition'])('refuse aussi %s à un USER par URL directe', async (path) => {
       open(path, 'user')
       expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: 'Comptes' })).not.toBeInTheDocument()
@@ -127,7 +127,7 @@ describe('routes protégées', () => {
       expect(await screen.findByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument()
       expect(router.state.location.pathname).toBe('/admin/comptes')
       const nav = screen.getByRole('navigation', { name: 'Sections de l’administration' })
-      expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Acquisition'])
+      expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Bibliothèque', 'Acquisition'])
       expect(within(nav).getByRole('link', { name: 'Comptes' })).toHaveAttribute('aria-current', 'page')
     })
 

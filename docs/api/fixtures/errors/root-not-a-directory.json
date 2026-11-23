@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/root-not-a-directory",
+  "title": "Ce n'est pas un dossier",
+  "status": 400,
+  "code": "ROOT_NOT_A_DIRECTORY",
+  "detail": "Ce chemin désigne un fichier, pas un dossier.",
+  "instance": "/api/v1/admin/media-roots"
+}
