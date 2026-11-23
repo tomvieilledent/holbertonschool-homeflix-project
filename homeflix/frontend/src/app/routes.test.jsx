@@ -35,7 +35,13 @@ describe('routes protégées', () => {
     const emptyHome = { continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url) => respond(String(url).includes('/admin/accounts') ? accountsFixture : emptyHome)),
+      vi.fn(async (url) => {
+        const path = String(url)
+        if (path.includes('/admin/accounts')) return respond(accountsFixture)
+        if (path.includes('/acquisition/v1/catalogue')) return respond({ items: [], page: 0, size: 20, total: 0, totalPages: 0 })
+        if (path.includes('/rights-notice')) return respond({ version: '2026-11', text: 'Rappel.', acknowledged: false })
+        return respond(emptyHome)
+      }),
     )
   })
   afterEach(() => vi.unstubAllGlobals())
