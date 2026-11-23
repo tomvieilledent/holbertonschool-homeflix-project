@@ -32,14 +32,23 @@ class HttpLibraryPurgeClient implements LibraryPurgeClient {
 
     @Override
     public void purgeProfile(UUID profileId) {
+        purge(Map.of("scope", "PROFILE", "profileId", profileId.toString()), "le profil n'a pas été supprimé");
+    }
+
+    @Override
+    public void purgeAccount(UUID accountId) {
+        purge(Map.of("scope", "ACCOUNT", "accountId", accountId.toString()), "le compte n'a pas été supprimé");
+    }
+
+    private void purge(Map<String, String> body, String consequence) {
         try {
             http.post().uri("/internal/purge")
                 .header("X-Internal-Key", internalKey)
-                .body(Map.of("scope", "PROFILE", "profileId", profileId.toString()))
+                .body(body)
                 .retrieve().toBodilessEntity();
         } catch (RestClientException e) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "LIBRARY_UNAVAILABLE", "Library indisponible",
-                "Library est injoignable : le profil n'a pas été supprimé. Réessayez plus tard.");
+                "Library est injoignable : " + consequence + ". Réessayez plus tard.");
         }
     }
 }

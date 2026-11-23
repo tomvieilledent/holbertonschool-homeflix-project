@@ -51,6 +51,7 @@ class ProfileIntegrationTests {
     /** Library simulée : enregistre les purges, ou simule une panne. */
     static class FakeLibrary implements LibraryPurgeClient {
         final List<UUID> purged = new ArrayList<>();
+        final List<UUID> purgedAccounts = new ArrayList<>();
         volatile boolean down;
 
         @Override
@@ -59,6 +60,14 @@ class ProfileIntegrationTests {
                 throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "LIBRARY_UNAVAILABLE", "Library indisponible", "KO");
             }
             purged.add(profileId);
+        }
+
+        @Override
+        public void purgeAccount(UUID accountId) {
+            if (down) {
+                throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "LIBRARY_UNAVAILABLE", "Library indisponible", "KO");
+            }
+            purgedAccounts.add(accountId);
         }
     }
 

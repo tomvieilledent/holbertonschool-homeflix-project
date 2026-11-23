@@ -28,6 +28,7 @@ class SecurityRulesTests {
     @MockitoBean AuthService authService;
     @MockitoBean com.homeflix.identity.admin.AdminAccountService adminAccountService;
     @MockitoBean com.homeflix.identity.profile.ProfileService profileService;
+    @MockitoBean com.homeflix.identity.account.AccountDeletionService accountDeletionService;
 
     @Autowired
     MockMvc mvc;
