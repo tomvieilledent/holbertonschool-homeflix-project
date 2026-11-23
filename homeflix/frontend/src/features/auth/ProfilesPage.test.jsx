@@ -78,6 +78,11 @@ describe('ProfilesPage', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/v1/profiles')
   })
 
+  it('mène à la gestion des profils', async () => {
+    renderFlow()
+    expect(await screen.findByRole('link', { name: 'Gérer les profils' })).toHaveAttribute('href', '/profiles/manage')
+  })
+
   it('revient à la destination demandée avant le choix du profil', async () => {
     const user = userEvent.setup()
     const { router } = renderFlow({ url: '/profiles?next=%2Fadmin-ish' })
@@ -106,6 +111,7 @@ describe('ProfilesPage', () => {
     fetchMock.mockImplementation(async () => json([]))
     renderFlow()
     expect(await screen.findByRole('heading', { name: 'Aucun profil' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Créer un profil' })).toHaveAttribute('href', '/profiles/manage')
   })
 
   it('remonte l’écran quand le profil actif change (rechargement des données)', async () => {

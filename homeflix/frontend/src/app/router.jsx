@@ -4,6 +4,7 @@ import BareLayout from '@/app/BareLayout'
 import NotFoundPage from '@/app/NotFoundPage'
 import RouteErrorPage from '@/app/RouteErrorPage'
 import LoginPage from '@/features/auth/LoginPage'
+import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import RequireAuth from '@/features/auth/RequireAuth'
 import RequireProfile from '@/features/auth/RequireProfile'
@@ -31,7 +32,10 @@ export const routes = [
           { path: '/setup', element: <SetupPage /> },
           {
             element: <RequireAuth />,
-            children: [{ path: '/profiles', element: <ProfilesPage /> }],
+            children: [
+              { path: '/profiles', element: <ProfilesPage /> },
+              { path: '/profiles/manage', element: <ManageProfilesPage /> },
+            ],
           },
           { path: '*', element: <NotFoundPage /> },
         ],

@@ -42,6 +42,15 @@ describe('Modal', () => {
     expect(dialog).toContainElement(document.activeElement)
   })
 
+  it('place le focus sur l’élément marqué data-autofocus plutôt que sur le premier focalisable', () => {
+    render(
+      <Modal open onClose={() => {}} title="Renommer">
+        <input aria-label="Nom" data-autofocus />
+      </Modal>,
+    )
+    expect(screen.getByRole('textbox', { name: 'Nom' })).toHaveFocus()
+  })
+
   it('piège le focus avec Tab et Maj+Tab', async () => {
     const user = userEvent.setup()
     render(<Harness />)
