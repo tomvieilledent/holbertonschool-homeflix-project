@@ -1,0 +1,79 @@
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.accounts__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.accounts__header h2 {
+  margin: 0;
+}
+
+.accounts__notice:empty {
+  display: none;
+}
+
+.accounts__count,
+.accounts__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.accounts__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.accounts__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.accounts__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.accounts__table th,
+.accounts__table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.accounts__table tbody tr:last-child th,
+.accounts__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.accounts__table thead th {
+  background: var(--color-surface);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.accounts__table tbody th {
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.accounts__badge {
+  color: var(--color-text-muted);
+  font-weight: normal;
+}
+
+.accounts__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

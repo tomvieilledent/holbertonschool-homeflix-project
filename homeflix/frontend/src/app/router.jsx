@@ -1,8 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from '@/app/AppLayout'
 import BareLayout from '@/app/BareLayout'
 import NotFoundPage from '@/app/NotFoundPage'
 import RouteErrorPage from '@/app/RouteErrorPage'
+import AdminLayout from '@/features/admin/AdminLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
@@ -71,10 +72,15 @@ export const routes = [
               {
                 element: <RequireRole role="ADMIN" />,
                 children: [
-                  { path: '/admin', ...lazyPage(() => import('@/features/admin/AdminPage')) },
                   {
-                    path: '/admin/acquisition',
-                    ...lazyPage(() => import('@/features/admin/AcquisitionPage')),
+                    // Section d'administration : navigation latérale commune à toutes ses pages.
+                    path: '/admin',
+                    element: <AdminLayout />,
+                    children: [
+                      { index: true, element: <Navigate to="/admin/comptes" replace /> },
+                      { path: 'comptes', ...lazyPage(() => import('@/features/admin/AccountsPage')) },
+                      { path: 'acquisition', ...lazyPage(() => import('@/features/admin/AcquisitionPage')) },
+                    ],
                   },
                 ],
               },
