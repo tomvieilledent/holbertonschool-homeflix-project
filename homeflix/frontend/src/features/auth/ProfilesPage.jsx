@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import '@/components/Button.css'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Spinner from '@/components/Spinner'
 import { useAuth } from '@/features/auth/authContext'
+import ProfileAvatar from '@/features/auth/ProfileAvatar'
 import { safeNext } from '@/features/auth/redirect'
-import { isAbortError } from '@/services/api'
-import { listProfiles } from '@/services/profiles'
+import useProfiles from '@/features/auth/useProfiles'
 import '@/features/auth/ProfilesPage.css'
 
-/** Bouton d'un profil : initiale (l'avatar prédéfini n'a pas d'image) et nom en texte. */
+/** Bouton d'un profil : avatar et nom en texte. */
 function ProfileButton({ profile, active, disabled, onSelect }) {
   return (
     <li>
@@ -20,9 +21,7 @@ function ProfileButton({ profile, active, disabled, onSelect }) {
         disabled={disabled}
         onClick={() => onSelect(profile)}
       >
-        <span className="profile-choice__avatar" aria-hidden="true">
-          {profile.name.trim().charAt(0).toUpperCase()}
-        </span>
+        <ProfileAvatar name={profile.name} />
         <span className="profile-choice__name">{profile.name}</span>
       </button>
     </li>
@@ -34,26 +33,10 @@ export default function ProfilesPage() {
   const { activeProfileId, selectProfile } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const [profiles, setProfiles] = useState(null) // null = chargement
-  const [loadFailed, setLoadFailed] = useState(false)
+  const { profiles, loadFailed, reload } = useProfiles() // profiles : null = chargement
   const [selecting, setSelecting] = useState(false)
   const [selectError, setSelectError] = useState('')
   const autoSelected = useRef(false)
-
-  const load = useCallback((signal) => {
-    setLoadFailed(false)
-    listProfiles(signal)
-      .then(setProfiles)
-      .catch((error) => {
-        if (!isAbortError(error)) setLoadFailed(true)
-      })
-  }, [])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    load(controller.signal)
-    return () => controller.abort()
-  }, [load])
 
   const onSelect = async (profile) => {
     setSelectError('')
@@ -78,16 +61,17 @@ export default function ProfilesPage() {
     }
   }, [onlyProfile]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loadFailed) return <ErrorState onRetry={() => load()} />
+  if (loadFailed) return <ErrorState onRetry={reload} />
   if (profiles === null || (onlyProfile && !selectError)) {
     return <Spinner size="lg" label="Chargement des profils…" />
   }
   if (profiles.length === 0) {
     return (
-      <EmptyState
-        title="Aucun profil"
-        description="Ce compte n’a pas encore de profil de visionnage. Contactez l’administrateur."
-      />
+      <EmptyState title="Aucun profil" description="Ce compte n’a pas encore de profil de visionnage.">
+        <Link className="btn btn--primary" to="/profiles/manage">
+          Créer un profil
+        </Link>
+      </EmptyState>
     )
   }
 
@@ -106,6 +90,9 @@ export default function ProfilesPage() {
           />
         ))}
       </ul>
+      <Link className="profiles__manage" to="/profiles/manage">
+        Gérer les profils
+      </Link>
     </section>
   )
 }

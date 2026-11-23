@@ -119,6 +119,30 @@ describe('profils', () => {
 
     expect((await call(`${IDENTITY}/profiles/${created.body.id}`, { method: 'DELETE' })).status).toBe(204)
   })
+
+  it('refuse un nom déjà utilisé ou trop long, à la création comme au renommage', async () => {
+    await login('famille', { profile: false })
+    const [first, second] = profilesFixture
+    const duplicate = await call(`${IDENTITY}/profiles`, { method: 'POST', body: { name: ` ${first.name.toUpperCase()} ` } })
+    expect(duplicate.status).toBe(409)
+    expect(duplicate.body.code).toBe('CONFLICT')
+    expect((await call(`${IDENTITY}/profiles`, { method: 'POST', body: { name: 'x'.repeat(31) } })).status).toBe(400)
+
+    const rename = (id, name) => call(`${IDENTITY}/profiles/${id}`, { method: 'PATCH', body: { name } })
+    expect((await rename(second.id, first.name)).body.code).toBe('CONFLICT')
+    expect((await rename(second.id, second.name)).status).toBe(200) // son propre nom n'est pas un doublon
+    expect((await rename(second.id, 'y'.repeat(31))).status).toBe(400)
+  })
+
+  it('conserve le dernier profil du compte', async () => {
+    await login('famille', { profile: false })
+    for (const profile of profilesFixture.slice(1)) {
+      expect((await call(`${IDENTITY}/profiles/${profile.id}`, { method: 'DELETE' })).status).toBe(204)
+    }
+    const last = await call(`${IDENTITY}/profiles/${profilesFixture[0].id}`, { method: 'DELETE' })
+    expect(last.status).toBe(409)
+    expect(last.body.code).toBe('CONFLICT')
+  })
 })
 
 describe('catalogue', () => {
@@ -175,9 +199,9 @@ describe('favoris, progression et lecture', () => {
     await login('famille')
     const target = mediaPage.items.find((m) => m.title === 'Spring').id
     expect((await call(`${LIBRARY}/me/favourites/${target}`, { method: 'PUT' })).status).toBe(204)
-    expect((await call(`${LIBRARY}/me/favourites`)).body.some((m) => m.id === target)).toBe(true)
+    expect((await call(`${LIBRARY}/me/favourites`)).body.items.some((m) => m.id === target)).toBe(true)
     await call(`${LIBRARY}/me/favourites/${target}`, { method: 'DELETE' })
-    expect((await call(`${LIBRARY}/me/favourites`)).body.some((m) => m.id === target)).toBe(false)
+    expect((await call(`${LIBRARY}/me/favourites`)).body.items.some((m) => m.id === target)).toBe(false)
   })
 
   it('enregistre la progression et calcule l’état', async () => {

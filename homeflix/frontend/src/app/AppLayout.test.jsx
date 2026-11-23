@@ -79,6 +79,7 @@ describe('ProfileMenu', () => {
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('link', { name: 'Changer de profil' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Gérer les profils' })).toHaveAttribute('href', '/profiles/manage')
 
     await user.keyboard('{Escape}')
     expect(toggle).toHaveAttribute('aria-expanded', 'false')

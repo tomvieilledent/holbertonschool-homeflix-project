@@ -46,13 +46,14 @@ const serialize = (body) =>
   body !== null && typeof body === 'object' && !(body instanceof FormData) ? JSON.stringify(body) : body
 
 /** Requête brute : ni jeton ni refresh. Convertit toute erreur en `ApiError`. */
-async function request(service, path, { method = 'GET', query, body, headers, signal } = {}) {
+async function request(service, path, { method = 'GET', query, body, headers, signal, keepalive } = {}) {
   let response
   try {
     response = await fetch(`${apiUrl(service, path)}${queryString(query)}`, {
       method,
       credentials: 'same-origin',
       signal,
+      keepalive,
       headers: { ...(body !== undefined && { 'Content-Type': 'application/json' }), ...headers },
       body: body === undefined ? undefined : serialize(body),
     })
@@ -121,6 +122,7 @@ function sessionLost() {
  * @param {object} [options.query] Paramètres d'URL ; les valeurs vides sont ignorées.
  * @param {*} [options.body] Objet sérialisé en JSON.
  * @param {Record<string,string>} [options.headers]
+ * @param {boolean} [options.keepalive] La requête survit à la fermeture de la page (fin de visionnage).
  * @param {AbortSignal} [options.signal] Annulation : la promesse est rejetée avec une AbortError (voir `isAbortError`).
  * @param {boolean} [options.auth] `false` pour un endpoint anonyme (pas de jeton, pas de refresh).
  * @returns {Promise<*>} Le JSON de la réponse, ou `null` (204).

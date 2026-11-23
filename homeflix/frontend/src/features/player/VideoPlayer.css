@@ -1,3 +1,11 @@
+.player-page__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+}
+
 .player {
   display: flex;
   flex-direction: column;
