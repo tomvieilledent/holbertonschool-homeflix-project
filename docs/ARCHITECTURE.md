@@ -270,6 +270,7 @@ Variables internes fixées par `compose.yaml` (pas dans `.env`) : `SERVER_PORT`,
 | `homeflix/scripts/gen-secrets.sh` | génère `.env` |
 | `homeflix/scripts/smoke.sh` | test de fumée de la pile complète (lancé par la CI) |
 | `homeflix/scripts/check-security-headers.sh` | vérifie les en-têtes du proxy |
+| `homeflix/scripts/security-audit.sh` | audit de sécurité des conteneurs (montages, utilisateurs, ports, réseaux, secrets, durcissement ; Trivy avec `--trivy`) ; voir [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) |
 | `homeflix/scripts/backup.sh`, `restore.sh` | sauvegarde et restauration des bases (`pg_dump`) ; jamais de `.env` dans l'archive |
 | `homeflix/scripts/test-backup-restore.sh` | prouve qu'une sauvegarde se restaure |
 | `homeflix/scripts/reset-demo.sh` | remet la démonstration à zéro (pile vierge, comptes de démo, catalogue) ; voir [`DEMO.md`](DEMO.md) |
