@@ -115,6 +115,91 @@ describe('PlayerPage', () => {
   })
 })
 
+describe('PlayerPage : erreurs de lecture', () => {
+  let fetchMock
+  let streamReply
+
+  beforeEach(() => {
+    streamReply = () => new Response(null, { status: 206 })
+    fetchMock = vi.fn(async (url) => {
+      if (url.endsWith('/progress')) return json(NOT_STARTED)
+      if (isTicket([url])) return json(ticketFixture)
+      return streamReply()
+    })
+    vi.stubGlobal('fetch', fetchMock)
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  const playbackFails = async (code = 4, currentTime = 0) => {
+    await waitFor(() => expect(video()).not.toBeNull())
+    failPlayback(code, currentTime)
+  }
+  const resumeAtPosition = async () => {
+    await waitFor(() => expect(video()).not.toBeNull())
+    Object.defineProperty(video(), 'duration', { value: 600, configurable: true })
+    fireEvent.loadedMetadata(video())
+    return video().currentTime
+  }
+
+  it.each([
+    [404, { code: 'MEDIA_FILE_MISSING' }, 'Le fichier de ce film est introuvable.'],
+    [403, { code: 'ACCESS_DENIED' }, 'Vous n’avez pas les droits nécessaires pour cette action.'],
+    [415, { code: 'MEDIA_UNSUPPORTED_FORMAT' }, 'Le format de cette vidéo n’est pas pris en charge.'],
+  ])('le flux répond %s : message clair, sans nouveau ticket', async (status, body, message) => {
+    streamReply = () => json(body, status)
+    renderPlayer()
+    await playbackFails()
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Lecture impossible' })).toBeInTheDocument()
+    expect(callsTo(fetchMock, isTicket)).toHaveLength(1)
+    expect(screen.getByRole('link', { name: 'Retour à la fiche' })).toBeInTheDocument()
+  })
+
+  it('ticket expiré (401) : nouveau ticket automatique, reprise à la même position', async () => {
+    streamReply = () => json({ code: 'TICKET_EXPIRED' }, 401)
+    renderPlayer()
+    await playbackFails(4, 87)
+
+    await waitFor(() => expect(callsTo(fetchMock, isTicket)).toHaveLength(2))
+    expect(await resumeAtPosition()).toBe(87)
+  })
+
+  it('perte du réseau : message de connexion, puis « Réessayer » reprend à la même position', async () => {
+    streamReply = () => {
+      throw new TypeError('Failed to fetch')
+    }
+    renderPlayer()
+    await playbackFails(2, 140)
+
+    expect(await screen.findByText('Impossible de joindre le serveur. Vérifiez votre connexion.')).toBeInTheDocument()
+    expect(callsTo(fetchMock, isTicket)).toHaveLength(1)
+
+    streamReply = () => new Response(null, { status: 206 })
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }))
+    expect(await resumeAtPosition()).toBe(140)
+  })
+
+  it('fichier illisible malgré un flux correct : message sur le fichier endommagé', async () => {
+    renderPlayer()
+    await playbackFails(3)
+    await waitFor(() => expect(callsTo(fetchMock, isTicket)).toHaveLength(2)) // un nouveau ticket d'abord
+    await waitFor(() => expect(video()).not.toBeNull())
+    failPlayback(3)
+
+    expect(await screen.findByText('Cette vidéo ne peut pas être lue : le fichier semble endommagé.')).toBeInTheDocument()
+  })
+
+  it('n’affiche aucun détail technique du serveur', async () => {
+    streamReply = () =>
+      json({ code: 'MEDIA_FILE_MISSING', detail: 'java.io.FileNotFoundException: /media/film.mp4' }, 404)
+    renderPlayer()
+    await playbackFails()
+    await screen.findByText('Le fichier de ce film est introuvable.')
+    expect(document.body).not.toHaveTextContent(/FileNotFound|\/media\/film|java\./)
+  })
+})
+
 describe('PlayerPage : reprise et sauvegarde', () => {
   let fetchMock
   let progress
