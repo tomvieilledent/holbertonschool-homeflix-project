@@ -299,6 +299,46 @@ describe('administration', () => {
     expect(refused.body.code).toBe('ROOT_NOT_READABLE')
   })
 
+  it('corrige les métadonnées dans les limites du contrat, et la correction est visible dans le catalogue', async () => {
+    await login('admin')
+    const [first] = (await call(`${LIBRARY}/media`)).body.items
+    const patch = (body) => call(`${LIBRARY}/admin/media/${first.id}`, { method: 'PATCH', body })
+
+    const updated = await patch({ title: '  Titre corrigé ', genres: ['Drame'], year: 1999 })
+    expect(updated.status).toBe(200)
+    expect(updated.body).toMatchObject({ title: 'Titre corrigé', genres: ['Drame'], year: 1999 })
+    expect((await call(`${LIBRARY}/media/${first.id}`)).body.title).toBe('Titre corrigé')
+    expect((await call(`${LIBRARY}/media?q=corrigé`)).body.items.map((m) => m.id)).toEqual([first.id])
+
+    for (const bad of [
+      {},
+      { title: ' ' },
+      { title: 'x'.repeat(201) },
+      { description: 'x'.repeat(2001) },
+      { genres: Array.from({ length: 11 }, (_, i) => `g${i}`) },
+      { genres: ['x'.repeat(41)] },
+      { year: 1887 },
+      { year: 2101 },
+      { year: 2008.5 },
+    ]) {
+      const refused = await patch(bad)
+      expect({ bad: JSON.stringify(bad).slice(0, 40), status: refused.status, code: refused.body.code }).toEqual({
+        bad: JSON.stringify(bad).slice(0, 40),
+        status: 400,
+        code: 'VALIDATION_ERROR',
+      })
+    }
+    expect((await call(`${LIBRARY}/media/${first.id}`)).body.title).toBe('Titre corrigé') // rien n'a changé
+  })
+
+  it('retire une entrée du catalogue', async () => {
+    await login('admin')
+    const [first] = (await call(`${LIBRARY}/media`)).body.items
+    expect((await call(`${LIBRARY}/admin/media/${first.id}`, { method: 'DELETE' })).status).toBe(204)
+    expect((await call(`${LIBRARY}/media/${first.id}`)).status).toBe(404)
+    expect((await call(`${LIBRARY}/admin/media/${first.id}`, { method: 'DELETE' })).body.code).toBe('NOT_FOUND')
+  })
+
   it('valide, ajoute et retire un dossier autorisé', async () => {
     await login('admin')
     const [existing] = (await call(`${LIBRARY}/admin/media-roots`)).body

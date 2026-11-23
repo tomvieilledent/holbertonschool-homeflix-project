@@ -279,8 +279,19 @@ export function libraryHandlers(db) {
       if (auth.error) return auth.error
       const media = findMedia(params.mediaId)
       if (!media) return problem('not-found')
-      const { title, description, genres, year } = await readJson(request)
+      const changes = await readJson(request)
+      const { title, description, genres, year } = changes
+      // Limites du contrat (MediaMetadataUpdate) : au moins un champ ; titre 1 à 200, description 2000, 10 genres de 40, année 1888 à 2100.
+      if (Object.keys(changes).length === 0) return invalid('title', 'Indiquez au moins une modification.')
       if (title !== undefined && !title.trim()) return invalid('title', 'Le titre ne peut pas être vide.')
+      if (title !== undefined && title.length > 200) return invalid('title', 'Le titre est limité à 200 caractères.')
+      if (description !== undefined && description.length > 2000) return invalid('description', 'La description est limitée à 2000 caractères.')
+      if (genres !== undefined && (!Array.isArray(genres) || genres.length > 10 || genres.some((g) => g.length > 40))) {
+        return invalid('genres', '10 genres au plus, de 40 caractères au plus.')
+      }
+      if (year !== undefined && (!Number.isInteger(year) || year < 1888 || year > 2100)) {
+        return invalid('year', 'L’année doit être comprise entre 1888 et 2100.')
+      }
       if (title !== undefined) media.title = title.trim()
       if (description !== undefined) media.description = description
       if (genres !== undefined) media.genres = genres
