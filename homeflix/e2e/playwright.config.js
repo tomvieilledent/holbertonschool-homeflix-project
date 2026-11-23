@@ -17,6 +17,9 @@ export default defineConfig({
   use: {
     baseURL,
     locale: 'fr-FR',
+    // « Moins d'animations » : l'intro du logo (jusqu'à 7 s avant la page de connexion) est alors sautée, ce qui
+    // garde les tests courts et ne dépend pas d'une animation.
+    reducedMotion: 'reduce',
     // Un échec laisse de quoi comprendre : trace (actions, réseau, DOM), capture et vidéo de la page.
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
