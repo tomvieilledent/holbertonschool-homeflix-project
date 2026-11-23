@@ -4,6 +4,7 @@ import BareLayout from '@/app/BareLayout'
 import NotFoundPage from '@/app/NotFoundPage'
 import RouteErrorPage from '@/app/RouteErrorPage'
 import LoginPage from '@/features/auth/LoginPage'
+import IntroGate from '@/features/intro/IntroGate'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import RequireAuth from '@/features/auth/RequireAuth'
 import RequireProfile from '@/features/auth/RequireProfile'
@@ -27,7 +28,15 @@ export const routes = [
         // Sans en-tête : pages publiques et choix du profil.
         element: <BareLayout />,
         children: [
-          { path: '/login', element: <LoginPage /> },
+          {
+            // L'intro du logo précède la connexion, une fois par session.
+            path: '/login',
+            element: (
+              <IntroGate>
+                <LoginPage />
+              </IntroGate>
+            ),
+          },
           { path: '/setup', element: <SetupPage /> },
           {
             element: <RequireAuth />,
