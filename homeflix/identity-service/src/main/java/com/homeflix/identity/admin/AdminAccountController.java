@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.homeflix.identity.account.AccountDeletionService;
 import com.homeflix.identity.setup.AccountResponse;
 
 import jakarta.validation.Valid;
@@ -25,9 +27,11 @@ import jakarta.validation.Valid;
 public class AdminAccountController {
 
     private final AdminAccountService service;
+    private final AccountDeletionService deletion;
 
-    public AdminAccountController(AdminAccountService service) {
+    public AdminAccountController(AdminAccountService service, AccountDeletionService deletion) {
         this.service = service;
+        this.deletion = deletion;
     }
 
     @GetMapping
@@ -53,6 +57,13 @@ public class AdminAccountController {
     @PostMapping("/{accountId}/password-reset")
     public ResponseEntity<Void> resetPassword(@PathVariable UUID accountId, @Valid @RequestBody PasswordReset request) {
         service.resetPassword(accountId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Supprime un compte et ses données (purge Library comprise). Dernier administrateur : 409 LAST_ADMIN. */
+    @DeleteMapping("/{accountId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID accountId) {
+        deletion.delete(accountId, account -> true);
         return ResponseEntity.noContent().build();
     }
 }
