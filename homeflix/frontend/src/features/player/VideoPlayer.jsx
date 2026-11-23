@@ -21,8 +21,10 @@ const VOLUME_STEP = 0.1
  * @param {string} [props.label] Nom du lecteur pour les lecteurs d'écran.
  * @param {(error: MediaError|null, currentTime: number) => void} [props.onError] Échec de lecture.
  * @param {() => void} [props.onReady] La vidéo peut démarrer.
+ * @param {(position: number, duration: number, options: {immediate: boolean}) => void} [props.onProgress]
+ *   Position courante (à chaque avancée) ; `immediate` à la pause et à la fin, pour la sauvegarder tout de suite.
  */
-export default function VideoPlayer({ src, startAt = 0, label = 'Lecteur vidéo', onError, onReady }) {
+export default function VideoPlayer({ src, startAt = 0, label = 'Lecteur vidéo', onError, onReady, onProgress }) {
   const containerRef = useRef(null)
   const videoRef = useRef(null)
   const [paused, setPaused] = useState(true)
@@ -46,6 +48,8 @@ export default function VideoPlayer({ src, startAt = 0, label = 'Lecteur vidéo'
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
+
+  const reportProgress = (video, immediate) => onProgress?.(video.currentTime, video.duration, { immediate })
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current
@@ -143,10 +147,19 @@ export default function VideoPlayer({ src, startAt = 0, label = 'Lecteur vidéo'
             setBuffering(false)
             onReady?.()
           }}
-          onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
+          onTimeUpdate={(event) => {
+            setCurrent(event.currentTarget.currentTime)
+            reportProgress(event.currentTarget, false)
+          }}
           onPlay={() => setPaused(false)}
-          onPause={() => setPaused(true)}
-          onEnded={() => setPaused(true)}
+          onPause={(event) => {
+            setPaused(true)
+            reportProgress(event.currentTarget, true)
+          }}
+          onEnded={(event) => {
+            setPaused(true)
+            reportProgress(event.currentTarget, true)
+          }}
           onWaiting={() => setBuffering(true)}
           onPlaying={() => setBuffering(false)}
           onSeeked={() => setBuffering(false)}
