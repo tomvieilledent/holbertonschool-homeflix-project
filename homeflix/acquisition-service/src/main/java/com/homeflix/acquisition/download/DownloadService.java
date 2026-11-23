@@ -73,9 +73,15 @@ public class DownloadService {
         try {
             download.setTorrentId(torrent.add(source.magnetUri()));
             download.setState(DownloadState.DOWNLOADING);
-        } catch (TorrentClientUnavailableException e) {
+        } catch (RuntimeException e) {
+            // Toute erreur du client (injoignable, lien refusé…) : sans cela la ligne resterait QUEUED, état actif, et
+            // l'index unique bloquerait l'entrée pour de bon.
+            boolean unavailable = e instanceof TorrentClientUnavailableException;
+            if (!unavailable) {
+                log.error("Échec du démarrage du téléchargement {}", download.getId(), e);
+            }
             download.setState(DownloadState.FAILED);
-            download.setErrorCode("TORRENT_CLIENT_UNAVAILABLE");
+            download.setErrorCode(unavailable ? "TORRENT_CLIENT_UNAVAILABLE" : "DOWNLOAD_FAILED");
             download.setFinishedAt(Instant.now());
             downloads.save(download);
             throw e;

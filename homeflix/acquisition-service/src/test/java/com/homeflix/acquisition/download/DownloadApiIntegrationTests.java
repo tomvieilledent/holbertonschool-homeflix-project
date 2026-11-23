@@ -234,6 +234,20 @@ class DownloadApiIntegrationTests {
 				.andExpect(status().isAccepted());
 	}
 
+	@Test
+	void anyOtherClientErrorMarksTheDownloadFailedAndDoesNotBlockTheEntry() throws Exception {
+		acknowledge();
+		when(torrent.add(anyString())).thenThrow(new IllegalArgumentException("pas un lien magnet"));
+		mvc.perform(post("/api/v1/downloads").with(asAdmin()).contentType(MediaType.APPLICATION_JSON).content(SINTEL_BODY))
+				.andExpect(status().isInternalServerError())
+				.andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+		assertThat(jdbc.queryForObject("select state from downloads", String.class)).isEqualTo("FAILED");
+		assertThat(jdbc.queryForObject("select error_code from downloads", String.class)).isEqualTo("DOWNLOAD_FAILED");
+		org.mockito.Mockito.doReturn(SINTEL_HASH).when(torrent).add(anyString());
+		mvc.perform(post("/api/v1/downloads").with(asAdmin()).contentType(MediaType.APPLICATION_JSON).content(SINTEL_BODY))
+				.andExpect(status().isAccepted());
+	}
+
 	// --- Suivi -------------------------------------------------------------------------------------------
 
 	@Test
