@@ -5,6 +5,9 @@ import { authenticate, noContent, paginate, problem, readJson } from '@/mocks/ht
 
 const BASE = '/api/identity/v1'
 const MAX_PROFILES = 5
+const MAX_NAME_LENGTH = 30
+
+const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
 const invalid = (field, message) =>
   problem('validation-error', { errors: [{ field, message }] })
@@ -54,7 +57,9 @@ export function identityHandlers(db) {
       if (auth.error) return auth.error
       const { name, avatar } = await readJson(request)
       if (!name?.trim()) return invalid('name', 'Le nom du profil est obligatoire.')
+      if (name.trim().length > MAX_NAME_LENGTH) return invalid('name', 'Au plus 30 caractères.')
       if (db.profiles.length >= MAX_PROFILES) return problem('profile-limit-reached')
+      if (db.profiles.some((p) => sameName(p.name, name))) return problem('conflict')
       const profile = {
         id: crypto.randomUUID(),
         name: name.trim(),
@@ -74,6 +79,10 @@ export function identityHandlers(db) {
       if (!profile) return problem('not-found')
       const { name, avatar } = await readJson(request)
       if (name !== undefined && !name.trim()) return invalid('name', 'Le nom du profil est obligatoire.')
+      if (name !== undefined && name.trim().length > MAX_NAME_LENGTH) return invalid('name', 'Au plus 30 caractères.')
+      if (name !== undefined && db.profiles.some((p) => p !== profile && sameName(p.name, name))) {
+        return problem('conflict')
+      }
       if (name !== undefined) profile.name = name.trim()
       if (avatar !== undefined) profile.avatar = avatar
       return HttpResponse.json(profile)
@@ -84,6 +93,7 @@ export function identityHandlers(db) {
       if (auth.error) return auth.error
       const index = db.profiles.findIndex((p) => p.id === params.profileId)
       if (index < 0) return problem('not-found')
+      if (db.profiles.length === 1) return problem('conflict') // le dernier profil d'un compte est conservé
       db.profiles.splice(index, 1)
       db.favourites.delete(params.profileId)
       db.progress.delete(params.profileId)

@@ -51,9 +51,16 @@ export default function AuthProvider({ children }) {
     setSession((current) => ({ ...current, activeProfileId: profileId }))
   }, [])
 
+  // Le profil actif vient d'être supprimé : il n'y en a plus d'actif tant qu'un autre n'est pas choisi.
+  const forgetProfile = useCallback((profileId) => {
+    setSession((current) =>
+      current.activeProfileId === profileId ? { ...current, activeProfileId: null } : current,
+    )
+  }, [])
+
   const value = useMemo(
-    () => ({ ...session, login, logout, selectProfile }),
-    [session, login, logout, selectProfile],
+    () => ({ ...session, login, logout, selectProfile, forgetProfile }),
+    [session, login, logout, selectProfile, forgetProfile],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -55,6 +55,9 @@ export default function ProfileMenu() {
           <Link to="/profiles" onClick={() => setOpen(false)}>
             Changer de profil
           </Link>
+          <Link to="/profiles/manage" onClick={() => setOpen(false)}>
+            Gérer les profils
+          </Link>
           <button type="button" onClick={signOut}>
             Se déconnecter
           </button>

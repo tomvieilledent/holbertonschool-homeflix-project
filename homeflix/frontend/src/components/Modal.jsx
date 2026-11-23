@@ -7,7 +7,8 @@ const FOCUSABLE =
 
 /**
  * Boîte de dialogue modale : `role="dialog"`, piège de focus, fermeture par Échap ou clic sur le fond,
- * focus rendu à l'élément déclencheur à la fermeture.
+ * focus rendu à l'élément déclencheur à la fermeture. Le focus va au premier élément focalisable, ou à celui
+ * qui porte `data-autofocus`.
  * @param {object} props
  * @param {boolean} props.open Affiche la modale.
  * @param {() => void} props.onClose Appelé sur Échap, clic sur le fond ou bouton de fermeture.
@@ -30,7 +31,8 @@ export default function Modal({ open, onClose, title, children, actions }) {
     const dialog = dialogRef.current
     const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const initial = dialog.querySelector(FOCUSABLE) ?? dialog
+    // Focus initial : l'élément marqué `data-autofocus` (ex. le champ d'un formulaire), sinon le premier focalisable.
+    const initial = dialog.querySelector('[data-autofocus]') ?? dialog.querySelector(FOCUSABLE) ?? dialog
     initial.focus()
 
     const onKeyDown = (event) => {
