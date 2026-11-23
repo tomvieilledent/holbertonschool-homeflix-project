@@ -10,11 +10,21 @@ import Modal from '@/components/Modal'
  * @param {string} props.title Titre (nom accessible de la boîte de dialogue).
  * @param {React.ReactNode} props.children Explication des conséquences.
  * @param {string} props.confirmLabel Libellé du bouton de confirmation.
+ * @param {string} [props.cancelLabel] Libellé du bouton qui renonce (« Annuler » par défaut) ; à changer quand l'action
+ *   confirmée s'appelle elle-même « Annuler… ».
  * @param {'danger'|'primary'} [props.variant] `danger` par défaut (suppression, désactivation).
  * @param {() => Promise<void>} props.onConfirm
  * @param {() => void} props.onClose
  */
-export default function ConfirmModal({ title, children, confirmLabel, variant = 'danger', onConfirm, onClose }) {
+export default function ConfirmModal({
+  title,
+  children,
+  confirmLabel,
+  cancelLabel = 'Annuler',
+  variant = 'danger',
+  onConfirm,
+  onClose,
+}) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -37,7 +47,7 @@ export default function ConfirmModal({ title, children, confirmLabel, variant = 
       actions={
         <>
           <Button variant="secondary" data-autofocus onClick={onClose}>
-            Annuler
+            {cancelLabel}
           </Button>
           <Button variant={variant} loading={busy} onClick={confirm}>
             {confirmLabel}

@@ -27,6 +27,8 @@ let entries
 let rights
 let writes // [{ method, path, body }]
 let fail // { 'POST /downloads': réponse } : réponse à renvoyer une fois pour cette écriture
+let catalogueFailure // réponse à renvoyer une fois à la lecture du catalogue
+let downloadsList // téléchargements renvoyés par `GET /downloads`
 let fetchMock
 
 function serve() {
@@ -34,7 +36,15 @@ function serve() {
     const path = String(url).replace('/api/acquisition/v1', '')
     const method = init.method ?? 'GET'
     const body = init.body ? JSON.parse(init.body) : undefined
+    if (method === 'GET' && path.startsWith('/downloads')) {
+      return json({ items: downloadsList, page: 0, size: 50, total: downloadsList.length, totalPages: 1 })
+    }
     if (method === 'GET' && path.startsWith('/catalogue')) {
+      if (catalogueFailure) {
+        const response = catalogueFailure
+        catalogueFailure = null
+        return response
+      }
       const query = new URL(path, 'http://localhost').searchParams
       const page = Number(query.get('page') ?? 0)
       const size = Number(query.get('size') ?? 20)
@@ -54,6 +64,7 @@ function serve() {
     }
     if (key === 'POST /downloads') {
       entries = entries.map((item) => (item.id === body.catalogueEntryId ? { ...item, activeDownloadId: 'd1' } : item))
+      downloadsList = [{ id: 'd1', catalogueEntryId: body.catalogueEntryId, title: 'x', state: 'QUEUED', progressPercent: 0, createdAt: '2026-11-23T10:00:00Z' }, ...downloadsList]
       return json({ id: 'd1', catalogueEntryId: body.catalogueEntryId, title: 'x', state: 'QUEUED', progressPercent: 0 }, 202)
     }
     throw new Error(`requête inattendue : ${key}`)
@@ -81,6 +92,8 @@ describe('AcquisitionPage', () => {
     rights = { ...NOTICE }
     writes = []
     fail = {}
+    catalogueFailure = null
+    downloadsList = []
     fetchMock = vi.fn(serve())
     vi.stubGlobal('fetch', fetchMock)
   })
@@ -100,7 +113,7 @@ describe('AcquisitionPage', () => {
       expect(proof).toHaveAttribute('href', 'https://studio.blender.org/films/')
       expect(proof).toHaveAttribute('target', '_blank')
       expect(proof).toHaveAttribute('rel', 'noopener noreferrer')
-      expect(fetchMock.mock.calls[0][0]).toBe('/api/acquisition/v1/catalogue?page=0&size=20')
+      expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain('/api/acquisition/v1/catalogue?page=0&size=20')
     })
 
     it('n’offre aucun champ pour saisir une adresse : on ne choisit que parmi les contenus autorisés', async () => {
@@ -135,7 +148,7 @@ describe('AcquisitionPage', () => {
     })
 
     it('propose de réessayer quand le catalogue ne se charge pas, sans détail technique', async () => {
-      fetchMock.mockResolvedValueOnce(problem(503, 'LIBRARY_UNAVAILABLE'))
+      catalogueFailure = problem(503, 'LIBRARY_UNAVAILABLE')
       renderPage()
       expect(await screen.findByText(/momentanément indisponible/)).toBeInTheDocument()
       expect(document.body).not.toHaveTextContent('SocketException')

@@ -47,3 +47,35 @@ export const acknowledgeRights = (noticeVersion) =>
  */
 export const startDownload = (catalogueEntryId) =>
   apiFetch('acquisition', '/v1/downloads', { method: 'POST', body: { catalogueEntryId } })
+
+/**
+ * Téléchargements, du plus récent au plus ancien (`GET /downloads`, ADMIN). `page` commence à 0 ; `state` filtre par
+ * état (`QUEUED`, `DOWNLOADING`, `COMPLETED`, `FAILED`, `CANCELLED`).
+ * @param {{page?: number, size?: number, state?: string}} [query]
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{items: Download[], page: number, size: number, total: number, totalPages: number}>}
+ * @typedef {object} Download
+ * @property {string} id
+ * @property {string} catalogueEntryId
+ * @property {string} title
+ * @property {'QUEUED'|'DOWNLOADING'|'COMPLETED'|'FAILED'|'CANCELLED'} state `COMPLETED`, `FAILED` et `CANCELLED` sont terminaux.
+ * @property {number} progressPercent 0 à 100.
+ * @property {string|null} [errorCode] Présent si `FAILED` (`NO_PEERS`, `DISK_FULL`, `TORRENT_CLIENT_UNAVAILABLE`).
+ * @property {string|null} [libraryMediaId] Média indexé une fois le fichier arrivé dans la bibliothèque.
+ * @property {string} createdAt
+ * @property {string|null} [finishedAt]
+ */
+export async function listDownloads(query = {}, signal) {
+  const page = await apiFetch('acquisition', '/v1/downloads', { query, signal })
+  if (!Array.isArray(page?.items)) throw new TypeError('Réponse inattendue du serveur pour les téléchargements.')
+  return page
+}
+
+/**
+ * Annule un téléchargement en cours (`POST /downloads/{id}/cancel`) et renvoie son nouvel état. Lève une `ApiError`
+ * `CONFLICT` (409) si le téléchargement est déjà terminé, échoué ou annulé.
+ * @param {string} downloadId
+ * @returns {Promise<Download>}
+ */
+export const cancelDownload = (downloadId) =>
+  apiFetch('acquisition', `/v1/downloads/${encodeURIComponent(downloadId)}/cancel`, { method: 'POST' })
