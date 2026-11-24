@@ -13,6 +13,7 @@ import SetupPage from '@/features/auth/SetupPage'
 import CataloguePage from '@/features/catalogue/CataloguePage'
 import DetailPage from '@/features/catalogue/DetailPage'
 import HomePage from '@/features/catalogue/HomePage'
+import IntroGate from '@/features/intro/IntroGate'
 import PlayerPage from '@/features/player/PlayerPage'
 
 const lazyPage = (loader) => ({
@@ -28,7 +29,15 @@ export const routes = [
         // Sans en-tête : pages publiques et choix du profil.
         element: <BareLayout />,
         children: [
-          { path: '/login', element: <LoginPage /> },
+          {
+            // L'intro du logo précède la connexion, une fois par session.
+            path: '/login',
+            element: (
+              <IntroGate>
+                <LoginPage />
+              </IntroGate>
+            ),
+          },
           { path: '/setup', element: <SetupPage /> },
           {
             element: <RequireAuth />,
