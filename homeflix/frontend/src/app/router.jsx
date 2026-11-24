@@ -7,6 +7,7 @@ import AdminLayout from '@/features/admin/AdminLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
+import MyListPage from '@/features/favourites/MyListPage'
 import RequireAuth from '@/features/auth/RequireAuth'
 import RequireProfile from '@/features/auth/RequireProfile'
 import RequireRole from '@/features/auth/RequireRole'
@@ -54,6 +55,7 @@ export const routes = [
                 children: [
                   { path: '/', element: <HomePage /> },
                   { path: '/catalogue', element: <CataloguePage /> },
+                  { path: '/ma-liste', element: <MyListPage /> },
               { path: '/media/:mediaId', element: <DetailPage /> },
                   { path: '/watch/:mediaId', element: <PlayerPage /> },
                 ],
