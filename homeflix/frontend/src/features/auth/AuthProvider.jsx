@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '@/features/auth/authContext'
+import { forgetProfile as forgetRememberedProfile } from '@/services/activeProfile'
 import { onSessionExpired } from '@/services/api'
 import { restoreSession, selectProfile as selectProfileRequest, signIn, signOut } from '@/services/auth'
 
@@ -53,6 +54,7 @@ export default function AuthProvider({ children }) {
 
   // Le profil actif vient d'être supprimé : il n'y en a plus d'actif tant qu'un autre n'est pas choisi.
   const forgetProfile = useCallback((profileId) => {
+    forgetRememberedProfile() // sinon le prochain refresh ré-sélectionnerait ce profil supprimé
     setSession((current) =>
       current.activeProfileId === profileId ? { ...current, activeProfileId: null } : current,
     )
