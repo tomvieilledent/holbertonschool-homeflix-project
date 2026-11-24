@@ -314,6 +314,31 @@ paths:
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /admin/system/status:
+    get:
+      tags: [Admin]
+      summary: État des services (ADMIN)
+      description: |
+        Interroge Identity (en mémoire), Library et Acquisition (`/actuator/health`, sur le réseau interne) avec un délai
+        de 2 s par service, en parallèle. L'état d'un service inclut celui de sa base de données. Chaque service est `UP`
+        ou `DOWN` ; l'ensemble est `UP` si les trois sont `UP`, `DEGRADED` dès qu'un seul est `DOWN`. L'ensemble n'est
+        jamais `DOWN` : si Identity ne répond pas, c'est la requête elle-même qui échoue (503 ou délai dépassé).
+        La réponse ne contient aucun détail technique (adresse, message d'erreur, version).
+      responses:
+        "200":
+          description: État des services
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemStatus" }
+              example:
+                status: DEGRADED
+                checkedAt: "2026-11-23T12:00:00Z"
+                services:
+                  - { name: identity, status: UP }
+                  - { name: library, status: UP }
+                  - { name: acquisition, status: DOWN }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /.well-known/jwks.json:
     servers:
       - url: /
@@ -421,6 +446,19 @@ components:
         expiresIn: { type: integer, description: Durée de vie en secondes }
         tokenType: { type: string, enum: [Bearer] }
     Role: { type: string, enum: [USER, ADMIN] }
+    ServiceStatus:
+      type: object
+      required: [name, status]
+      properties:
+        name: { type: string, enum: [identity, library, acquisition] }
+        status: { type: string, enum: [UP, DOWN] }
+    SystemStatus:
+      type: object
+      required: [status, checkedAt, services]
+      properties:
+        status: { type: string, enum: [UP, DEGRADED], description: "`UP` si les trois services sont `UP`, sinon `DEGRADED`." }
+        checkedAt: { type: string, format: date-time }
+        services: { type: array, items: { $ref: "#/components/schemas/ServiceStatus" } }
     Account:
       type: object
       required: [id, username, email, role, enabled, createdAt]
