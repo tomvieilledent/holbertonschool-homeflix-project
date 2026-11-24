@@ -123,7 +123,7 @@ export default function AcquisitionPage() {
     } catch (failure) {
       if (failure.code === 'CONFLICT') {
         downloads.reload().catch(() => {})
-        throw new Error('Ce téléchargement est déjà terminé ou annulé : la liste a été actualisée.')
+        throw new Error('Ce téléchargement est déjà terminé ou échoué : la liste a été actualisée.')
       }
       throw failure
     }

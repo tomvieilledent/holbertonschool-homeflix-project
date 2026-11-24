@@ -379,5 +379,8 @@ describe('acquisition', () => {
     const active = (await call(`${ACQUISITION}/downloads?state=DOWNLOADING`)).body.items[0]
     const cancelled = await call(`${ACQUISITION}/downloads/${active.id}/cancel`, { method: 'POST' })
     expect(cancelled.body.state).toBe('CANCELLED')
+    const again = await call(`${ACQUISITION}/downloads/${active.id}/cancel`, { method: 'POST' })
+    expect(again.status).toBe(200) // idempotent : 409 seulement pour COMPLETED ou FAILED
+    expect(again.body.state).toBe('CANCELLED')
   })
 })

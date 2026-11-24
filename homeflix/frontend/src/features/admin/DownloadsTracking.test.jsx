@@ -177,7 +177,7 @@ describe('suivi des téléchargements', () => {
     await actor.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Annuler le téléchargement' }))
     await advance(0)
 
-    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('Ce téléchargement est déjà terminé ou annulé : la liste a été actualisée.')
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('Ce téléchargement est déjà terminé ou échoué : la liste a été actualisée.')
     expect(within(rowOf('Sintel')).getByText('Terminé')).toBeInTheDocument()
   })
 

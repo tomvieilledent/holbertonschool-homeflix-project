@@ -72,8 +72,9 @@ export async function listDownloads(query = {}, signal) {
 }
 
 /**
- * Annule un téléchargement en cours (`POST /downloads/{id}/cancel`) et renvoie son nouvel état. Lève une `ApiError`
- * `CONFLICT` (409) si le téléchargement est déjà terminé, échoué ou annulé.
+ * Annule un téléchargement en file ou en cours (`POST /downloads/{id}/cancel`) et renvoie son nouvel état ; annuler un
+ * téléchargement déjà annulé répond `200` (idempotent). Lève une `ApiError`
+ * `CONFLICT` (409) s'il est déjà terminé (`COMPLETED`) ou échoué (`FAILED`).
  * @param {string} downloadId
  * @returns {Promise<Download>}
  */
