@@ -48,3 +48,22 @@ export const resetProgress = (mediaId) => apiFetch('library', progressPath(media
  * @returns {Promise<{items: object[], page: number, size: number, total: number, totalPages: number}>}
  */
 export const listFavourites = (query = {}, signal) => apiFetch('library', '/v1/me/favourites', { query, signal })
+
+const FAVOURITES_PAGE_SIZE = 50
+const FAVOURITES_MAX_PAGES = 20 // garde-fou : 1 000 favoris au plus
+
+/**
+ * Tous les favoris du profil actif, les plus récents en premier (parcourt les pages de `GET /me/favourites`).
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<object[]>}
+ */
+export async function listAllFavourites(signal) {
+  const items = []
+  for (let page = 0; page < FAVOURITES_MAX_PAGES; page += 1) {
+    const result = await listFavourites({ page, size: FAVOURITES_PAGE_SIZE }, signal)
+    if (!Array.isArray(result?.items)) throw new TypeError('Réponse inattendue pour « Ma liste »')
+    items.push(...result.items)
+    if (page + 1 >= result.totalPages) break
+  }
+  return items
+}

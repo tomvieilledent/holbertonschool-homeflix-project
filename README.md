@@ -256,6 +256,8 @@ Commencez toujours par `docker compose ps` (état des services) puis `docker com
 | Un appel de téléchargement répond `409` « dossier non déclaré » | `/downloads` n'est pas déclaré comme dossier dans Library | Déclarez `/downloads` (section 3) |
 | Un téléchargement P2P ne démarre jamais | Aucun pair disponible, ou le réseau bloque BitTorrent | Mettez `TRANSMISSION_DHT=true` dans `.env` et relancez ; sinon essayez un autre réseau |
 
+Les limites connues du MVP, avec l'issue qui les suit, sont listées dans [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md).
+
 Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose up --build -d --wait`.
 
 ## 9. Pour les développeurs
@@ -267,7 +269,7 @@ Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose
   docker compose -f compose.yaml -f compose.dev.yaml up --build
   ```
 
-- **Tests :** `./mvnw test` dans chaque service (Docker est requis pour Testcontainers) ; `npm test` dans `homeflix/frontend` (voir son [README](homeflix/frontend/README.md)).
+- **Tests :** `./mvnw test` dans chaque service (Docker est requis pour Testcontainers) ; `npm test` dans `homeflix/frontend` (voir son [README](homeflix/frontend/README.md)) ; tests de bout en bout du parcours principal avec Playwright dans `homeflix/e2e` (voir son [README](homeflix/e2e/README.md)).
 - **Scripts** (dans `homeflix/scripts/`) : `smoke.sh` (test de fumée de la pile complète), `test-persistence.sh` (les données survivent au redémarrage), `test-backup-restore.sh` (une sauvegarde se restaure), `check-security-headers.sh` (en-têtes du proxy), `check-secrets.sh`.
 - **Conventions :** commits [Conventional Commits](https://www.conventionalcommits.org/) (`feat(identity): …`), une issue = une branche = une PR vers `main`. Détails dans [`CONTRIBUTING.md`](CONTRIBUTING.md) et [`docs/WORKING_AGREEMENT.md`](docs/WORKING_AGREEMENT.md).
 
@@ -279,6 +281,7 @@ Pour **tout remettre à zéro** : `docker compose down -v`, puis `docker compose
 | [`docs/adr/`](docs/adr/) | Décisions d'architecture (authentification et sécurité, infrastructure) |
 | [`docs/api/`](docs/api/) | Contrats OpenAPI des services et conventions d'erreur |
 | [`docs/RISKS.md`](docs/RISKS.md) | Registre des risques |
+| [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md) | Limites connues (livré et non livré), ressources et environnements testés, dépannage complémentaire |
 | [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md) | Sauvegarde et restauration des données, cas particuliers |
 | [`docs/COPYRIGHT_AND_P2P.md`](docs/COPYRIGHT_AND_P2P.md) | Droit d'auteur et P2P : ce que le P2P n'autorise pas, mesures de HomeFlix, rappel des droits |
 | [`docs/legal/`](docs/legal/) | Licences des films de démonstration et du fichier P2P |

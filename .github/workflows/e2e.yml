@@ -1,0 +1,67 @@
+# Tests de bout en bout (Playwright) du parcours principal, sur la pile Docker Compose complète.
+# Facultatif : lancé à la main (onglet Actions, « Run workflow »), jamais sur une pull request, car il télécharge les
+# films de démonstration (environ 250 Mo) et dure plusieurs minutes. Voir homeflix/e2e/README.md.
+name: E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Parcours principal (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: homeflix/e2e/package-lock.json
+      - name: Secrets et films de démonstration
+        working-directory: homeflix
+        run: |
+          ./scripts/gen-secrets.sh
+          ./scripts/fetch-demo-media.sh
+      - name: Démarrer la pile
+        working-directory: homeflix
+        run: docker compose up --build -d --wait
+      - name: Installer Playwright
+        working-directory: homeflix/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Lancer les tests
+        working-directory: homeflix/e2e
+        run: |
+          set -euo pipefail
+          # Le code d'installation vient de .env ; il est masqué dans les journaux.
+          token="$(grep '^SETUP_TOKEN=' ../.env | cut -d= -f2-)"
+          echo "::add-mask::$token"
+          E2E_SETUP_TOKEN="$token" npx playwright test
+      # Captures, vidéos et traces des échecs (et rapport HTML), à ouvrir avec `npx playwright show-trace`.
+      - name: Publier le rapport et les traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            homeflix/e2e/playwright-report
+            homeflix/e2e/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Journaux de la pile en cas d'échec
+        if: failure()
+        working-directory: homeflix
+        run: docker compose logs --no-color --tail=200
+      - name: Arrêter la pile
+        if: always()
+        working-directory: homeflix
+        run: docker compose down -v || true

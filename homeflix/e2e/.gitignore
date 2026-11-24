@@ -1,0 +1,5 @@
+node_modules/
+test-results/
+playwright-report/
+# Identifiants de l'administrateur de test, créés au premier lancement (droits 600). Jamais commités.
+.state.json

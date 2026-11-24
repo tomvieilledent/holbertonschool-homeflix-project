@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '@/app/router'
@@ -27,11 +28,13 @@ function open(path, session) {
 }
 
 describe('routes protégées', () => {
-  // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
+  // L'accueil et les pages d'administration chargent leurs données : une réponse vide mais bien formée (accueil et page
+  // vide) suffit à ces tests de routage. Une page qui recevrait une forme inattendue planterait après son premier rendu,
+  // et le titre qu'on attend disparaîtrait selon le rythme de la machine (test instable en CI).
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
+      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [], items: [], page: 0, size: 20, total: 0, totalPages: 0 }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
     )
   })
   afterEach(() => vi.unstubAllGlobals())
@@ -82,28 +85,78 @@ describe('routes protégées', () => {
     expect(router.state.location.search).toBe('?next=%2Fmedia%2Fm1')
   })
 
+  it('laisse un utilisateur avec un profil ouvrir « Ma liste »', () => {
+    open('/ma-liste', 'user')
+    expect(screen.getByRole('heading', { level: 1, name: 'Ma liste' })).toBeInTheDocument()
+  })
+
+  it('« Ma liste » sans profil actif renvoie vers « Qui regarde ? » en gardant la destination', () => {
+    const router = open('/ma-liste', 'noProfile')
+    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.search).toBe('?next=%2Fma-liste')
+  })
+
   it('l’accueil sans profil mène à /profiles sans paramètre', () => {
     const router = open('/', 'noProfile')
     expect(router.state.location.pathname).toBe('/profiles')
     expect(router.state.location.search).toBe('')
   })
 
-  it('refuse /admin à un USER', async () => {
-    const router = open('/admin', 'user')
-    expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Administration' })).not.toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/admin')
-  })
+  describe('administration', () => {
+    it('refuse /admin à un USER, sans lui montrer la navigation ni le contenu', async () => {
+      const router = open('/admin', 'user')
+      expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Administration' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('navigation', { name: 'Sections de l’administration' })).not.toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/admin')
+    })
 
-  it('refuse aussi les sous-pages admin à un USER', async () => {
-    open('/admin/acquisition', 'user')
-    expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
-    expect(screen.queryByText('Administration — Acquisition')).not.toBeInTheDocument()
-  })
+    it.each(['/admin/comptes', '/admin/acquisition'])('refuse aussi %s à un USER par URL directe', async (path) => {
+      open(path, 'user')
+      expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Comptes' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Acquisition' })).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Retour à l’accueil' })).toHaveAttribute('href', '/')
+    })
 
-  it('autorise /admin à un ADMIN', async () => {
-    open('/admin', 'admin')
-    expect(await screen.findByRole('heading', { name: 'Administration' })).toBeInTheDocument()
+    it('ne montre pas le lien « Administration » à un USER', () => {
+      open('/', 'user')
+      expect(screen.queryByRole('link', { name: 'Administration' })).not.toBeInTheDocument()
+    })
+
+    it('renvoie un anonyme vers la connexion, pas vers « Accès refusé »', async () => {
+      const router = open('/admin/comptes', 'anonymous')
+      await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+      expect(router.state.location.search).toBe('?next=%2Fadmin%2Fcomptes')
+      expect(screen.queryByRole('heading', { name: 'Accès refusé' })).not.toBeInTheDocument()
+    })
+
+    it('autorise un ADMIN : /admin ouvre la première section avec la navigation latérale', async () => {
+      const router = open('/admin', 'admin')
+      expect(await screen.findByRole('heading', { level: 1, name: 'Administration' })).toBeInTheDocument()
+      expect(await screen.findByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/admin/comptes')
+      const nav = screen.getByRole('navigation', { name: 'Sections de l’administration' })
+      expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Acquisition'])
+      expect(within(nav).getByRole('link', { name: 'Comptes' })).toHaveAttribute('aria-current', 'page')
+    })
+
+    it('passe d’une section à l’autre avec la navigation latérale', async () => {
+      const user = userEvent.setup()
+      const router = open('/admin/comptes', 'admin')
+      await screen.findByRole('heading', { level: 2, name: 'Comptes' })
+      await user.click(within(screen.getByRole('navigation', { name: 'Sections de l’administration' })).getByRole('link', { name: 'Acquisition' }))
+
+      expect(await screen.findByRole('heading', { level: 2, name: 'Acquisition' })).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/admin/acquisition')
+      expect(screen.getByRole('link', { name: 'Acquisition' })).toHaveAttribute('aria-current', 'page')
+      expect(screen.getByRole('link', { name: 'Comptes' })).not.toHaveAttribute('aria-current')
+    })
+
+    it('affiche la page introuvable pour une section inconnue', async () => {
+      open('/admin/inconnue', 'admin')
+      expect(await screen.findByRole('heading', { name: 'Page introuvable' })).toBeInTheDocument()
+    })
   })
 
   it('affiche la page 404 sans exiger de connexion', () => {

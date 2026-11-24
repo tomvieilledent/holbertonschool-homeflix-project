@@ -1,0 +1,14 @@
+{
+  "name": "homeflix-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Tests de bout en bout (Playwright) du parcours principal de HomeFlix, contre la pile Docker Compose.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}
