@@ -7,10 +7,11 @@ import Skeleton from '@/components/Skeleton'
 import AvailabilityBadge from '@/features/catalogue/AvailabilityBadge'
 import { formatDuration, playAction } from '@/features/catalogue/format'
 import Poster from '@/features/catalogue/Poster'
+import { useFavourites } from '@/features/favourites/favouritesContext'
 import '@/features/catalogue/DetailPage.css'
 import { isAbortError } from '@/services/api'
 import { getMedia } from '@/services/catalogue'
-import { addFavourite, getProgress, listFavourites, removeFavourite } from '@/services/library'
+import { getProgress } from '@/services/library'
 
 /** Pourquoi un film ne peut pas être lu : dit à l'utilisateur quoi faire, sans détail technique. */
 const UNPLAYABLE = {
@@ -42,26 +43,19 @@ export default function DetailPage() {
   const { mediaId } = useParams()
   const [media, setMedia] = useState(null) // null = chargement
   const [progress, setProgress] = useState(null)
-  const [isFavourite, setIsFavourite] = useState(null) // null = inconnu : le bouton est masqué
   const [error, setError] = useState(null)
-  const [pending, setPending] = useState(false)
-  const [favouriteError, setFavouriteError] = useState('')
+  const favourites = useFavourites()
 
   const load = useCallback(
     (signal) => {
       setError(null)
       setMedia(null)
-      // Le média est indispensable ; la progression et « Ma liste » ne doivent pas empêcher d'afficher la fiche.
-      Promise.all([
-        getMedia(mediaId, signal),
-        getProgress(mediaId, signal).catch(() => null),
-        listFavourites({ size: 50 }, signal).catch(() => null),
-      ])
-        .then(([found, progressResult, favourites]) => {
+      // Le média est indispensable ; la progression ne doit pas empêcher d'afficher la fiche.
+      Promise.all([getMedia(mediaId, signal), getProgress(mediaId, signal).catch(() => null)])
+        .then(([found, progressResult]) => {
           if (signal?.aborted) return
           setMedia(found)
           setProgress(progressResult)
-          setIsFavourite(favourites ? favourites.items.some((item) => item.id === found.id) : null)
         })
         .catch((failure) => {
           if (!isAbortError(failure) && !signal?.aborted) setError(failure)
@@ -75,19 +69,6 @@ export default function DetailPage() {
     load(controller.signal)
     return () => controller.abort()
   }, [load])
-
-  const toggleFavourite = async () => {
-    setFavouriteError('')
-    setPending(true)
-    try {
-      await (isFavourite ? removeFavourite(mediaId) : addFavourite(mediaId))
-      setIsFavourite(!isFavourite)
-    } catch (failure) {
-      setFavouriteError(failure.message)
-    } finally {
-      setPending(false)
-    }
-  }
 
   const back = <Link to="/catalogue">Retour au catalogue</Link>
 
@@ -140,13 +121,17 @@ export default function DetailPage() {
                 {UNPLAYABLE[availability] ?? UNPLAYABLE.UNAVAILABLE}
               </p>
             )}
-            {isFavourite !== null && (
-              <Button variant="secondary" aria-pressed={isFavourite} disabled={pending} onClick={toggleFavourite}>
-                {isFavourite ? 'Dans ma liste' : 'Ajouter à ma liste'}
+            {favourites.status === 'ready' && (
+              <Button
+                variant="secondary"
+                aria-pressed={favourites.isFavourite(media.id)}
+                disabled={favourites.isPending(media.id)}
+                onClick={() => favourites.toggle(media)}
+              >
+                {favourites.isFavourite(media.id) ? 'Dans ma liste' : 'Ajouter à ma liste'}
               </Button>
             )}
           </div>
-          {favouriteError && <p role="alert">{favouriteError}</p>}
         </div>
       </div>
     </article>
