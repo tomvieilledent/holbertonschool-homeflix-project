@@ -141,7 +141,7 @@ describe('routes protégées', () => {
     it('autorise un ADMIN : /admin ouvre la première section avec la navigation latérale', async () => {
       const router = open('/admin', 'admin')
       expect(await screen.findByRole('heading', { level: 1, name: 'Administration' })).toBeInTheDocument()
-      expect(await screen.findByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument())
       expect(router.state.location.pathname).toBe('/admin/comptes')
       const nav = screen.getByRole('navigation', { name: 'Sections de l’administration' })
       expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Bibliothèque', 'Acquisition'])
@@ -154,7 +154,7 @@ describe('routes protégées', () => {
       await screen.findByRole('heading', { level: 2, name: 'Comptes' })
       await user.click(within(screen.getByRole('navigation', { name: 'Sections de l’administration' })).getByRole('link', { name: 'Acquisition' }))
 
-      expect(await screen.findByRole('heading', { level: 2, name: 'Acquisition' })).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Acquisition' })).toBeInTheDocument())
       expect(router.state.location.pathname).toBe('/admin/acquisition')
       expect(screen.getByRole('link', { name: 'Acquisition' })).toHaveAttribute('aria-current', 'page')
       expect(screen.getByRole('link', { name: 'Comptes' })).not.toHaveAttribute('aria-current')
