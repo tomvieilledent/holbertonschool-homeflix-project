@@ -85,6 +85,17 @@ describe('routes protégées', () => {
     expect(router.state.location.search).toBe('?next=%2Fmedia%2Fm1')
   })
 
+  it('laisse un utilisateur avec un profil ouvrir « Ma liste »', () => {
+    open('/ma-liste', 'user')
+    expect(screen.getByRole('heading', { level: 1, name: 'Ma liste' })).toBeInTheDocument()
+  })
+
+  it('« Ma liste » sans profil actif renvoie vers « Qui regarde ? » en gardant la destination', () => {
+    const router = open('/ma-liste', 'noProfile')
+    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.search).toBe('?next=%2Fma-liste')
+  })
+
   it('l’accueil sans profil mène à /profiles sans paramètre', () => {
     const router = open('/', 'noProfile')
     expect(router.state.location.pathname).toBe('/profiles')

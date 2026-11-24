@@ -11,6 +11,7 @@ import CataloguePage, {
   PAGE_SIZE,
   pageFromParams,
 } from '@/features/catalogue/CataloguePage'
+import ProfileScope from '@/features/favourites/ProfileScope'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -25,6 +26,7 @@ const ALL = Array.from({ length: 45 }, (_, index) => ({
 /** Simule `GET /media` : filtre `q` (titre) et `genre`, puis tranche selon `page` et `size` (à partir de 0). */
 const serve = (all) => async (url) => {
   if (String(url).includes('/v1/genres')) return json(genres)
+  if (String(url).includes('/me/favourites')) return json({ items: [], page: 0, size: 50, total: 0, totalPages: 0 })
   const query = new URL(url, 'http://localhost').searchParams
   const q = query.get('q')?.toLowerCase()
   const genre = query.get('genre')
@@ -46,7 +48,11 @@ function renderCatalogue(url = '/catalogue') {
   const router = createMemoryRouter([{ path: '/catalogue', element: <CataloguePage /> }], {
     initialEntries: [url],
   })
-  render(<RouterProvider router={router} />)
+  render(
+    <ProfileScope>
+      <RouterProvider router={router} />
+    </ProfileScope>,
+  )
   return router
 }
 

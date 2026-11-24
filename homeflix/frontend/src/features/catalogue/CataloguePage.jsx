@@ -4,9 +4,9 @@ import Button from '@/components/Button'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Pagination from '@/components/Pagination'
-import Skeleton from '@/components/Skeleton'
 import CatalogueFilters from '@/features/catalogue/CatalogueFilters'
-import MovieCard from '@/features/catalogue/MovieCard'
+import GridSkeleton from '@/features/catalogue/GridSkeleton'
+import FavouriteCard from '@/features/favourites/FavouriteCard'
 import '@/features/catalogue/CataloguePage.css'
 import { isAbortError } from '@/services/api'
 import { listGenres, listMedia } from '@/services/catalogue'
@@ -32,21 +32,6 @@ export function catalogueUrl(params, page) {
   else next.set('page', String(page))
   const search = next.toString()
   return search ? `/catalogue?${search}` : '/catalogue'
-}
-
-function GridSkeleton() {
-  return (
-    <>
-      <span role="status" className="visually-hidden">
-        Chargement du catalogue
-      </span>
-      <div className="catalogue__grid" aria-hidden="true">
-        {Array.from({ length: 8 }, (_, index) => (
-          <Skeleton key={index} variant="rect" width="100%" height={288} />
-        ))}
-      </div>
-    </>
-  )
 }
 
 /**
@@ -159,7 +144,7 @@ export default function CataloguePage() {
         <ul className="catalogue__grid">
           {data.items.map((media) => (
             <li key={media.id}>
-              <MovieCard media={media} />
+              <FavouriteCard media={media} />
             </li>
           ))}
         </ul>
