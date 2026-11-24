@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import accountsFixture from '@fixtures/identity/accounts-page.json'
 import { routes } from '@/app/router'
 import { AuthContext } from '@/features/auth/authContext'
@@ -29,6 +29,12 @@ function open(path, session) {
 }
 
 describe('routes protégées', () => {
+  // Les pages d'administration sont chargées à la demande : la première transformation de leur code, sur un exécuteur
+  // de CI chargé, dépassait le délai d'attente des requêtes asynchrones. On les charge une fois pour toutes ici.
+  beforeAll(async () => {
+    await Promise.all(Object.values(import.meta.glob('/src/features/admin/*Page.jsx')).map((load) => load()))
+  }, 60_000)
+
   // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
   beforeEach(() => {
     const respond = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
