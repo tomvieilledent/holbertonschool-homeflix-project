@@ -8,6 +8,24 @@ import { apiFetch } from '@/services/api'
  */
 export const getHome = (signal) => apiFetch('library', '/v1/home', { signal })
 
+// Écritures de progression en cours, par film. La position est enregistrée en tâche de fond quand on quitte le
+// lecteur, pendant que la fiche charge déjà la progression : sans attente, la lecture pourrait dépasser l'écriture
+// et afficher l'ancienne position. `getProgress` attend donc les écritures du même film.
+const pendingWrites = new Map()
+
+/** Suit une écriture de progression ; renvoie la requête telle quelle (l'échec reste l'affaire de l'appelant). */
+function trackWrite(mediaId, request) {
+  const settled = request.then(
+    () => {},
+    () => {},
+  )
+  const tracking = Promise.all([pendingWrites.get(mediaId), settled]).then(() => {
+    if (pendingWrites.get(mediaId) === tracking) pendingWrites.delete(mediaId)
+  })
+  pendingWrites.set(mediaId, tracking)
+  return request
+}
+
 const progressPath = (mediaId) => `/v1/media/${encodeURIComponent(mediaId)}/progress`
 const favouritePath = (mediaId) => `/v1/me/favourites/${encodeURIComponent(mediaId)}`
 
@@ -25,7 +43,10 @@ export const removeFavourite = (mediaId) => apiFetch('library', favouritePath(me
  * @returns {Promise<{mediaId: string, positionSeconds: number, durationSeconds?: number|null,
  *   state: 'NOT_STARTED'|'STARTED'|'COMPLETED', updatedAt?: string|null}>}
  */
-export const getProgress = (mediaId, signal) => apiFetch('library', progressPath(mediaId), { signal })
+export async function getProgress(mediaId, signal) {
+  await pendingWrites.get(mediaId) // lire après sa propre écriture (voir `trackWrite`)
+  return apiFetch('library', progressPath(mediaId), { signal })
+}
 
 /**
  * Enregistre la position de lecture (`PUT /media/{id}/progress`, idempotent) ; le serveur borne la position
@@ -36,10 +57,11 @@ export const getProgress = (mediaId, signal) => apiFetch('library', progressPath
  * @param {{keepalive?: boolean}} [options]
  */
 export const saveProgress = (mediaId, position, { keepalive } = {}) =>
-  apiFetch('library', progressPath(mediaId), { method: 'PUT', body: position, keepalive })
+  trackWrite(mediaId, apiFetch('library', progressPath(mediaId), { method: 'PUT', body: position, keepalive }))
 
 /** Réinitialise la progression (« Recommencer ») : le média repasse à `NOT_STARTED`. */
-export const resetProgress = (mediaId) => apiFetch('library', progressPath(mediaId), { method: 'DELETE' })
+export const resetProgress = (mediaId) =>
+  trackWrite(mediaId, apiFetch('library', progressPath(mediaId), { method: 'DELETE' }))
 
 /**
  * « Ma liste » du profil actif (`GET /me/favourites`), les ajouts les plus récents en premier.
