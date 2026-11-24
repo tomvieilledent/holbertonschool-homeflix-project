@@ -13,5 +13,5 @@ regexes = [
   '''un-mot-de-passe-long-12''',
   '''un-mot-de-passe-de-12-car''',  # exemple factice de la première version du README (historique du commit)
   '''eyJhbGciOiJSUzI1NiJ9\.fixture\.signature''',
-  '''temporaire-12345''',  # mot de passe temporaire factice des tests du frontend (comptes administrateur)
+  '''temporaire-12345''',  # mot de passe temporaire factice des tests du frontend (écran des comptes)
 ]
