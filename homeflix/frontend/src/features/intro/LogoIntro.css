@@ -1,0 +1,117 @@
+/* Intro animée : le logo apparaît, pivote d'un quart de tour (les lettres se redressent), puis le « play »
+   est pressé et des ondes se propagent. Fond et couleurs fixes : c'est une animation de marque. */
+.logo-intro {
+  --rot: 4s;
+  --ease: cubic-bezier(0.45, 0, 0.25, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #1f2124;
+}
+
+.logo-intro__waves {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.logo-intro__wave {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgb(246 179 82 / 35%);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 55%, rgb(56 58 63 / 90%) 70%, transparent 72%);
+}
+
+.logo-intro__svg {
+  position: relative;
+  display: block;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: auto;
+}
+
+/* rotation lente autour du centre de la toile */
+.logo-intro__logo {
+  transform-box: view-box;
+  transform-origin: 640px 360px;
+}
+
+.logo-intro__logo.is-appearing {
+  animation: logo-intro-appear 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.logo-intro__logo.is-turned {
+  transform: rotate(90deg);
+  transition: transform var(--rot) var(--ease);
+}
+
+@keyframes logo-intro-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* lettres : contre-rotation et espacement, le texte reste droit. Le centre de rotation de chaque lettre est
+   fixé en ligne (`transform-origin`, en unités du viewBox), pas par `fill-box` : voir LogoIntro.jsx. */
+.logo-intro__letter {
+  transform-box: view-box;
+}
+
+.logo-intro__logo.is-turned .logo-intro__letter {
+  transform: translateX(var(--dx)) rotate(-90deg);
+  transition: transform var(--rot) var(--ease);
+}
+
+/* pression sur le play */
+.logo-intro__shapes {
+  transform-box: view-box;
+  transform-origin: 640px 354px; /* centre des formes (triangle et barres) */
+}
+
+.logo-intro__shapes.is-pressed {
+  animation: logo-intro-press 0.6s cubic-bezier(0.3, 0.7, 0.4, 1.4);
+}
+
+@keyframes logo-intro-press {
+  30% {
+    transform: scale(0.92);
+  }
+
+  70% {
+    transform: scale(1.04);
+  }
+}
+
+.logo-intro__skip {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  padding: 0.45em 1.1em;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(255 255 255 / 90%);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.logo-intro__skip:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+.logo-intro__skip:focus-visible {
+  outline: 2px solid #f6b352;
+  outline-offset: 2px;
+}
