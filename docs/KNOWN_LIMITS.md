@@ -52,7 +52,6 @@ Vérifié sur la pile Docker Compose complète, par le reverse proxy, comme un n
 | T6 | **Le catalogue d'acquisition est fermé** : seules les entrées avec source et licence documentées peuvent être téléchargées. Aucune adresse libre n'est acceptée. | Droit d'auteur : le P2P n'accorde aucun droit. | [`COPYRIGHT_AND_P2P.md`](COPYRIGHT_AND_P2P.md) ; R9, R13 |
 | T7 | **La lecture dépend du navigateur** : le fichier est servi tel quel (pas de transcodage). | Voir section 5. | Choix du MVP |
 | T8 | **Un service Java s'est arrêté au démarrage** 2 fois sur 7 sur la machine de développement (code 139, plantage de la JVM). La politique de redémarrage le relance. | Cause non établie. `reset-demo.sh` réessaie jusqu'à 5 fois. À surveiller avant la soutenance. | [`DEMO.md`](DEMO.md) |
-| T9 | **L'intégration continue est bloquée** depuis le 23/11 : le quota de minutes GitHub Actions du compte propriétaire est épuisé (remise à zéro le 1er décembre). Les contrôles se font en local. | Les jobs échouent en quelques secondes, sans exécuter une seule étape. | Décision de l'équipe en attente |
 
 ## 4. Ressources minimales testées
 
@@ -76,7 +75,7 @@ Vérifié sur la pile Docker Compose complète, par le reverse proxy, comme un n
 
 | Environnement | État |
 |---|---|
-| Linux (Ubuntu, GitHub Actions) | Pile complète et tests à chaque modification **jusqu'au 23/11** (la CI est bloquée depuis, voir T9) |
+| Linux (Ubuntu, GitHub Actions) | Pile complète et tests à chaque pull request et à chaque modification de `main`. Interrompus du 23 au 24/11 par l'épuisement du quota de minutes (dépôt alors privé), rétablis le 24/11 |
 | Linux sous WSL 2, Docker 29.9, Compose 5.7, 15 Go de mémoire | Poste de développement : installation à froid, parcours complet, sauvegarde et restauration |
 | Chrome et Firefox | Recette du frontend du 24/11 (Firefox : connexion, catalogue, lecture, pause et reprise, plein écran, aucune erreur en console) |
 | Safari, navigateur mobile réel | **Non testés.** La mise en page à 390 px a été vérifiée seulement avec les outils de développement de Chrome. |
