@@ -28,11 +28,13 @@ function open(path, session) {
 }
 
 describe('routes protégées', () => {
-  // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
+  // L'accueil et les pages d'administration chargent leurs données : une réponse vide mais bien formée (accueil et page
+  // vide) suffit à ces tests de routage. Une page qui recevrait une forme inattendue planterait après son premier rendu,
+  // et le titre qu'on attend disparaîtrait selon le rythme de la machine (test instable en CI).
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
+      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [], items: [], page: 0, size: 20, total: 0, totalPages: 0 }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
     )
   })
   afterEach(() => vi.unstubAllGlobals())
