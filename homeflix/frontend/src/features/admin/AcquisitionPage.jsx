@@ -45,7 +45,7 @@ function Proof({ entry }) {
   const href = safeHttpUrl(entry.licenseProofUrl)
   if (!href) return <span>Preuve indisponible</span>
   return (
-    <a className="touch-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Preuve de la licence de ${entry.title} (s’ouvre dans un nouvel onglet)`}>
+    <a className="touch-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Voir la preuve de la licence de ${entry.title} (s’ouvre dans un nouvel onglet)`}>
       Voir la preuve
     </a>
   )

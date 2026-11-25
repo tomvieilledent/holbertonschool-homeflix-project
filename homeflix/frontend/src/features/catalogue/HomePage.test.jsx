@@ -6,6 +6,7 @@ import home from '@fixtures/library/home.json'
 import homeEmpty from '@fixtures/library/home-empty.json'
 import HomePage from '@/features/catalogue/HomePage'
 import ProfileScope from '@/features/favourites/ProfileScope'
+import { expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -198,7 +199,10 @@ describe('HomePage', () => {
       const first = home.favourites[0]
       await user.click(favouriteButton(list, 'retirer', first.title))
       const again = screen.getAllByRole('button', { name: new RegExp(`« ${first.title} »`) })
-      for (const button of again) expect(button).toBeDisabled()
+      for (const button of again) {
+        expectBusy(button)
+        await user.click(button) // un second clic est ignoré
+      }
       release()
       await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1))
     })

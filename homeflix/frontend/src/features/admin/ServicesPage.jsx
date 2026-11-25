@@ -77,7 +77,7 @@ export default function ServicesPage() {
     <section className="services">
       <div className="services__header">
         <h2>Services</h2>
-        <Button variant="secondary" onClick={() => load()} disabled={refreshing || !status}>
+        <Button variant="secondary" onClick={() => load()} busy={refreshing} disabled={!status}>
           {refreshing && status ? 'Actualisation…' : 'Actualiser'}
         </Button>
       </div>

@@ -5,7 +5,7 @@ import '@/app/AppLayout.css'
 /** Mise en page sans en-tête : connexion, choix du profil, page introuvable. */
 export default function BareLayout() {
   return (
-    <main id="main-content" className="bare-layout">
+    <main id="main-content" tabIndex={-1} className="bare-layout">
       <Logo height={48} />
       <Outlet />
     </main>

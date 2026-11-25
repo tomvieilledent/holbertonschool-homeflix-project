@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom'
 import { useAuth } from '@/features/auth/authContext'
+import useDocumentTitle from '@/hooks/useDocumentTitle'
 
 /**
  * Garde de rôle, à placer sous `RequireAuth` : un compte sans le rôle demandé voit « Accès refusé ».
@@ -9,8 +10,10 @@ import { useAuth } from '@/features/auth/authContext'
  */
 export default function RequireRole({ role }) {
   const { account } = useAuth()
+  const refused = account?.role !== role
+  useDocumentTitle(refused ? 'Accès refusé' : null)
 
-  if (account?.role !== role) {
+  if (refused) {
     return (
       <section>
         <h1>Accès refusé</h1>

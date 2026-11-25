@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import IndexingPanel from '@/features/admin/IndexingPanel'
 import { MAX_POLL_FAILURES, POLL_INTERVAL_MS } from '@/features/admin/useIndexJob'
+import { expectAvailable, expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/problem+json' } })
@@ -73,7 +74,7 @@ describe('IndexingPanel', () => {
     expect(launchButton()).toBeDisabled()
     release()
     await advance(0)
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
     expect(actor).toBeDefined()
   })
 
@@ -81,18 +82,18 @@ describe('IndexingPanel', () => {
     await renderPanel()
     expect(screen.getByText('Aucune indexation n’a encore été lancée.')).toBeInTheDocument()
     expect(screen.queryByText('Analysés')).not.toBeInTheDocument()
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
   })
 
-  it('lancer : le bouton se désactive aussitôt, la progression se met à jour seule, le résultat final reste affiché', async () => {
+  it('lancer : le bouton devient indisponible aussitôt, la progression se met à jour seule, le résultat final reste affiché', async () => {
     statuses = [job('IDLE'), job('RUNNING', { scanned: 14, added: 4 }), job('RUNNING', { scanned: 28, added: 8 }), job('COMPLETED', { scanned: 42, added: 12, duplicates: 1 })]
     const { actor } = await renderPanel()
 
     await actor.click(launchButton())
-    expect(launchButton()).toBeDisabled() // dès le clic, avant même la réponse du serveur
+    expectBusy(launchButton()) // dès le clic, avant même la réponse du serveur
     await advance(0)
     expect(calls.at(-1)).toEqual({ method: 'POST', path: '/api/library/v1/admin/index' })
-    expect(launchButton()).toBeDisabled()
+    expectBusy(launchButton())
     expect(screen.getByText('Indexation en cours…')).toBeInTheDocument()
     expect(screen.getByText('Une indexation est en cours.')).toBeInTheDocument()
 
@@ -100,12 +101,12 @@ describe('IndexingPanel', () => {
     expect(screen.getByText('14')).toBeInTheDocument() // analysés
     await advance(POLL_INTERVAL_MS)
     expect(screen.getByText('28')).toBeInTheDocument()
-    expect(launchButton()).toBeDisabled()
+    expectBusy(launchButton())
 
     await advance(POLL_INTERVAL_MS)
     expect(screen.getByText(/Indexation terminée à/)).toHaveTextContent('12 films ajoutés, 0 mis à jour, 0 manquant.')
     expect(screen.getByText('42')).toBeInTheDocument()
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
     expect(screen.queryByText('Une indexation est en cours.')).not.toBeInTheDocument()
   })
 
@@ -133,15 +134,15 @@ describe('IndexingPanel', () => {
     expect(gets()).toBe(done)
   })
 
-  it('reprend le suivi d’un scan déjà en cours au chargement (bouton désactivé)', async () => {
+  it('reprend le suivi d’un scan déjà en cours au chargement (bouton indisponible)', async () => {
     statuses = [job('RUNNING', { scanned: 8, added: 3 }), job('COMPLETED', { scanned: 20, added: 6 })]
     await renderPanel()
-    expect(launchButton()).toBeDisabled()
+    expectBusy(launchButton())
     expect(screen.getByText('8')).toBeInTheDocument()
 
     await advance(POLL_INTERVAL_MS)
     expect(screen.getByText(/Indexation terminée/)).toBeInTheDocument()
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
   })
 
   it('un scan déjà en cours côté serveur (409) est suivi, sans message d’erreur', async () => {
@@ -153,7 +154,7 @@ describe('IndexingPanel', () => {
     await advance(0)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByText('Indexation en cours…')).toBeInTheDocument()
-    expect(launchButton()).toBeDisabled()
+    expectBusy(launchButton())
     await advance(POLL_INTERVAL_MS)
     expect(screen.getByText(/Indexation terminée/)).toBeInTheDocument()
   })
@@ -166,14 +167,14 @@ describe('IndexingPanel', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Une erreur est survenue de notre côté.')
     expect(document.body).not.toHaveTextContent('NullPointerException')
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
   })
 
   it('affiche un scan en échec avec une piste, et permet de relancer', async () => {
     statuses = [job('FAILED', { scanned: 3, errors: 3 })]
     await renderPanel()
     expect(screen.getByText(/L’indexation a échoué/)).toBeInTheDocument()
-    expect(launchButton()).toBeEnabled()
+    expectAvailable(launchButton())
   })
 
   it('met les erreurs en évidence et dit quoi vérifier', async () => {

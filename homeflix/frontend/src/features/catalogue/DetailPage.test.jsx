@@ -9,6 +9,7 @@ import progressNotStarted from '@fixtures/library/progress-not-started.json'
 import progressStarted from '@fixtures/library/progress-started.json'
 import DetailPage from '@/features/catalogue/DetailPage'
 import ProfileScope from '@/features/favourites/ProfileScope'
+import { expectAvailable, expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -201,9 +202,9 @@ describe('DetailPage', () => {
       // La requête n'est pas terminée : l'état est déjà celui du succès, et le bouton est bloqué.
       const pressed = screen.getByRole('button', { name: 'Dans ma liste' })
       expect(pressed).toHaveAttribute('aria-pressed', 'true')
-      expect(pressed).toBeDisabled()
+      expectBusy(pressed)
       release()
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Dans ma liste' })).toBeEnabled())
+      await waitFor(() => expectAvailable(screen.getByRole('button', { name: 'Dans ma liste' })))
     })
 
     it('restaure l’état précédent avec un message si la mise à jour échoue', async () => {
