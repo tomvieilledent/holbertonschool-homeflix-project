@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ticketFixture from '@fixtures/library/stream-ticket.json'
-import PlayerPage, { startFromParams } from '@/features/player/PlayerPage'
+import PlayerPage from '@/features/player/PlayerPage'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -98,15 +98,7 @@ describe('PlayerPage', () => {
     await waitFor(() => expect(video()).not.toBeNull())
   })
 
-  it('démarre à la position demandée dans l’URL (« Reprendre à … » depuis la fiche)', async () => {
-    renderPlayer('?t=212')
-    await waitFor(() => expect(video()).not.toBeNull())
-    Object.defineProperty(video(), 'duration', { value: 596, configurable: true })
-    fireEvent.loadedMetadata(video())
-    expect(video().currentTime).toBe(212)
-  })
-
-  it('démarre au début sans position dans l’URL', async () => {
+  it('démarre au début quand rien n’est commencé', async () => {
     renderPlayer()
     await waitFor(() => expect(video()).not.toBeNull())
     Object.defineProperty(video(), 'duration', { value: 596, configurable: true })
@@ -221,7 +213,7 @@ describe('PlayerPage : reprise et sauvegarde', () => {
   }
   const progressPuts = () => callsTo(fetchMock, ([url, init]) => url.endsWith('/progress') && init?.method === 'PUT')
 
-  it('reprend à la dernière position du profil quand l’URL n’en donne pas (rechargement)', async () => {
+  it('reprend à la dernière position enregistrée du profil', async () => {
     progress = { ...NOT_STARTED, positionSeconds: 312, state: 'STARTED' }
     renderPlayer()
     await loadVideo()
@@ -235,12 +227,11 @@ describe('PlayerPage : reprise et sauvegarde', () => {
     expect(video().currentTime).toBe(0)
   })
 
-  it('la position de l’URL prime sur la progression enregistrée', async () => {
+  it('ignore une position dans l’URL : un rechargement ne revient pas à un point dépassé', async () => {
     progress = { ...NOT_STARTED, positionSeconds: 312, state: 'STARTED' }
-    renderPlayer('?t=40')
+    renderPlayer('?t=40') // ancien lien ou historique du navigateur
     await loadVideo()
-    expect(video().currentTime).toBe(40)
-    expect(callsTo(fetchMock, ([url]) => url.endsWith('/progress'))).toHaveLength(0)
+    expect(video().currentTime).toBe(312)
   })
 
   it('démarre au début si la progression est illisible', async () => {
@@ -278,19 +269,5 @@ describe('PlayerPage : reprise et sauvegarde', () => {
     await loadVideo()
     expect(video().currentTime).toBe(0)
     expect(progressPuts()).toHaveLength(0)
-  })
-})
-
-describe('startFromParams', () => {
-  it.each([
-    ['', 0],
-    ['t=212', 212],
-    ['t=12.9', 12],
-    ['t=0', 0],
-    ['t=-5', 0],
-    ['t=abc', 0],
-    ['t=Infinity', 0],
-  ])('?%s → %s s', (query, expected) => {
-    expect(startFromParams(new URLSearchParams(query))).toBe(expected)
   })
 })
