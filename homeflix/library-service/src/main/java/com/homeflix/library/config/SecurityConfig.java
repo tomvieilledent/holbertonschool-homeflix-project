@@ -1,5 +1,6 @@
 package com.homeflix.library.config;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -22,6 +23,16 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Library est un resource server : les jetons RS256 émis par Identity sont validés (signature, expiration,
@@ -53,11 +64,28 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler))
             // Avant le filtre des jetons : Identity injoignable = 503 (voir IdentityUnavailableFilter).
             .addFilterBefore(new IdentityUnavailableFilter(), BearerTokenAuthenticationFilter.class)
+            // Mot de passe temporaire (claim `mcp`) : aucune route de Library n'est accessible avant le changement.
+            .addFilterAfter(passwordChangeRequiredFilter(accessDeniedHandler), BearerTokenAuthenticationFilter.class)
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
             .headers(Customizer.withDefaults());
         return http.build();
+    }
+
+    private static OncePerRequestFilter passwordChangeRequiredFilter(ProblemAccessDeniedHandler denied) {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+                    throws ServletException, IOException {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getPrincipal() instanceof Jwt jwt && Boolean.TRUE.equals(jwt.getClaim("mcp"))) {
+                    denied.handle(req, res, new AccessDeniedException("Changement de mot de passe requis"));
+                    return;
+                }
+                chain.doFilter(req, res);
+            }
+        };
     }
 
     /**
@@ -80,11 +108,17 @@ public class SecurityConfig {
         return decoder;
     }
 
-    /** Le claim `roles` (USER/ADMIN) devient les autorités ROLE_USER / ROLE_ADMIN. */
+    /**
+     * Le claim `roles` (USER/ADMIN) devient les autorités ROLE_USER / ROLE_ADMIN, sauf si le claim `mcp` (mot de
+     * passe temporaire à changer) est levé : le jeton n'a alors aucun rôle et toute route protégée est refusée.
+     */
     private static JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<String> roles = jwt.getClaimAsStringList("roles");
+            if (Boolean.TRUE.equals(jwt.getClaim("mcp"))) {
+                return List.<GrantedAuthority>of();
+            }
             return roles == null ? List.<GrantedAuthority>of()
                 : roles.stream().<GrantedAuthority>map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
         });

@@ -103,6 +103,9 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<String> roles = jwt.getClaimAsStringList("roles");
+            if (Boolean.TRUE.equals(jwt.getClaim("mcp"))) {
+                return List.<GrantedAuthority>of();
+            }
             return roles == null ? List.<GrantedAuthority>of()
                 : roles.stream().<GrantedAuthority>map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
         });

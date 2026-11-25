@@ -69,6 +69,16 @@ public class AuthController {
         return auth.me(jwt);
     }
 
+    /** Change le mot de passe du compte connecté ; seule route (avec /me) ouverte avec un mot de passe temporaire. */
+    @PostMapping("/change-password")
+    public ResponseEntity<TokenResponse> changePassword(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        AuthService.Session session = auth.changePassword(jwt, request);
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, refreshCookie(session.refreshToken()).toString())
+            .body(session.tokens());
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(
             @RequestHeader(value = CSRF_HEADER, required = false) String requestedWith,

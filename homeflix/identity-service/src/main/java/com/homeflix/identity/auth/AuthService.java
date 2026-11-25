@@ -102,6 +102,37 @@ public class AuthService {
         return openSession(account, current.getFamilyId(), current.getActiveProfileId());
     }
 
+    /**
+     * Changement du mot de passe du compte connecté. Les autres sessions sont coupées ; une nouvelle session est
+     * ouverte pour l'appelant, sans le drapeau « mot de passe temporaire ».
+     *
+     * @throws ApiException 400 INVALID_CURRENT_PASSWORD si l'ancien mot de passe est faux, 400 si le nouveau est identique
+     */
+    @Transactional
+    public Session changePassword(Jwt jwt, ChangePasswordRequest request) {
+        UUID accountId = parseUuid(jwt.getSubject());
+        Account account = accountId == null ? null : accounts.findById(accountId).orElse(null);
+        if (account == null) {
+            throw sessionExpired();
+        }
+        if (!account.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Compte désactivé",
+                "Ce compte est désactivé.");
+        }
+        if (!encoder.matches(request.currentPassword(), account.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_CURRENT_PASSWORD", "Requête invalide",
+                "Le mot de passe actuel est incorrect.");
+        }
+        if (request.currentPassword().equals(request.newPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Requête invalide",
+                "newPassword : le nouveau mot de passe doit être différent de l'actuel.");
+        }
+        account.setPasswordHash(encoder.encode(request.newPassword()));
+        account.setMustChangePassword(false);
+        refreshTokens.revokeAllOfAccount(accountId, clock.instant());
+        return openSession(account, UUID.randomUUID(), null);
+    }
+
     /** Déconnexion idempotente : révoque le jeton présenté (et sa famille) s'il existe. */
     @Transactional
     public void logout(String refreshToken) {
@@ -161,7 +192,8 @@ public class AuthService {
     Session openSession(Account account, UUID familyId, UUID activeProfileId) {
         UUID active = activeProfileId != null && profiles.existsByIdAndAccountId(activeProfileId, account.getId())
             ? activeProfileId : null;
-        String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), active, familyId);
+        String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), active, familyId,
+            account.isMustChangePassword());
         String refresh = RefreshTokens.newValue();
         Instant expiresAt = clock.instant().plus(props.refreshTtl());
         RefreshToken token = new RefreshToken(account, familyId, RefreshTokens.hash(refresh), expiresAt);
