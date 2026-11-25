@@ -64,7 +64,9 @@ export default function ManageProfilesPage() {
     <section className="manage-profiles">
       <h1>Gérer les profils</h1>
       <p>
-        <Link to="/profiles">Retour au choix du profil</Link>
+        <Link className="touch-link" to="/profiles">
+          Retour au choix du profil
+        </Link>
       </p>
 
       <div role="status" className="manage-profiles__notice">

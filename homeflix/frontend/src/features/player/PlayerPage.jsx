@@ -116,7 +116,11 @@ export default function PlayerPage() {
     load()
   }
 
-  const back = <Link to={`/media/${encodeURIComponent(mediaId)}`}>Retour à la fiche</Link>
+  const back = (
+    <Link className="touch-link" to={`/media/${encodeURIComponent(mediaId)}`}>
+      Retour à la fiche
+    </Link>
+  )
 
   let content
   if (error) {

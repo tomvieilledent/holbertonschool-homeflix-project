@@ -55,6 +55,9 @@
   --space-7: 3rem;
   --space-8: 4rem;
 
+  /* Barre de navigation du bas (téléphone) */
+  --bottom-nav-height: 3.5rem;
+
   /* Rayons */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -66,6 +69,18 @@
   --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
   --focus-ring: 2px solid var(--color-focus);
   --focus-offset: 2px;
+}
+
+/* Téléphone : titres plus petits, pour qu'un mot long tienne sur sa ligne. */
+@media (max-width: 40rem) {
+  :root {
+    --text-h1: 2rem;
+    --text-h1-lh: 2.5rem;
+    --text-h2: 1.5rem;
+    --text-h2-lh: 2rem;
+    --text-h3: 1.25rem;
+    --text-h3-lh: 1.75rem;
+  }
 }
 
 :root[data-theme='light'] {

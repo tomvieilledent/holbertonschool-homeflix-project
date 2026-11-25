@@ -23,47 +23,15 @@
   gap: var(--space-3);
 }
 
-.acquisition__scroll {
-  overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+.acquisition__title {
+  min-width: 6rem; /* le titre ne se casse pas lettre par lettre quand la colonne « Source » est longue */
 }
 
-.acquisition__table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
+.acquisition__source {
+  min-width: 9rem;
 }
 
-.acquisition__table th,
-.acquisition__table td {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-}
-
-.acquisition__table tbody tr:last-child th,
-.acquisition__table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.acquisition__table thead th {
-  background: var(--color-surface);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-}
-
-.acquisition__table tbody th {
-  min-width: 7rem; /* le titre ne se casse pas lettre par lettre quand la colonne « Source » est longue */
-  font-weight: var(--font-weight-medium);
-  overflow-wrap: break-word;
-}
-
-.acquisition__table td:nth-child(2) {
-  min-width: 12rem;
-}
-
-.acquisition__table td:nth-child(5) {
+.acquisition__size {
   white-space: nowrap; /* « 123 Mo » reste sur une ligne */
 }
 

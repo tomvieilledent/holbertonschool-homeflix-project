@@ -35,41 +35,6 @@
   gap: var(--space-3);
 }
 
-.medias__scroll {
-  overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.medias__table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.medias__table th,
-.medias__table td {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-}
-
-.medias__table tbody tr:last-child th,
-.medias__table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.medias__table thead th {
-  background: var(--color-surface);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-}
-
-.medias__table tbody th {
-  font-weight: var(--font-weight-medium);
-  overflow-wrap: anywhere;
-}
-
 .medias__actions {
   display: flex;
   flex-wrap: wrap;

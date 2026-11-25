@@ -90,7 +90,7 @@ export default function ProfilesPage() {
           />
         ))}
       </ul>
-      <Link className="profiles__manage" to="/profiles/manage">
+      <Link className="profiles__manage touch-link" to="/profiles/manage">
         Gérer les profils
       </Link>
     </section>

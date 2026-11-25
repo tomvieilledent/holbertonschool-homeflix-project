@@ -17,42 +17,6 @@
   color: var(--color-text-muted);
 }
 
-.downloads__scroll {
-  overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.downloads__table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.downloads__table th,
-.downloads__table td {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-}
-
-.downloads__table tbody tr:last-child th,
-.downloads__table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.downloads__table thead th {
-  background: var(--color-surface);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-}
-
-.downloads__table tbody th {
-  min-width: 7rem;
-  font-weight: var(--font-weight-medium);
-  overflow-wrap: break-word;
-}
-
 .downloads__progress {
   display: flex;
   align-items: center;

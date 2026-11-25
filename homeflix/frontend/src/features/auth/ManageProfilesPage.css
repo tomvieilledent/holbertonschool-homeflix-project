@@ -39,3 +39,10 @@
 .manage-profiles__hint {
   margin: 0;
 }
+
+/* Téléphone : le nom prend toute la ligne, « Renommer » et « Supprimer » restent côte à côte en dessous. */
+@media (max-width: 30rem) {
+  .manage-profiles__name {
+    flex-basis: calc(100% - 4rem);
+  }
+}

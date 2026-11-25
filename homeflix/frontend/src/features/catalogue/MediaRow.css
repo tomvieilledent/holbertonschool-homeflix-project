@@ -11,6 +11,7 @@
 }
 
 .media-row__list {
+  position: relative; /* contient les textes masqués des cartes : sans cela ils élargissent toute la page */
   display: flex;
   gap: var(--space-4);
   margin: 0;
@@ -25,4 +26,11 @@
   flex: 0 0 auto;
   width: 12rem;
   scroll-snap-align: start;
+}
+
+/* Téléphone : au moins deux cartes visibles, la suivante dépasse et invite à faire défiler. */
+@media (max-width: 40rem) {
+  .media-row__item {
+    width: 9.5rem;
+  }
 }

@@ -15,7 +15,7 @@ export default function RequireRole({ role }) {
       <section>
         <h1>Accès refusé</h1>
         <p>Votre compte n’a pas les droits nécessaires pour consulter cette page.</p>
-        <Link to="/">Retour à l’accueil</Link>
+        <Link className="touch-link" to="/">Retour à l’accueil</Link>
       </section>
     )
   }

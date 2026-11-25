@@ -70,7 +70,11 @@ export default function DetailPage() {
     return () => controller.abort()
   }, [load])
 
-  const back = <Link to="/catalogue">Retour au catalogue</Link>
+  const back = (
+    <Link className="touch-link" to="/catalogue">
+      Retour au catalogue
+    </Link>
+  )
 
   if (error) {
     return (

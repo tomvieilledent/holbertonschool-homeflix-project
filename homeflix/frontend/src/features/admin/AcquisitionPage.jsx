@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
+import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Pagination from '@/components/Pagination'
@@ -44,7 +45,7 @@ function Proof({ entry }) {
   const href = safeHttpUrl(entry.licenseProofUrl)
   if (!href) return <span>Preuve indisponible</span>
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Preuve de la licence de ${entry.title} (s’ouvre dans un nouvel onglet)`}>
+    <a className="touch-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Preuve de la licence de ${entry.title} (s’ouvre dans un nouvel onglet)`}>
       Voir la preuve
     </a>
   )
@@ -192,6 +193,44 @@ export default function AcquisitionPage() {
     return <Navigate to={acquisitionUrl(catalogue.totalPages)} replace /> // page hors limites
   }
 
+  /** Dernière colonne : déjà dans la bibliothèque, en cours, ou à télécharger. */
+  const downloadCell = (entry) => {
+    if (entry.inLibrary) {
+      return (
+        <span>
+          Dans la bibliothèque
+          {entry.libraryMediaId && (
+            <>
+              {' · '}
+              <Link to={`/media/${encodeURIComponent(entry.libraryMediaId)}`} aria-label={`Voir ${entry.title} dans la bibliothèque`}>
+                Voir
+              </Link>
+            </>
+          )}
+        </span>
+      )
+    }
+    if (entry.activeDownloadId) return <span>Téléchargement en cours</span>
+    return (
+      <Button
+        variant="secondary"
+        loading={busyId === entry.id}
+        aria-label={`Télécharger ${entry.title}`}
+        onClick={() => requestDownload(entry)}
+      >
+        Télécharger
+      </Button>
+    )
+  }
+  const columns = [
+    { key: 'title', header: 'Titre', rowHeader: true, className: 'acquisition__title', render: (entry) => entry.title },
+    { key: 'source', header: 'Source', className: 'acquisition__source', render: (entry) => entry.source },
+    { key: 'license', header: 'Licence', render: (entry) => entry.license },
+    { key: 'proof', header: 'Preuve', render: (entry) => <Proof entry={entry} /> },
+    { key: 'size', header: 'Taille', className: 'acquisition__size', render: (entry) => formatBytes(entry.sizeBytes) },
+    { key: 'download', header: 'Téléchargement', render: downloadCell },
+  ]
+
   return (
     <section className="acquisition">
       <h2>Acquisition</h2>
@@ -214,60 +253,7 @@ export default function AcquisitionPage() {
         <EmptyState title="Aucun contenu disponible" description="Le catalogue d’acquisition est vide pour le moment." />
       ) : (
         <>
-          <div className="acquisition__scroll">
-            <table className="acquisition__table">
-              <caption className="visually-hidden">Contenus autorisés au téléchargement</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Titre</th>
-                  <th scope="col">Source</th>
-                  <th scope="col">Licence</th>
-                  <th scope="col">Preuve</th>
-                  <th scope="col">Taille</th>
-                  <th scope="col">Téléchargement</th>
-                </tr>
-              </thead>
-              <tbody>
-                {catalogue.items.map((entry) => (
-                  <tr key={entry.id}>
-                    <th scope="row">{entry.title}</th>
-                    <td>{entry.source}</td>
-                    <td>{entry.license}</td>
-                    <td>
-                      <Proof entry={entry} />
-                    </td>
-                    <td>{formatBytes(entry.sizeBytes)}</td>
-                    <td>
-                      {entry.inLibrary ? (
-                        <span>
-                          Dans la bibliothèque
-                          {entry.libraryMediaId && (
-                            <>
-                              {' · '}
-                              <Link to={`/media/${encodeURIComponent(entry.libraryMediaId)}`} aria-label={`Voir ${entry.title} dans la bibliothèque`}>
-                                Voir
-                              </Link>
-                            </>
-                          )}
-                        </span>
-                      ) : entry.activeDownloadId ? (
-                        <span>Téléchargement en cours</span>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          loading={busyId === entry.id}
-                          aria-label={`Télécharger ${entry.title}`}
-                          onClick={() => requestDownload(entry)}
-                        >
-                          Télécharger
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable caption="Contenus autorisés au téléchargement" columns={columns} rows={catalogue.items} />
           <Pagination page={page} totalPages={catalogue.totalPages} hrefFor={acquisitionUrl} label="Pagination du catalogue d’acquisition" />
         </>
       )}
