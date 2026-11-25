@@ -22,13 +22,24 @@ let fetchMock
 let writes // [{ method, path, body }]
 let validation // résultat de `POST /validate` : fonction (chemin) → réponse
 let failWith // réponse à renvoyer à la prochaine écriture
+let rootsResponse // remplace la réponse de la liste des dossiers (une fois), ou null
 
 function serve() {
   return async (url, init = {}) => {
     const path = String(url)
     const method = init.method ?? 'GET'
     const body = init.body ? JSON.parse(init.body) : undefined
-    if (method === 'GET' && path.endsWith('/admin/media-roots')) return json(roots)
+    if (method === 'GET' && path.endsWith('/admin/index/status')) {
+      return json({ jobId: 'j1', state: 'IDLE', startedAt: null, finishedAt: null }) // panneau d'indexation (#94)
+    }
+    if (method === 'GET' && path.endsWith('/admin/media-roots')) {
+      if (rootsResponse) {
+        const response = rootsResponse
+        rootsResponse = null
+        return response
+      }
+      return json(roots)
+    }
     if (method === 'POST' && path.endsWith('/admin/media-roots/validate')) {
       writes.push({ method, path, body })
       return validation(body.path)
@@ -66,6 +77,7 @@ describe('LibraryPage', () => {
     writes = []
     validation = () => valid()
     failWith = null
+    rootsResponse = null
     fetchMock = vi.fn(serve())
     vi.stubGlobal('fetch', fetchMock)
   })
@@ -97,7 +109,7 @@ describe('LibraryPage', () => {
     })
 
     it('propose de réessayer quand la liste ne se charge pas, sans détail technique', async () => {
-      fetchMock.mockResolvedValueOnce(problem(500, 'INTERNAL_ERROR'))
+      rootsResponse = problem(500, 'INTERNAL_ERROR')
       render(<LibraryPage />)
       expect(await screen.findByText('Une erreur est survenue de notre côté. Réessayez dans un instant.')).toBeInTheDocument()
       expect(document.body).not.toHaveTextContent('AccessDeniedException')
@@ -106,7 +118,7 @@ describe('LibraryPage', () => {
     })
 
     it('ne plante pas si la réponse n’est pas une liste', async () => {
-      fetchMock.mockResolvedValueOnce(json({ pas: 'une liste' }))
+      rootsResponse = json({ pas: 'une liste' })
       render(<LibraryPage />)
       expect(await screen.findByRole('button', { name: 'Réessayer' })).toBeInTheDocument()
     })
@@ -142,7 +154,7 @@ describe('LibraryPage', () => {
       await userEvent.click(addButton())
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
       expect(writes[1]).toEqual({ method: 'POST', path: '/api/library/v1/admin/media-roots', body: { path: '/media/series', label: 'Mes films' } })
-      expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Dossier « Mes films » ajouté.')
+      expect(screen.getByText('Dossier « Mes films » ajouté.')).toBeInTheDocument()
       expect(await screen.findByText('/media/series')).toBeInTheDocument()
     })
 
@@ -229,7 +241,7 @@ describe('LibraryPage', () => {
       await userEvent.click(within(dialog()).getByRole('button', { name: 'Retirer le dossier' }))
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
       expect(writes[0]).toMatchObject({ method: 'DELETE', path: `/api/library/v1/admin/media-roots/${first.id}` })
-      expect(screen.getByRole('status', { name: '' })).toHaveTextContent(`Dossier « ${first.label} » retiré.`)
+      expect(screen.getByText(`Dossier « ${first.label} » retiré.`)).toBeInTheDocument()
       await waitFor(() => expect(screen.queryByText(first.path)).not.toBeInTheDocument())
     })
 

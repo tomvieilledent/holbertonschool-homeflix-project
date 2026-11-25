@@ -106,6 +106,31 @@ export const addMediaRoot = (root) => apiFetch('library', '/v1/admin/media-roots
 export const deleteMediaRoot = (rootId) =>
   apiFetch('library', `/v1/admin/media-roots/${encodeURIComponent(rootId)}`, { method: 'DELETE' })
 
+/**
+ * Lance une indexation manuelle (`POST /admin/index`, 202) : scan asynchrone de tous les dossiers actifs, idempotent.
+ * Un seul scan à la fois : `INDEX_ALREADY_RUNNING` (409) si l'un tourne déjà.
+ * @returns {Promise<IndexJob>}
+ */
+export const startIndexing = () => apiFetch('library', '/v1/admin/index', { method: 'POST' })
+
+/**
+ * État de la dernière indexation (`GET /admin/index/status`).
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<IndexJob>}
+ * @typedef {object} IndexJob
+ * @property {string} jobId
+ * @property {'IDLE'|'RUNNING'|'COMPLETED'|'FAILED'} state
+ * @property {number} [scanned] Fichiers analysés.
+ * @property {number} [added]
+ * @property {number} [updated]
+ * @property {number} [markedUnavailable] Films dont le fichier a disparu.
+ * @property {number} [duplicates]
+ * @property {number} [errors]
+ * @property {string|null} [startedAt]
+ * @property {string|null} [finishedAt]
+ */
+export const getIndexStatus = (signal) => apiFetch('library', '/v1/admin/index/status', { signal })
+
 const FAVOURITES_PAGE_SIZE = 50
 const FAVOURITES_MAX_PAGES = 20 // garde-fou : 1 000 favoris au plus
 
