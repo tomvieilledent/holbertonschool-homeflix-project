@@ -56,6 +56,20 @@ export async function signOut() {
 }
 
 /**
+ * Supprime son propre compte (`DELETE /accounts/me`) après confirmation du mot de passe : profils, sessions et données
+ * associées sont purgés, les fichiers médias ne le sont jamais. Lève une `ApiError` : `AUTH_INVALID_CREDENTIALS`
+ * (mauvais mot de passe : la session reste ouverte), `LAST_ADMIN` (409) ou `VALIDATION_ERROR`. En cas de succès, la
+ * session locale est abandonnée (le serveur a fermé les sessions avec le compte).
+ * @param {string} password
+ * @returns {Promise<void>}
+ */
+export async function deleteOwnAccount(password) {
+  await apiFetch('identity', '/v1/accounts/me', { method: 'DELETE', body: { password } })
+  setAccessToken(null)
+  forgetProfile()
+}
+
+/**
  * Choisit le profil actif : le serveur renvoie un nouvel access token portant le claim `pid`. Le profil est
  * retenu pour cet onglet, afin de le rétablir après un rechargement ou un renouvellement du jeton.
  * @param {string} profileId

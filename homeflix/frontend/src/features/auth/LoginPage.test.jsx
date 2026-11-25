@@ -101,3 +101,17 @@ describe('LoginPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
 })
+
+describe('LoginPage — compte supprimé', () => {
+  it('explique que le compte et ses données ont été supprimés', () => {
+    const router = createMemoryRouter([{ path: '/login', element: <LoginPage /> }], {
+      initialEntries: [{ pathname: '/login', state: { reason: 'account-deleted' } }],
+    })
+    render(
+      <AuthContext.Provider value={{ status: 'anonymous', login: vi.fn(), logout: vi.fn() }}>
+        <RouterProvider router={router} />
+      </AuthContext.Provider>,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Votre compte et ses données ont été supprimés.')
+  })
+})

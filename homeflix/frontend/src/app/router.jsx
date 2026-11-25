@@ -3,6 +3,7 @@ import AppLayout from '@/app/AppLayout'
 import BareLayout from '@/app/BareLayout'
 import NotFoundPage from '@/app/NotFoundPage'
 import RouteErrorPage from '@/app/RouteErrorPage'
+import AccountPage from '@/features/auth/AccountPage'
 import AdminLayout from '@/features/admin/AdminLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
@@ -58,6 +59,8 @@ export const routes = [
           {
             element: <AppLayout />,
             children: [
+              // Le compte ne dépend pas du profil : accessible même sans profil actif.
+              { path: '/compte', element: <AccountPage /> },
               {
                 // Pas d'accueil, de fiche ni de lecture sans profil actif.
                 element: <RequireProfile />,

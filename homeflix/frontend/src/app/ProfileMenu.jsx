@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/authContext'
 
-/** Menu du compte : changer de profil, se déconnecter. Échap ou un clic à l'extérieur le ferme. */
+/** Menu du compte : changer de profil, gérer son compte, se déconnecter. Échap ou un clic à l'extérieur le ferme. */
 export default function ProfileMenu() {
   const { account, logout } = useAuth()
   const navigate = useNavigate()
@@ -57,6 +57,9 @@ export default function ProfileMenu() {
           </Link>
           <Link to="/profiles/manage" onClick={() => setOpen(false)}>
             Gérer les profils
+          </Link>
+          <Link to="/compte" onClick={() => setOpen(false)}>
+            Mon compte
           </Link>
           <button type="button" onClick={signOut}>
             Se déconnecter

@@ -63,6 +63,9 @@ export default function LoginPage() {
       {state?.reason === 'setup-done' && (
         <p role="status">Administrateur créé. Connectez-vous pour continuer.</p>
       )}
+      {state?.reason === 'account-deleted' && (
+        <p role="status">Votre compte et ses données ont été supprimés.</p>
+      )}
       {error && (
         <p className="auth-form__error" role="alert">
           {error}

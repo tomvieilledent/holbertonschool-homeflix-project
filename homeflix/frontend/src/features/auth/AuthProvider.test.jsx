@@ -15,11 +15,12 @@ const ME = {
 }
 
 function Probe() {
-  const { status, account, activeProfileId, sessionExpired, login, logout, selectProfile } = useAuth()
+  const { status, account, activeProfileId, sessionExpired, accountDeleted, login, logout, deleteAccount, selectProfile } = useAuth()
   return (
     <>
       <p data-testid="status">{status}</p>
       <p data-testid="expired">{String(sessionExpired)}</p>
+      <p data-testid="deleted">{String(accountDeleted)}</p>
       <p data-testid="user">{account?.username ?? '-'}</p>
       <button type="button" onClick={() => login('camille', 'un-mot-de-passe-long')}>
         login
@@ -27,6 +28,9 @@ function Probe() {
       <p data-testid="profile">{activeProfileId ?? '-'}</p>
       <button type="button" onClick={logout}>
         logout
+      </button>
+      <button type="button" onClick={() => deleteAccount('un-mot-de-passe-long').catch(() => {})}>
+        delete
       </button>
       <button type="button" onClick={() => selectProfile('p2')}>
         select
@@ -111,6 +115,54 @@ describe('AuthProvider', () => {
 
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
     expect(screen.getByTestId('expired')).toHaveTextContent('true')
+  })
+
+  it('supprime le compte avec le mot de passe, puis redevient anonyme sans appeler la déconnexion', async () => {
+    const user = userEvent.setup()
+    fetchMock
+      .mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+      .mockResolvedValueOnce(json({ accessToken: 'jeton2', expiresIn: 900, tokenType: 'Bearer' }))
+      .mockResolvedValueOnce(json(ME))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    await user.click(screen.getByRole('button', { name: 'login' }))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authenticated'))
+
+    await user.click(screen.getByRole('button', { name: 'delete' }))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/identity/v1/accounts/me')
+    expect(fetchMock.mock.calls[3][1].method).toBe('DELETE')
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({ password: 'un-mot-de-passe-long' })
+    expect(getAccessToken()).toBeNull()
+    expect(screen.getByTestId('deleted')).toHaveTextContent('true')
+    expect(fetchMock).toHaveBeenCalledTimes(4) // pas de /auth/logout : le compte et ses sessions n'existent plus
+  })
+
+  it('garde la session ouverte quand la suppression est refusée (mot de passe incorrect)', async () => {
+    const user = userEvent.setup()
+    fetchMock
+      .mockResolvedValueOnce(json({ code: 'SESSION_EXPIRED' }, 401))
+      .mockResolvedValueOnce(json({ accessToken: 'jeton2', expiresIn: 900, tokenType: 'Bearer' }))
+      .mockResolvedValueOnce(json(ME))
+      .mockResolvedValueOnce(json({ code: 'AUTH_INVALID_CREDENTIALS', status: 401 }, 401))
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anonymous'))
+    await user.click(screen.getByRole('button', { name: 'login' }))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authenticated'))
+
+    await user.click(screen.getByRole('button', { name: 'delete' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4))
+    expect(screen.getByTestId('status')).toHaveTextContent('authenticated')
+    expect(getAccessToken()).toBe('jeton2')
   })
 
   it('connecte puis déconnecte', async () => {
