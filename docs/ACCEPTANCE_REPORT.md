@@ -148,6 +148,26 @@ Contrôles complémentaires faits le 24/11 : compte désactivé refusé (403 `AC
 | S10.3 Décision humaine sur chaque constat | Accepté, ou rejeté avec justification | _non fait_ | | Non exécuté |
 | S10.4 PR liée à un constat accepté | Mention « Constat AI-NN, vérifié par … » | _non fait_ | | Non exécuté |
 
+## Complément : recette visuelle des écrans d'administration (25/11/2026)
+
+Passage manuel sous Chrome (Firefox pour les sessions et le contrôle d'accès) sur la pile réelle remise à zéro, commit `32d952b`. Il complète les scénarios 2, 6, 7 et 9, vérifiés surtout par l'API. Résultat : **39 points conformes, 1 écart de texte, 4 points non livrés ou non testables.**
+
+| Domaine | Vérifié | Statut |
+|---|---|---|
+| Accès | Bouton « Administration » réservé au rôle ADMIN ; `/admin/comptes` avec `demo-invite` : « Accès refusé » ; `/compte` sans session : redirection vers la connexion | Conforme |
+| Comptes | Création (champs obligatoires, doublon), promotion et rétrogradation avec confirmation, désactivation puis réactivation, suppression ; administrateur actuel verrouillé | Conforme |
+| Connexion d'un compte désactivé ou inexistant | Même message « Identifiant ou mot de passe incorrect. » avec un mauvais mot de passe ; message « Ce compte est désactivé » seulement avec le bon | Conforme |
+| Session d'un compte désactivé | Elle répond encore jusqu'au prochain rechargement (jeton de 15 min), F5 la ferme ; la confirmation annonce à tort une fermeture « immédiate » | **Écart de texte** ([#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265)) |
+| Dossiers médias | Chemin vide, introuvable, hors zone (`/etc`), déjà couvert : messages clairs ; retrait et ajout de `/downloads` | Conforme |
+| Indexation | Compteurs, aucun doublon, bouton désactivé pendant l'exécution, fichiers intacts | Conforme (rechargement en cours d'indexation : non testé) |
+| Médias | Recherche, état vide, modification (titre visible côté utilisateur), année invalide refusée, retrait sans suppression du fichier | Conforme |
+| Acquisition | Catalogue fermé sans champ de saisie, preuve de licence, rappel des droits obligatoire avant démarrage, annulation | Conforme |
+| Suivi du téléchargement | Ligne créée, mais **reste « En cours » à 0 %** alors que Transmission avait terminé (124 Mo reçus) | **Non livré** ([#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99)) |
+| Services | Trois services opérationnels ; Acquisition arrêtée : état général « Dégradé », Acquisition « Hors service », les deux autres inchangés ; retour à la normale après relance | Conforme |
+| « Mon compte » | Informations, confirmation par mot de passe, mauvais mot de passe refusé sans fermer la session, suppression effective | Conforme (purge côté Library non vérifiée, [#97](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/97)) |
+
+Preuves à ranger dans `acceptance/` : captures des écrans ci-dessus (sans mot de passe ni jeton).
+
 ## Défauts connus
 
 À lire avec [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md), qui détaille chaque limite.
@@ -157,6 +177,8 @@ Contrôles complémentaires faits le 24/11 : compte désactivé refusé (403 `AC
 | Un rechargement de page (F5) fait perdre le profil actif | Un clic de plus (3, 4, 5, 7) | [#222](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/222) |
 | Un mot de passe temporaire ne peut jamais être changé | Hors scénarios, écart de sécurité | [#223](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/223) |
 | Un compte désactivé garde l'accès jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | `ARCHITECTURE.md` §9 |
+| La confirmation de désactivation d'un compte annonce une fermeture « immédiate » des sessions | Hors scénarios, texte inexact | [#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265) |
+| Un film retiré du catalogue ne peut pas être rajouté depuis l'écran | Scénario 2 (si retrait par erreur) | `KNOWN_LIMITS.md` L13 |
 | Les doublons de contenu ne sont pas détectés | Scénarios 2 et 6 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) |
 | Titres affichés = noms de fichier tant que les métadonnées ne sont pas corrigées | Scénarios 2 et 3 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) |
 | Pas de HTTPS dans l'application | Hors scénarios | README, section 6 |
