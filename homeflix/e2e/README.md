@@ -1,6 +1,6 @@
 # Tests de bout en bout (Playwright)
 
-Ces tests pilotent un vrai navigateur (Chromium) contre HomeFlix démarré avec Docker Compose. Ils rejouent le parcours principal : connexion, choix du profil, recherche, lecture, reprise de la lecture.
+Ces tests pilotent un vrai navigateur (Chromium) contre HomeFlix démarré avec Docker Compose. Ils rejouent le parcours principal (connexion, choix du profil, recherche, lecture, reprise de la lecture) et le parcours d’administration.
 
 ## Ce qui est testé
 
@@ -10,6 +10,7 @@ Ces tests pilotent un vrai navigateur (Chromium) contre HomeFlix démarré avec 
 | | Deux profils d'un même compte ont des listes « Ma liste » séparées |
 | | Reprise : la position enregistrée est proposée (« Reprendre à… ») puis reprise (**demande #65**) |
 | `tests/controles-acces.spec.js` | Mauvais mot de passe refusé, page protégée renvoyée vers la connexion, un utilisateur simple n'accède pas à l'administration |
+| `tests/administration.spec.js` | Administration contre les vrais services : comptes (création, désactivation, réactivation, suppression), dossier refusé puis indexation, correction d’une fiche (remise ensuite à l’état initial), catalogue d’acquisition et état des services |
 
 Chaque test crée son **propre compte** (nom aléatoire, profils Alice et Bob) par l'API d'administration et le **supprime à la fin** : les tests ne dépendent ni de l'ordre, ni des données des autres, et ne laissent rien derrière eux (sauf le compte administrateur de test).
 
@@ -46,7 +47,7 @@ docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp --network host --ipc=hos
 
 Sans Docker : Node 20 ou plus, puis `npm ci`, `npx playwright install --with-deps chromium` et `npx playwright test` (mêmes variables).
 
-Durée : environ 30 secondes pour les 6 tests.
+Durée : environ 30 secondes pour les 10 tests.
 
 ## Quand un test échoue
 
@@ -66,4 +67,4 @@ Le workflow [`E2E`](../../.github/workflows/e2e.yml) lance ces tests sur la pile
 - Les tests supposent les films de démonstration (ils cherchent « sintel »). Sans eux, la préparation s'arrête avec un message qui l'explique.
 - Un test à la fois (une seule pile partagée).
 - Navigateur testé : Chromium uniquement ; la lecture H.264 y fonctionne.
-- Pas encore couverts : les écrans d'administration (dossiers, comptes, téléchargements), qui sont des maquettes tant que les issues du frontend ne sont pas livrées.
+- Volontairement absents : le lancement d’un téléchargement (trafic pair-à-pair réel) et le retrait d’un dossier (le rajouter indexe ses films une seconde fois).
