@@ -11,6 +11,7 @@ import CataloguePage, {
   PAGE_SIZE,
   pageFromParams,
 } from '@/features/catalogue/CataloguePage'
+import { AuthContext } from '@/features/auth/authContext'
 import ProfileScope from '@/features/favourites/ProfileScope'
 
 const json = (body, status = 200) =>
@@ -49,9 +50,11 @@ function renderCatalogue(url = '/catalogue') {
     initialEntries: [url],
   })
   render(
-    <ProfileScope>
-      <RouterProvider router={router} />
-    </ProfileScope>,
+    <AuthContext.Provider value={{ account: { id: '1', username: 'camille', role: 'USER' } }}>
+      <ProfileScope>
+        <RouterProvider router={router} />
+      </ProfileScope>
+    </AuthContext.Provider>,
   )
   return router
 }
@@ -132,10 +135,10 @@ describe('CataloguePage', () => {
     expect(await screen.findByRole('heading', { level: 3, name: 'Film 41' })).toBeInTheDocument()
   })
 
-  it('invite à contacter l’administrateur quand le catalogue est vide', async () => {
+  it('explique quoi attendre quand le catalogue est vide, sans pagination', async () => {
     fetchMock.mockImplementation(async () => json(mediaPageEmpty))
     renderCatalogue()
-    expect(await screen.findByRole('heading', { name: 'Le catalogue est vide' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Aucun film pour le moment' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Pagination du catalogue' })).not.toBeInTheDocument()
   })
 
