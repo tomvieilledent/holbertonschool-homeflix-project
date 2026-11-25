@@ -5,7 +5,9 @@ export default function NotFoundPage() {
     <section>
       <h1>Page introuvable</h1>
       <p>Cette page n’existe pas ou a été déplacée.</p>
-      <Link to="/">Retour à l’accueil</Link>
+      <Link className="touch-link" to="/">
+        Retour à l’accueil
+      </Link>
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
 import ConfirmModal from '@/components/ConfirmModal'
+import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Field from '@/components/Field'
@@ -101,6 +102,31 @@ export default function MediasPage() {
   }
 
   const target = dialog?.media
+  const columns = [
+    { key: 'title', header: 'Titre', rowHeader: true, render: (media) => media.title },
+    { key: 'year', header: 'Année', render: (media) => media.year ?? '—' },
+    { key: 'genres', header: 'Genres', render: (media) => (media.genres.length > 0 ? media.genres.join(', ') : '—') },
+    { key: 'duration', header: 'Durée', render: (media) => formatDuration(media.durationSeconds) || '—' },
+    { key: 'availability', header: 'Disponibilité', render: (media) => <AvailabilityBadge availability={media.availability} /> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (media) => (
+        <div className="medias__actions">
+          <Button variant="secondary" aria-label={`Modifier ${media.title}`} onClick={() => setDialog({ type: 'edit', media })}>
+            Modifier
+          </Button>
+          <Button
+            variant="danger"
+            aria-label={`Retirer ${media.title} du catalogue`}
+            onClick={() => setDialog({ type: 'delete', media })}
+          >
+            Retirer
+          </Button>
+        </div>
+      ),
+    },
+  ]
   return (
     <section className="medias">
       <h2>Médias</h2>
@@ -141,52 +167,7 @@ export default function MediasPage() {
             {data.total} film{data.total > 1 ? 's' : ''}
             {q ? ` pour « ${q} »` : ''}
           </p>
-          <div className="medias__scroll">
-            <table className="medias__table">
-              <caption className="visually-hidden">Films du catalogue</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Titre</th>
-                  <th scope="col">Année</th>
-                  <th scope="col">Genres</th>
-                  <th scope="col">Durée</th>
-                  <th scope="col">Disponibilité</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((media) => (
-                  <tr key={media.id}>
-                    <th scope="row">{media.title}</th>
-                    <td>{media.year ?? '—'}</td>
-                    <td>{media.genres.length > 0 ? media.genres.join(', ') : '—'}</td>
-                    <td>{formatDuration(media.durationSeconds) || '—'}</td>
-                    <td>
-                      <AvailabilityBadge availability={media.availability} />
-                    </td>
-                    <td>
-                      <div className="medias__actions">
-                        <Button
-                          variant="secondary"
-                          aria-label={`Modifier ${media.title}`}
-                          onClick={() => setDialog({ type: 'edit', media })}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          variant="danger"
-                          aria-label={`Retirer ${media.title} du catalogue`}
-                          onClick={() => setDialog({ type: 'delete', media })}
-                        >
-                          Retirer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable caption="Films du catalogue" columns={columns} rows={data.items} />
           <Pagination
             page={page}
             totalPages={data.totalPages}

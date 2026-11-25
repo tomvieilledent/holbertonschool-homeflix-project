@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
 import ConfirmModal from '@/components/ConfirmModal'
+import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Pagination from '@/components/Pagination'
@@ -112,72 +113,82 @@ export default function AccountsPage() {
   const isMe = (account) => account.id === me?.id
   const locked = (account) => isMe(account) || isLastAdmin(account)
 
-  const rows = data.items.map((account) => {
-    const lockedAccount = locked(account)
-    const busy = busyId === account.id
-    const promoting = account.role !== 'ADMIN'
-    return (
-      <tr key={account.id}>
-        <th scope="row">
+  const columns = [
+    {
+      key: 'username',
+      header: 'Identifiant',
+      rowHeader: true,
+      render: (account) => (
+        <>
           {account.username}
           {isMe(account) && <span className="accounts__badge"> (vous)</span>}
-        </th>
-        <td>{account.email}</td>
-        <td>{ROLE_LABEL[account.role] ?? account.role}</td>
-        <td>
+        </>
+      ),
+    },
+    { key: 'email', header: 'E-mail', render: (account) => account.email },
+    { key: 'role', header: 'Rôle', render: (account) => ROLE_LABEL[account.role] ?? account.role },
+    {
+      key: 'state',
+      header: 'État',
+      render: (account) => (
+        <>
           {account.enabled ? 'Actif' : 'Désactivé'}
           {account.mustChangePassword && <span className="accounts__badge"> · mot de passe temporaire</span>}
           {isLastAdmin(account) && <span className="accounts__badge"> · dernier administrateur</span>}
-        </td>
-        <td>
-          <div className="accounts__actions">
-            {account.enabled ? (
-              <Button
-                variant="secondary"
-                disabled={lockedAccount}
-                aria-label={`Désactiver le compte ${account.username}`}
-                onClick={() => setDialog({ type: 'toggle', account })}
-              >
-                Désactiver
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                loading={busy}
-                aria-label={`Activer le compte ${account.username}`}
-                onClick={() => activate(account)}
-              >
-                Activer
-              </Button>
-            )}
+        </>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (account) => (
+        <div className="accounts__actions">
+          {account.enabled ? (
             <Button
               variant="secondary"
-              disabled={!promoting && lockedAccount}
-              aria-label={`${promoting ? 'Promouvoir administrateur' : 'Rétrograder en utilisateur'} le compte ${account.username}`}
-              onClick={() => setDialog({ type: 'role', account })}
+              disabled={locked(account)}
+              aria-label={`Désactiver le compte ${account.username}`}
+              onClick={() => setDialog({ type: 'toggle', account })}
             >
-              {promoting ? 'Promouvoir' : 'Rétrograder'}
+              Désactiver
             </Button>
+          ) : (
             <Button
               variant="secondary"
-              aria-label={`Réinitialiser le mot de passe de ${account.username}`}
-              onClick={() => setDialog({ type: 'reset', account })}
+              loading={busyId === account.id}
+              aria-label={`Activer le compte ${account.username}`}
+              onClick={() => activate(account)}
             >
-              Mot de passe
+              Activer
             </Button>
-            <Button
-              variant="danger"
-              disabled={lockedAccount}
-              aria-label={`Supprimer le compte ${account.username}`}
-              onClick={() => setDialog({ type: 'delete', account })}
-            >
-              Supprimer
-            </Button>
-          </div>
-        </td>
-      </tr>
-    )
-  })
+          )}
+          <Button
+            variant="secondary"
+            disabled={account.role === 'ADMIN' && locked(account)}
+            aria-label={`${account.role === 'ADMIN' ? 'Rétrograder en utilisateur' : 'Promouvoir administrateur'} le compte ${account.username}`}
+            onClick={() => setDialog({ type: 'role', account })}
+          >
+            {account.role === 'ADMIN' ? 'Rétrograder' : 'Promouvoir'}
+          </Button>
+          <Button
+            variant="secondary"
+            aria-label={`Réinitialiser le mot de passe de ${account.username}`}
+            onClick={() => setDialog({ type: 'reset', account })}
+          >
+            Mot de passe
+          </Button>
+          <Button
+            variant="danger"
+            disabled={locked(account)}
+            aria-label={`Supprimer le compte ${account.username}`}
+            onClick={() => setDialog({ type: 'delete', account })}
+          >
+            Supprimer
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   const target = dialog?.account
   return (
@@ -199,21 +210,7 @@ export default function AccountsPage() {
           <p className="accounts__count">
             {data.total} compte{data.total > 1 ? 's' : ''}
           </p>
-          <div className="accounts__scroll">
-            <table className="accounts__table">
-              <caption className="visually-hidden">Comptes</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Identifiant</th>
-                  <th scope="col">E-mail</th>
-                  <th scope="col">Rôle</th>
-                  <th scope="col">État</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody>{rows}</tbody>
-            </table>
-          </div>
+          <DataTable caption="Comptes" columns={columns} rows={data.items} />
           <p className="accounts__hint">
             Vous ne pouvez pas désactiver, rétrograder ni supprimer votre propre compte depuis cet écran, et il doit
             toujours rester au moins un administrateur actif.
