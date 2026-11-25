@@ -14,6 +14,7 @@ const SESSIONS = {
   expired: { status: 'anonymous', account: null, sessionExpired: true },
   user: { status: 'authenticated', account: account('USER'), activeProfileId: 'p1' },
   admin: { status: 'authenticated', account: account('ADMIN'), activeProfileId: 'p1' },
+  deleted: { status: 'anonymous', account: null, accountDeleted: true },
   noProfile: { status: 'authenticated', account: account('USER'), activeProfileId: null },
 }
 
@@ -113,6 +114,25 @@ describe('routes protégées', () => {
     const router = open('/', 'noProfile')
     expect(router.state.location.pathname).toBe('/profiles')
     expect(router.state.location.search).toBe('')
+  })
+
+  it('« Mon compte » est accessible sans profil actif, mais pas à un anonyme', async () => {
+    const router = open('/compte', 'noProfile')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mon compte' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/compte')
+  })
+
+  it('après la suppression du compte, renvoie à la connexion avec l’explication et sans ?next=', () => {
+    const router = open('/compte', 'deleted')
+    expect(router.state.location.pathname).toBe('/login')
+    expect(router.state.location.search).toBe('')
+    expect(router.state.location.state).toEqual({ reason: 'account-deleted' })
+  })
+
+  it('renvoie un anonyme de /compte vers la connexion', () => {
+    const router = open('/compte', 'anonymous')
+    expect(router.state.location.pathname).toBe('/login')
+    expect(router.state.location.search).toBe('?next=%2Fcompte')
   })
 
   describe('administration', () => {
