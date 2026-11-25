@@ -28,4 +28,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update RefreshToken t set t.revokedAt = :now where t.account.id = :accountId and t.revokedAt is null")
     int revokeAllOfAccount(@Param("accountId") UUID accountId, @Param("now") Instant now);
+
+    /** Mémorise le profil actif sur les sessions encore valides de la famille (le prochain refresh le restitue). */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update RefreshToken t set t.activeProfileId = :profileId where t.familyId = :familyId and t.revokedAt is null")
+    int setActiveProfile(@Param("familyId") UUID familyId, @Param("profileId") UUID profileId);
 }

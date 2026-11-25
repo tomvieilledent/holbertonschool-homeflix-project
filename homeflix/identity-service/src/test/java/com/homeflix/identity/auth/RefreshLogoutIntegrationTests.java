@@ -78,6 +78,7 @@ class RefreshLogoutIntegrationTests {
     @Autowired RoleRepository roles;
     @Autowired PasswordEncoder encoder;
     @Autowired MutableClock clock;
+    @Autowired com.homeflix.identity.account.ProfileRepository profiles;
 
     @BeforeEach
     void reset() {
@@ -115,6 +116,30 @@ class RefreshLogoutIntegrationTests {
         assertThat(second).isNotEqualTo(first);
         assertThat(r.getResponse().getHeader(HttpHeaders.SET_COOKIE)).contains("HttpOnly", "SameSite=Strict", "Path=/api/v1/auth");
         assertThat(refresh(second).getResponse().getStatus()).isEqualTo(200); // le nouveau jeton fonctionne
+    }
+
+    @Test
+    void refreshKeepsTheActiveProfileSelectedBefore() throws Exception {
+        Account alice = accounts.findByUsername("alice").orElseThrow();
+        var profile = profiles.save(new com.homeflix.identity.account.Profile(alice, "Alice", "avatar-1"));
+        MvcResult login = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"username\":\"alice\",\"password\":\"" + PASSWORD + "\"}")).andReturn();
+        String access = jsonField(login, "accessToken");
+        MvcResult select = mvc.perform(post("/api/v1/profiles/" + profile.getId() + "/select")
+            .header("Authorization", "Bearer " + access).header("X-Requested-With", "homeflix")).andReturn();
+        assertThat(select.getResponse().getStatus()).isEqualTo(200);
+
+        MvcResult refreshed = refresh(cookieValue(login));
+        assertThat(refreshed.getResponse().getStatus()).isEqualTo(200);
+        String me = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me")
+            .header("Authorization", "Bearer " + jsonField(refreshed, "accessToken"))).andReturn().getResponse().getContentAsString();
+        assertThat(me).contains(profile.getId().toString());
+    }
+
+    private static String jsonField(MvcResult r, String field) throws Exception {
+        var m = java.util.regex.Pattern.compile("\"" + field + "\"\\s*:\\s*\"([^\"]+)\"").matcher(r.getResponse().getContentAsString());
+        assertThat(m.find()).isTrue();
+        return m.group(1);
     }
 
     @Test

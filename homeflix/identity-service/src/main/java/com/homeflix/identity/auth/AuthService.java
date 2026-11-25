@@ -66,7 +66,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Compte désactivé",
                 "Ce compte est désactivé.");
         }
-        return openSession(account, UUID.randomUUID());
+        return openSession(account, UUID.randomUUID(), null);
     }
 
     /**
@@ -99,7 +99,7 @@ public class AuthService {
                 "Ce compte est désactivé.");
         }
         current.revoke(now);
-        return openSession(account, current.getFamilyId());
+        return openSession(account, current.getFamilyId(), current.getActiveProfileId());
     }
 
     /** Déconnexion idempotente : révoque le jeton présenté (et sa famille) s'il existe. */
@@ -154,12 +154,19 @@ public class AuthService {
         }
     }
 
-    /** Émet un access token (sans profil actif) et enregistre un nouveau refresh token de la famille donnée. */
-    Session openSession(Account account, UUID familyId) {
-        String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), null);
+    /**
+     * Émet un access token et enregistre un nouveau refresh token de la famille donnée. Le profil actif de la
+     * session (s'il existe encore) est conservé dans le jeton et dans le nouveau refresh token.
+     */
+    Session openSession(Account account, UUID familyId, UUID activeProfileId) {
+        UUID active = activeProfileId != null && profiles.existsByIdAndAccountId(activeProfileId, account.getId())
+            ? activeProfileId : null;
+        String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), active, familyId);
         String refresh = RefreshTokens.newValue();
         Instant expiresAt = clock.instant().plus(props.refreshTtl());
-        refreshTokens.save(new RefreshToken(account, familyId, RefreshTokens.hash(refresh), expiresAt));
+        RefreshToken token = new RefreshToken(account, familyId, RefreshTokens.hash(refresh), expiresAt);
+        token.setActiveProfileId(active);
+        refreshTokens.save(token);
         return new Session(TokenResponse.bearer(access, jwtProps.accessTtl().toSeconds()), refresh);
     }
 }
