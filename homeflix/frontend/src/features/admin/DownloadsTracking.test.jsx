@@ -9,7 +9,7 @@ import AcquisitionPage, { DOWNLOADS_MAX_FAILURES, DOWNLOADS_POLL_MS } from '@/fe
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-const problem = (status, code) => json({ status, code }, status) // pour le refus d'annulation (409)
+const problem = (status, code) => json({ status, code }, status)
 
 const entry = (id, title, overrides = {}) => ({
   id,
@@ -42,6 +42,7 @@ let rights
 let list // téléchargements renvoyés par `GET /downloads` ; une fonction (appel n°) → liste fait évoluer la progression
 let calls
 let cancelResponse
+let startResponse // réponse à `POST /downloads` à la place du démarrage réussi
 let listFailure // erreur à lever à la lecture des téléchargements
 
 const downloadReads = () => calls.filter((call) => call === 'GET /downloads').length
@@ -59,6 +60,7 @@ function serve() {
     if (method === 'GET' && path === '/catalogue') return json({ items: entries, page: 0, size: 20, total: entries.length, totalPages: 1 })
     if (method === 'GET' && path === '/rights-notice') return json(rights)
     if (method === 'POST' && path === '/downloads') {
+      if (startResponse) return startResponse()
       const created = download('d-new', 'Nouveau', 'QUEUED')
       list = [created, ...(typeof list === 'function' ? list(downloadReads()) : list)]
       return json(created, 202)
@@ -78,6 +80,7 @@ describe('suivi des téléchargements', () => {
     list = []
     calls = []
     listFailure = null
+    startResponse = null
     cancelResponse = () => json(download('d1', 'Sintel', 'CANCELLED', 40))
     vi.stubGlobal('fetch', vi.fn(serve()))
   })
@@ -219,5 +222,22 @@ describe('suivi des téléchargements', () => {
     await actor.click(screen.getByRole('button', { name: 'Réessayer' }))
     await advance(0)
     expect(screen.getByText(/Aucun téléchargement pour le moment/)).toBeInTheDocument()
+    expect(screen.queryByText('Impossible de joindre le serveur. Vérifiez votre connexion.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Réessayer' })).not.toBeInTheDocument()
+  })
+
+  it('un démarrage refusé par le client BitTorrent affiche aussitôt la ligne « Échoué »', async () => {
+    startResponse = () => {
+      // Le serveur enregistre le téléchargement en échec avant de répondre 503.
+      list = [download('d-ko', 'Sintel', 'FAILED', 0, { errorCode: 'TORRENT_CLIENT_UNAVAILABLE' })]
+      return problem(503, 'TORRENT_CLIENT_UNAVAILABLE')
+    }
+    const { actor } = await renderPage()
+    await actor.click(screen.getByRole('button', { name: 'Télécharger Sintel' }))
+    await advance(0)
+
+    expect(within(rowOf('Sintel')).getByText('Échoué')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Le service de téléchargement est injoignable.')
+    expect(screen.queryByText('Téléchargement de « Sintel » lancé.')).not.toBeInTheDocument()
   })
 })
