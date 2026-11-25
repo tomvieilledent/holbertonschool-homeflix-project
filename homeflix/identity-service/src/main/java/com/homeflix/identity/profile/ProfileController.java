@@ -55,7 +55,15 @@ public class ProfileController {
 
     @PostMapping("/{profileId}/select")
     public TokenResponse select(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID profileId) {
-        return service.select(accountId(jwt), profileId);
+        UUID account = accountId(jwt);
+        String fid = jwt.getClaimAsString("fid");
+        UUID family = null;
+        try {
+            family = fid == null ? null : UUID.fromString(fid);
+        } catch (IllegalArgumentException e) {
+            // claim illisible : la sélection fonctionne, mais sans mémorisation pour le refresh
+        }
+        return service.select(account, profileId, family);
     }
 
     private static UUID accountId(Jwt jwt) {

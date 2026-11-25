@@ -27,6 +27,11 @@ public class JwtService {
     }
 
     public String issueAccessToken(UUID accountId, Collection<String> roles, UUID profileId) {
+        return issueAccessToken(accountId, roles, profileId, null);
+    }
+
+    /** `familyId` (claim `fid`) relie le jeton à sa session de refresh, pour y mémoriser le profil actif. */
+    public String issueAccessToken(UUID accountId, Collection<String> roles, UUID profileId, UUID familyId) {
         Instant now = Instant.now();
         JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder()
             .subject(accountId.toString())
@@ -36,6 +41,9 @@ public class JwtService {
             .claim("roles", roles.stream().toList());
         if (profileId != null) {
             claims.claim("pid", profileId.toString());
+        }
+        if (familyId != null) {
+            claims.claim("fid", familyId.toString());
         }
         try {
             SignedJWT jwt = new SignedJWT(

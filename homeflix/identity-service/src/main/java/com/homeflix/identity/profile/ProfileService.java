@@ -11,6 +11,7 @@ import com.homeflix.identity.account.Account;
 import com.homeflix.identity.account.AccountRepository;
 import com.homeflix.identity.account.Profile;
 import com.homeflix.identity.account.ProfileRepository;
+import com.homeflix.identity.account.RefreshTokenRepository;
 import com.homeflix.identity.auth.TokenResponse;
 import com.homeflix.identity.error.ApiException;
 import com.homeflix.identity.security.JwtProperties;
@@ -30,9 +31,11 @@ public class ProfileService {
     private final JwtService jwt;
     private final JwtProperties jwtProps;
     private final LibraryPurgeClient library;
+    private final RefreshTokenRepository refreshTokens;
 
     public ProfileService(ProfileRepository profiles, AccountRepository accounts, JwtService jwt,
-            JwtProperties jwtProps, LibraryPurgeClient library) {
+            JwtProperties jwtProps, LibraryPurgeClient library, RefreshTokenRepository refreshTokens) {
+        this.refreshTokens = refreshTokens;
         this.profiles = profiles;
         this.accounts = accounts;
         this.jwt = jwt;
@@ -85,11 +88,18 @@ public class ProfileService {
         profiles.delete(profile);
     }
 
-    @Transactional(readOnly = true)
-    public TokenResponse select(UUID accountId, UUID profileId) {
+    /** @param familyId session de refresh du jeton appelant (claim `fid`), nul pour un jeton sans session */
+    @Transactional
+    public TokenResponse select(UUID accountId, UUID profileId, UUID familyId) {
         Profile profile = owned(accountId, profileId);
         Account account = profile.getAccount();
-        String access = jwt.issueAccessToken(account.getId(), List.of(account.getRole().getName()), profile.getId());
+        UUID id = profile.getId();
+        List<String> roles = List.of(account.getRole().getName());
+        // Lecture du compte avant la mise à jour : elle vide le contexte de persistance.
+        if (familyId != null) {
+            refreshTokens.setActiveProfile(familyId, id);
+        }
+        String access = jwt.issueAccessToken(accountId, roles, id, familyId);
         return TokenResponse.bearer(access, jwtProps.accessTtl().toSeconds());
     }
 
