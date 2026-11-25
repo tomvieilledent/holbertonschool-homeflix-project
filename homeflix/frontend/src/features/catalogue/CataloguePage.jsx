@@ -5,6 +5,7 @@ import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Pagination from '@/components/Pagination'
 import CatalogueFilters from '@/features/catalogue/CatalogueFilters'
+import EmptyLibrary from '@/features/catalogue/EmptyLibrary'
 import GridSkeleton from '@/features/catalogue/GridSkeleton'
 import FavouriteCard from '@/features/favourites/FavouriteCard'
 import '@/features/catalogue/CataloguePage.css'
@@ -112,12 +113,7 @@ export default function CataloguePage() {
   } else if (data === null) {
     content = <GridSkeleton />
   } else if (data.total === 0 && !filtered) {
-    content = (
-      <EmptyState
-        title="Le catalogue est vide"
-        description="Aucun film à afficher pour le moment. Demandez à l’administrateur de configurer la bibliothèque."
-      />
-    )
+    content = <EmptyLibrary />
   } else if (data.total === 0) {
     content = (
       <EmptyState

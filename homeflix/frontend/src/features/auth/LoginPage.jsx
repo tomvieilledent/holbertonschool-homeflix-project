@@ -7,6 +7,7 @@ import '@/features/auth/AuthForm.css'
 import { useAuth } from '@/features/auth/authContext'
 import { safeNext } from '@/features/auth/redirect'
 import SessionExpiredNotice from '@/features/auth/SessionExpiredNotice'
+import useSetupRequired from '@/features/auth/useSetupRequired'
 
 /** Message d'échec de connexion : le 401 reste générique (rien sur l'existence du compte). */
 const failureMessage = (error) =>
@@ -25,9 +26,12 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const next = safeNext(params.get('next'))
+  const setupRequired = useSetupRequired(status === 'anonymous')
 
   if (status === 'loading') return <Spinner size="lg" label="Vérification de votre session…" />
   if (status === 'authenticated' && !submitting) return <Navigate to={next} replace />
+  // Premier lancement : aucun compte n'existe encore, la connexion mène à la création de l'administrateur.
+  if (setupRequired) return <Navigate to="/setup" replace />
 
   if (state?.reason === 'session-expired') {
     // Même URL (donc `?next=`), sans l'état : l'écran d'expiration laisse place à la connexion.

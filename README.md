@@ -80,7 +80,7 @@ Chaque service doit afficher `healthy`.
 
 **5. Ouvrir HomeFlix**
 
-Allez sur **http://localhost:8080/setup** pour créer le premier administrateur (section 3). Attention : sans cette adresse, la page d'accueil du site affiche la **connexion**, qui ne renvoie pas vers la création du compte.
+Allez sur **http://localhost:8080** pour créer le premier administrateur (section 3). Tant qu'aucun compte n'existe, la page de connexion renvoie vers la « Première configuration » (**/setup**).
 
 ## 3. Première utilisation
 

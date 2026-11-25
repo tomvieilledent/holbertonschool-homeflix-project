@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Skeleton from '@/components/Skeleton'
+import EmptyLibrary from '@/features/catalogue/EmptyLibrary'
 import MediaRow from '@/features/catalogue/MediaRow'
 import FavouriteCard from '@/features/favourites/FavouriteCard'
 import { useFavourites } from '@/features/favourites/favouritesContext'
@@ -55,14 +55,7 @@ function HomeSections() {
 
   if (error) return <ErrorState description={error.message} onRetry={() => load()} />
   if (home === null) return <HomeSkeleton />
-  if (isEmpty(home)) {
-    return (
-      <EmptyState
-        title="Votre bibliothèque est vide"
-        description="Aucun film à afficher pour le moment. Demandez à l’administrateur de configurer la bibliothèque (dossiers de médias) pour voir des films ici."
-      />
-    )
-  }
+  if (isEmpty(home)) return <EmptyLibrary />
 
   return (
     <div className="home">
@@ -95,8 +88,8 @@ function HomeSections() {
 /**
  * Accueil du profil actif (`GET /home`) : continuer à regarder, ajoutés récemment, catégories et
  * « Ma liste » (celle du magasin partagé `useFavourites`, donc à jour quand on ajoute ou retire un film). Une
- * rangée vide est masquée, sauf « Ma liste » qui explique comment la remplir ; si tout est vide, la bibliothèque
- * n'est sans doute pas configurée. Le titre de page est présent dans tous les états.
+ * rangée vide est masquée, sauf « Ma liste » qui explique comment la remplir ; si tout est vide, `EmptyLibrary`
+ * dit quoi faire selon le rôle. Le titre de page est présent dans tous les états.
  */
 export default function HomePage() {
   return (

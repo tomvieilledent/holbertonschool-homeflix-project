@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
+import '@/components/Button.css'
 import ConfirmModal from '@/components/ConfirmModal'
 import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
@@ -160,7 +161,13 @@ export default function MediasPage() {
               ? 'Vérifiez l’orthographe ou essayez un mot plus court.'
               : 'Ajoutez un dossier dans « Bibliothèque » puis lancez une indexation.'
           }
-        />
+        >
+          {!q && (
+            <Link className="btn btn--secondary" to="/admin/bibliotheque">
+              Ouvrir la bibliothèque
+            </Link>
+          )}
+        </EmptyState>
       ) : (
         <>
           <p className="medias__count">

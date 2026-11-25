@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '@/features/auth/authContext'
 import LoginPage from '@/features/auth/LoginPage'
 import { ApiError } from '@/services/apiError'
@@ -12,6 +12,7 @@ function renderLogin({ login = vi.fn(), status = 'anonymous', url = '/login' } =
       { path: '/login', element: <LoginPage /> },
       { path: '/', element: <p>accueil</p> },
       { path: '/admin', element: <p>administration</p> },
+      { path: '/setup', element: <p>première configuration</p> },
     ],
     { initialEntries: [url] },
   )
@@ -94,6 +95,29 @@ describe('LoginPage', () => {
     await submit(user)
     expect(screen.getByRole('button', { name: /Se connecter/ })).toBeDisabled()
     resolve()
+  })
+
+  describe('premier lancement', () => {
+    const answer = (body, status = 200) =>
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })))
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('mène à la première configuration quand aucun administrateur n’existe', async () => {
+      answer({ setupRequired: true })
+      const { router } = renderLogin()
+      await waitFor(() => expect(router.state.location.pathname).toBe('/setup'))
+    })
+
+    it.each([
+      ['l’installation est faite', { setupRequired: false }, 200],
+      ['le serveur ne répond pas', {}, 503],
+    ])('reste sur la connexion quand %s', async (_label, body, status) => {
+      answer(body, status)
+      const { router } = renderLogin()
+      await waitFor(() => expect(fetch).toHaveBeenCalled())
+      expect(await screen.findByRole('button', { name: 'Se connecter' })).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/login')
+    })
   })
 
   it('renvoie un utilisateur déjà connecté vers l’accueil', async () => {
