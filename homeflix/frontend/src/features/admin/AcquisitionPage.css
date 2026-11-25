@@ -1,0 +1,91 @@
+.acquisition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.acquisition > h2 {
+  margin: 0;
+}
+
+.acquisition__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.acquisition__notice:empty {
+  display: none;
+}
+
+.acquisition__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.acquisition__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.acquisition__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.acquisition__table th,
+.acquisition__table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.acquisition__table tbody tr:last-child th,
+.acquisition__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.acquisition__table thead th {
+  background: var(--color-surface);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.acquisition__table tbody th {
+  min-width: 7rem; /* le titre ne se casse pas lettre par lettre quand la colonne « Source » est longue */
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: break-word;
+}
+
+.acquisition__table td:nth-child(2) {
+  min-width: 12rem;
+}
+
+.acquisition__table td:nth-child(5) {
+  white-space: nowrap; /* « 123 Mo » reste sur une ligne */
+}
+
+.rights__text {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--color-secondary);
+  background: var(--color-bg);
+  white-space: pre-wrap;
+}
+
+.rights__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.rights__check input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+}

@@ -79,7 +79,10 @@ export const routes = [
                     children: [
                       { index: true, element: <Navigate to="/admin/comptes" replace /> },
                       { path: 'comptes', ...lazyPage(() => import('@/features/admin/AccountsPage')) },
+                      { path: 'bibliotheque', ...lazyPage(() => import('@/features/admin/LibraryPage')) },
+                      { path: 'medias', ...lazyPage(() => import('@/features/admin/MediasPage')) },
                       { path: 'acquisition', ...lazyPage(() => import('@/features/admin/AcquisitionPage')) },
+                      { path: 'services', ...lazyPage(() => import('@/features/admin/ServicesPage')) },
                     ],
                   },
                 ],

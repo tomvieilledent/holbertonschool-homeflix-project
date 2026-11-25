@@ -284,6 +284,61 @@ describe('administration', () => {
     expect((await call(`${IDENTITY}/admin/accounts/${ok.body.id}`)).body.mustChangePassword).toBe(true)
   })
 
+  it('valide un dossier dans l’ordre du contrat : autorisé, existant, dossier, lisible, sans chevauchement', async () => {
+    await login('admin')
+    const check = async (path) => (await call(`${LIBRARY}/admin/media-roots/validate`, { method: 'POST', body: { path } })).body
+    expect(await check('/media/series')).toEqual({ valid: true })
+    expect((await check('/etc/passwd')).code).toBe('ROOT_NOT_ALLOWED') // l'emplacement prime sur le reste
+    expect((await check('/media/introuvable')).code).toBe('ROOT_NOT_FOUND')
+    expect((await check('/media/film.mp4')).code).toBe('ROOT_NOT_A_DIRECTORY')
+    expect((await check('/media/illisible')).code).toBe('ROOT_NOT_READABLE')
+    expect((await check('/media/films/saison1')).code).toBe('ROOT_OVERLAP') // sous « /media/films », déjà configuré
+
+    const refused = await call(`${LIBRARY}/admin/media-roots`, { method: 'POST', body: { path: '/media/illisible' } })
+    expect(refused.status).toBe(400)
+    expect(refused.body.code).toBe('ROOT_NOT_READABLE')
+  })
+
+  it('corrige les métadonnées dans les limites du contrat, et la correction est visible dans le catalogue', async () => {
+    await login('admin')
+    const [first] = (await call(`${LIBRARY}/media`)).body.items
+    const patch = (body) => call(`${LIBRARY}/admin/media/${first.id}`, { method: 'PATCH', body })
+
+    const updated = await patch({ title: '  Titre corrigé ', genres: ['Drame'], year: 1999 })
+    expect(updated.status).toBe(200)
+    expect(updated.body).toMatchObject({ title: 'Titre corrigé', genres: ['Drame'], year: 1999 })
+    expect((await call(`${LIBRARY}/media/${first.id}`)).body.title).toBe('Titre corrigé')
+    expect((await call(`${LIBRARY}/media?q=corrigé`)).body.items.map((m) => m.id)).toEqual([first.id])
+
+    for (const bad of [
+      {},
+      { title: ' ' },
+      { title: 'x'.repeat(201) },
+      { description: 'x'.repeat(2001) },
+      { genres: Array.from({ length: 11 }, (_, i) => `g${i}`) },
+      { genres: ['x'.repeat(41)] },
+      { year: 1887 },
+      { year: 2101 },
+      { year: 2008.5 },
+    ]) {
+      const refused = await patch(bad)
+      expect({ bad: JSON.stringify(bad).slice(0, 40), status: refused.status, code: refused.body.code }).toEqual({
+        bad: JSON.stringify(bad).slice(0, 40),
+        status: 400,
+        code: 'VALIDATION_ERROR',
+      })
+    }
+    expect((await call(`${LIBRARY}/media/${first.id}`)).body.title).toBe('Titre corrigé') // rien n'a changé
+  })
+
+  it('retire une entrée du catalogue', async () => {
+    await login('admin')
+    const [first] = (await call(`${LIBRARY}/media`)).body.items
+    expect((await call(`${LIBRARY}/admin/media/${first.id}`, { method: 'DELETE' })).status).toBe(204)
+    expect((await call(`${LIBRARY}/media/${first.id}`)).status).toBe(404)
+    expect((await call(`${LIBRARY}/admin/media/${first.id}`, { method: 'DELETE' })).body.code).toBe('NOT_FOUND')
+  })
+
   it('valide, ajoute et retire un dossier autorisé', async () => {
     await login('admin')
     const [existing] = (await call(`${LIBRARY}/admin/media-roots`)).body
@@ -364,5 +419,8 @@ describe('acquisition', () => {
     const active = (await call(`${ACQUISITION}/downloads?state=DOWNLOADING`)).body.items[0]
     const cancelled = await call(`${ACQUISITION}/downloads/${active.id}/cancel`, { method: 'POST' })
     expect(cancelled.body.state).toBe('CANCELLED')
+    const again = await call(`${ACQUISITION}/downloads/${active.id}/cancel`, { method: 'POST' })
+    expect(again.status).toBe(200) // idempotent : 409 seulement pour COMPLETED ou FAILED
+    expect(again.body.state).toBe('CANCELLED')
   })
 })

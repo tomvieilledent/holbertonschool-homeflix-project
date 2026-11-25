@@ -21,12 +21,21 @@ function progressState(position, duration) {
   return position >= duration * COMPLETED_RATIO ? 'COMPLETED' : 'STARTED'
 }
 
+/**
+ * Valide un chemin dans l'ordre du contrat : absolu et autorisé, puis existant, dossier, lisible, sans chevauchement.
+ * Le système de fichiers est simulé par le nom du dernier segment : `introuvable` n'existe pas, `illisible` n'est pas
+ * lisible, une extension (`film.mp4`) désigne un fichier ; tout autre dossier sous un emplacement autorisé est valide.
+ */
 function checkRoot(db, rawPath) {
   const path = String(rawPath ?? '')
   const refuse = (code, problemName) => ({ valid: false, code, problemName })
   if (!path.startsWith('/') || path.split('/').includes('..') || !ALLOWED_BASES.some((b) => path === b || path.startsWith(`${b}/`))) {
     return refuse('ROOT_NOT_ALLOWED', 'root-not-allowed')
   }
+  const name = path.split('/').filter(Boolean).pop() ?? ''
+  if (name.includes('introuvable')) return refuse('ROOT_NOT_FOUND', 'root-not-found')
+  if (/\.[a-z0-9]{2,4}$/i.test(name)) return refuse('ROOT_NOT_A_DIRECTORY', 'root-not-a-directory')
+  if (name.includes('illisible')) return refuse('ROOT_NOT_READABLE', 'root-not-readable')
   const overlap = db.roots.find((r) => path.startsWith(r.path) || r.path.startsWith(path))
   if (overlap) return refuse('ROOT_OVERLAP', 'root-overlap')
   return { valid: true }
@@ -270,8 +279,19 @@ export function libraryHandlers(db) {
       if (auth.error) return auth.error
       const media = findMedia(params.mediaId)
       if (!media) return problem('not-found')
-      const { title, description, genres, year } = await readJson(request)
+      const changes = await readJson(request)
+      const { title, description, genres, year } = changes
+      // Limites du contrat (MediaMetadataUpdate) : au moins un champ ; titre 1 à 200, description 2000, 10 genres de 40, année 1888 à 2100.
+      if (Object.keys(changes).length === 0) return invalid('title', 'Indiquez au moins une modification.')
       if (title !== undefined && !title.trim()) return invalid('title', 'Le titre ne peut pas être vide.')
+      if (title !== undefined && title.length > 200) return invalid('title', 'Le titre est limité à 200 caractères.')
+      if (description !== undefined && description.length > 2000) return invalid('description', 'La description est limitée à 2000 caractères.')
+      if (genres !== undefined && (!Array.isArray(genres) || genres.length > 10 || genres.some((g) => g.length > 40))) {
+        return invalid('genres', '10 genres au plus, de 40 caractères au plus.')
+      }
+      if (year !== undefined && (!Number.isInteger(year) || year < 1888 || year > 2100)) {
+        return invalid('year', 'L’année doit être comprise entre 1888 et 2100.')
+      }
       if (title !== undefined) media.title = title.trim()
       if (description !== undefined) media.description = description
       if (genres !== undefined) media.genres = genres

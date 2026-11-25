@@ -71,6 +71,66 @@ export const resetProgress = (mediaId) =>
  */
 export const listFavourites = (query = {}, signal) => apiFetch('library', '/v1/me/favourites', { query, signal })
 
+/**
+ * Dossiers autorisés (`GET /admin/media-roots`, ADMIN).
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{id: string, path: string, label: string, enabled: boolean, createdAt: string}[]>}
+ */
+export async function listMediaRoots(signal) {
+  const roots = await apiFetch('library', '/v1/admin/media-roots', { signal })
+  if (!Array.isArray(roots)) throw new TypeError('Réponse inattendue du serveur pour la liste des dossiers.')
+  return roots
+}
+
+/**
+ * Vérifie un chemin sans l'enregistrer (`POST /admin/media-roots/validate`) : répond toujours 200, le résultat
+ * dit si le dossier est utilisable (`valid`) et sinon pourquoi (`code`, `message`).
+ * @param {{path: string, label?: string}} root
+ * @returns {Promise<{valid: boolean, code?: string, message?: string}>}
+ */
+export const validateMediaRoot = (root) =>
+  apiFetch('library', '/v1/admin/media-roots/validate', { method: 'POST', body: root })
+
+/**
+ * Ajoute un dossier autorisé (`POST /admin/media-roots`). Le serveur le valide à nouveau et lève une `ApiError` :
+ * `ROOT_NOT_FOUND`, `ROOT_NOT_A_DIRECTORY`, `ROOT_NOT_READABLE`, `ROOT_NOT_ALLOWED` ou `ROOT_OVERLAP` (409).
+ * @param {{path: string, label?: string}} root
+ */
+export const addMediaRoot = (root) => apiFetch('library', '/v1/admin/media-roots', { method: 'POST', body: root })
+
+/**
+ * Retire un dossier autorisé (`DELETE /admin/media-roots/{id}`) : ses films deviennent indisponibles, aucun fichier
+ * n'est supprimé.
+ * @param {string} rootId
+ */
+export const deleteMediaRoot = (rootId) =>
+  apiFetch('library', `/v1/admin/media-roots/${encodeURIComponent(rootId)}`, { method: 'DELETE' })
+
+/**
+ * Lance une indexation manuelle (`POST /admin/index`, 202) : scan asynchrone de tous les dossiers actifs, idempotent.
+ * Un seul scan à la fois : `INDEX_ALREADY_RUNNING` (409) si l'un tourne déjà.
+ * @returns {Promise<IndexJob>}
+ */
+export const startIndexing = () => apiFetch('library', '/v1/admin/index', { method: 'POST' })
+
+/**
+ * État de la dernière indexation (`GET /admin/index/status`).
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<IndexJob>}
+ * @typedef {object} IndexJob
+ * @property {string} jobId
+ * @property {'IDLE'|'RUNNING'|'COMPLETED'|'FAILED'} state
+ * @property {number} [scanned] Fichiers analysés.
+ * @property {number} [added]
+ * @property {number} [updated]
+ * @property {number} [markedUnavailable] Films dont le fichier a disparu.
+ * @property {number} [duplicates]
+ * @property {number} [errors]
+ * @property {string|null} [startedAt]
+ * @property {string|null} [finishedAt]
+ */
+export const getIndexStatus = (signal) => apiFetch('library', '/v1/admin/index/status', { signal })
+
 const FAVOURITES_PAGE_SIZE = 50
 const FAVOURITES_MAX_PAGES = 20 // garde-fou : 1 000 favoris au plus
 

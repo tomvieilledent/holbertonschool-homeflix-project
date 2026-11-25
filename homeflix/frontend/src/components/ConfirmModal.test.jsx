@@ -65,4 +65,13 @@ describe('ConfirmModal', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
     release()
   })
+
+  it('le libellé du bouton qui renonce peut être changé (quand l’action confirmée s’appelle « Annuler… »)', async () => {
+    const onClose = vi.fn()
+    renderModal({ confirmLabel: 'Annuler le téléchargement', cancelLabel: 'Garder le téléchargement', onClose })
+    expect(screen.queryByRole('button', { name: 'Annuler' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Garder le téléchargement' })).toHaveFocus()
+    await userEvent.click(screen.getByRole('button', { name: 'Garder le téléchargement' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })

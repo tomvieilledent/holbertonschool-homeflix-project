@@ -1,0 +1,83 @@
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.library > h2 {
+  margin: 0;
+}
+
+.library__roots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.library__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.library__header h3 {
+  margin: 0;
+}
+
+.library__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.library__notice:empty {
+  display: none;
+}
+
+.library__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.library__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.library__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.library__path {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.library__badge {
+  color: var(--color-text-muted);
+}
+
+.add-root__result:empty {
+  display: none;
+}

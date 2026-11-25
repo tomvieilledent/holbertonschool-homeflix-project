@@ -41,7 +41,13 @@ describe('routes protégées', () => {
     const emptyHome = { continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url) => respond(String(url).includes('/admin/accounts') ? accountsFixture : emptyHome)),
+      vi.fn(async (url) => {
+        const path = String(url)
+        if (path.includes('/admin/accounts')) return respond(accountsFixture)
+        if (path.includes('/acquisition/v1/catalogue')) return respond({ items: [], page: 0, size: 20, total: 0, totalPages: 0 })
+        if (path.includes('/rights-notice')) return respond({ version: '2026-11', text: 'Rappel.', acknowledged: false })
+        return respond(emptyHome)
+      }),
     )
   })
   afterEach(() => vi.unstubAllGlobals())
@@ -118,7 +124,7 @@ describe('routes protégées', () => {
       expect(router.state.location.pathname).toBe('/admin')
     })
 
-    it.each(['/admin/comptes', '/admin/acquisition'])('refuse aussi %s à un USER par URL directe', async (path) => {
+    it.each(['/admin/comptes', '/admin/bibliotheque', '/admin/medias', '/admin/acquisition', '/admin/services'])('refuse aussi %s à un USER par URL directe', async (path) => {
       open(path, 'user')
       expect(await screen.findByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument()
       expect(screen.queryByRole('heading', { name: 'Comptes' })).not.toBeInTheDocument()
@@ -144,7 +150,7 @@ describe('routes protégées', () => {
       await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument())
       expect(router.state.location.pathname).toBe('/admin/comptes')
       const nav = screen.getByRole('navigation', { name: 'Sections de l’administration' })
-      expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Acquisition'])
+      expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Bibliothèque', 'Médias', 'Acquisition', 'Services'])
       expect(within(nav).getByRole('link', { name: 'Comptes' })).toHaveAttribute('aria-current', 'page')
     })
 
