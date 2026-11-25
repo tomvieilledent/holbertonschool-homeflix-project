@@ -10,6 +10,7 @@ import '@/components/StateMessage.css'
  * @param {() => void} [props.onRetry] Si fourni, affiche le bouton « Réessayer ».
  * @param {string} [props.retryLabel] Libellé du bouton de nouvel essai.
  * @param {React.ReactNode} [props.children] Actions supplémentaires (ex. « Retour à la fiche »).
+ * @param {'h1'|'h2'} [props.titleAs] `h1` quand cet état est toute la page.
  */
 export default function ErrorState({
   title = 'Une erreur est survenue',
@@ -17,13 +18,14 @@ export default function ErrorState({
   onRetry,
   retryLabel = 'Réessayer',
   children,
+  titleAs: Heading = 'h2',
 }) {
   return (
     <section className="state state--error" role="alert">
       <div className="state__icon" aria-hidden="true">
         !
       </div>
-      <h2 className="state__title">{title}</h2>
+      <Heading className="state__title">{title}</Heading>
       <p className="state__description">{description}</p>
       {(onRetry || children) && (
         <div className="state__actions">

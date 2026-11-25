@@ -26,7 +26,7 @@ export default function ManageProfilesPage() {
   const summaryId = useId()
   const lastId = useId()
 
-  if (loadFailed) return <ErrorState onRetry={reload} />
+  if (loadFailed) return <ErrorState titleAs="h1" onRetry={reload} />
   if (profiles === null) return <Spinner size="lg" label="Chargement des profils…" />
 
   const atLimit = profiles.length >= MAX_PROFILES

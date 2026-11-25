@@ -109,7 +109,7 @@ describe('AcquisitionPage', () => {
       expect(within(row).getByText('Blender Foundation')).toBeInTheDocument()
       expect(within(row).getByText('CC BY 3.0')).toBeInTheDocument()
       expect(within(row).getByText('334 Mo')).toBeInTheDocument()
-      const proof = within(row).getByRole('link', { name: 'Preuve de la licence de Sintel (s’ouvre dans un nouvel onglet)' })
+      const proof = within(row).getByRole('link', { name: 'Voir la preuve de la licence de Sintel (s’ouvre dans un nouvel onglet)' })
       expect(proof).toHaveAttribute('href', 'https://studio.blender.org/films/')
       expect(proof).toHaveAttribute('target', '_blank')
       expect(proof).toHaveAttribute('rel', 'noopener noreferrer')

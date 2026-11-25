@@ -77,7 +77,7 @@ export default function DownloadsPanel({ downloads, stalled, onResume, onCancel 
             </Button>
           )}
           {download.state === 'COMPLETED' && download.libraryMediaId && (
-            <Link to={`/media/${encodeURIComponent(download.libraryMediaId)}`} aria-label={`Voir ${download.title} dans la bibliothèque`}>
+            <Link to={`/media/${encodeURIComponent(download.libraryMediaId)}`} aria-label={`Voir dans la bibliothèque : ${download.title}`}>
               Voir dans la bibliothèque
             </Link>
           )}

@@ -9,6 +9,7 @@ import { formatDuration, playAction } from '@/features/catalogue/format'
 import Poster from '@/features/catalogue/Poster'
 import { useFavourites } from '@/features/favourites/favouritesContext'
 import '@/features/catalogue/DetailPage.css'
+import useDocumentTitle from '@/hooks/useDocumentTitle'
 import { isAbortError } from '@/services/api'
 import { getMedia } from '@/services/catalogue'
 import { getProgress } from '@/services/library'
@@ -45,6 +46,7 @@ export default function DetailPage() {
   const [progress, setProgress] = useState(null)
   const [error, setError] = useState(null)
   const favourites = useFavourites()
+  useDocumentTitle(media?.title)
 
   const load = useCallback(
     (signal) => {
@@ -78,7 +80,7 @@ export default function DetailPage() {
 
   if (error) {
     return (
-      <ErrorState title="Film introuvable" description={error.message} onRetry={() => load()}>
+      <ErrorState titleAs="h1" title="Film introuvable" description={error.message} onRetry={() => load()}>
         {back}
       </ErrorState>
     )
@@ -129,7 +131,7 @@ export default function DetailPage() {
               <Button
                 variant="secondary"
                 aria-pressed={favourites.isFavourite(media.id)}
-                disabled={favourites.isPending(media.id)}
+                busy={favourites.isPending(media.id)}
                 onClick={() => favourites.toggle(media)}
               >
                 {favourites.isFavourite(media.id) ? 'Dans ma liste' : 'Ajouter à ma liste'}

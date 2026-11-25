@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '@/features/auth/authContext'
 import LoginPage from '@/features/auth/LoginPage'
 import { ApiError } from '@/services/apiError'
+import { expectBusy } from '@/test/busy'
 
 function renderLogin({ login = vi.fn(), status = 'anonymous', url = '/login' } = {}) {
   const router = createMemoryRouter(
@@ -80,7 +81,7 @@ describe('LoginPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(text)
   })
 
-  it('désactive le bouton pendant l’envoi', async () => {
+  it('bloque le formulaire pendant l’envoi sans faire perdre le focus', async () => {
     const user = userEvent.setup()
     let resolve
     renderLogin({
@@ -92,7 +93,10 @@ describe('LoginPage', () => {
       ),
     })
     await submit(user)
-    expect(screen.getByRole('button', { name: /Se connecter/ })).toBeDisabled()
+    expectBusy(screen.getByRole('button', { name: /Se connecter/ }))
+    expect(screen.getByLabelText(/Identifiant/)).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/Mot de passe/)).toHaveAttribute('readonly')
+    expect(document.body).not.toHaveFocus()
     resolve()
   })
 

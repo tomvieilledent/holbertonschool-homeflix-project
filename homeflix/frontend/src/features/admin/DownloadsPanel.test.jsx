@@ -93,7 +93,7 @@ describe('DownloadsPanel : rendu des états', () => {
 
   it('un téléchargement terminé renvoie vers le film dans la bibliothèque', () => {
     renderPanel()
-    expect(within(rowOf('Film terminé')).getByRole('link', { name: 'Voir Film terminé dans la bibliothèque' })).toHaveAttribute('href', '/media/m9')
+    expect(within(rowOf('Film terminé')).getByRole('link', { name: 'Voir dans la bibliothèque : Film terminé' })).toHaveAttribute('href', '/media/m9')
   })
 
   it('explique quand il n’y a aucun téléchargement', () => {

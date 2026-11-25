@@ -36,6 +36,7 @@ export default function MyListPage() {
         <p role="status" className="catalogue__count">
           {items.length} film{items.length > 1 ? 's' : ''} dans votre liste
         </p>
+        <h2 className="visually-hidden">Films</h2>
         <ul className="catalogue__grid">
           {items.map((media) => (
             <li key={media.id}>

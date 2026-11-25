@@ -56,7 +56,7 @@ export default function IndexingPanel() {
       </p>
 
       <div className="indexing__actions">
-        <Button onClick={start} disabled={running || job === null} loading={starting}>
+        <Button onClick={start} busy={running} disabled={job === null} loading={starting}>
           Lancer l’indexation
         </Button>
         {running && !starting && (
