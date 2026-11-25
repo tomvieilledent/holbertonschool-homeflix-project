@@ -97,18 +97,31 @@ async function restoreActiveProfile(token) {
 }
 
 /**
+ * Exécute `task` sous un verrou commun à tous les onglets (Web Locks), pour qu'un seul refresh parte à la fois,
+ * avec le cookie posé par le précédent. Sans cette API (contexte non sécurisé), `task` s'exécute directement.
+ */
+const withRefreshLock = (task) =>
+  navigator.locks ? navigator.locks.request('homeflix:refresh', task) : task()
+
+/**
+ * Échange le cookie de rafraîchissement contre un nouveau jeton. `keepalive` : si la page est quittée pendant
+ * l'appel (rechargement), la requête aboutit quand même et le navigateur reçoit le nouveau cookie.
+ */
+const rotateRefreshToken = () =>
+  withRefreshLock(() =>
+    request('identity', '/v1/auth/refresh', { method: 'POST', headers: SESSION_HEADER, keepalive: true }),
+  )
+
+/**
  * Renouvelle l'access token via le cookie de rafraîchissement, puis rétablit le profil actif retenu.
- * Les appels concurrents partagent la même requête : le refresh token est à usage unique, et deux
- * appels simultanés (ex. React StrictMode en développement) révoqueraient la session.
+ * Le refresh token est à usage unique et le réutiliser révoque la session : les appels concurrents partagent la
+ * même requête (ex. React StrictMode en développement) et les onglets passent l'un après l'autre.
  * @returns {Promise<string>} Le nouvel access token.
  */
 export function refreshAccessToken() {
   refreshing ??= (async () => {
     try {
-      const token = await request('identity', '/v1/auth/refresh', {
-        method: 'POST',
-        headers: SESSION_HEADER,
-      })
+      const token = await rotateRefreshToken()
       accessToken = await restoreActiveProfile(token.accessToken)
       return accessToken
     } catch (error) {
