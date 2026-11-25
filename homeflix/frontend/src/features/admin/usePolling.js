@@ -66,6 +66,7 @@ export default function usePolling({ fetch, isActive, intervalMs, maxFailures })
   const reload = useCallback(async () => {
     setFailures(0)
     setData(await fetch())
+    setLoadError(null) // une relecture réussie répare un premier chargement en échec
   }, [fetch])
 
   return { data, setData, loadError, stalled: active && failures >= maxFailures, resume, reload }
