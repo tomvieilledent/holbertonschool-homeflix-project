@@ -82,6 +82,7 @@ export const routes = [
                       { path: 'bibliotheque', ...lazyPage(() => import('@/features/admin/LibraryPage')) },
                       { path: 'medias', ...lazyPage(() => import('@/features/admin/MediasPage')) },
                       { path: 'acquisition', ...lazyPage(() => import('@/features/admin/AcquisitionPage')) },
+                      { path: 'services', ...lazyPage(() => import('@/features/admin/ServicesPage')) },
                     ],
                   },
                 ],

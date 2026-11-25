@@ -8,4 +8,5 @@ export const ADMIN_SECTIONS = [
   { to: '/admin/bibliotheque', label: 'Bibliothèque' },
   { to: '/admin/medias', label: 'Médias' },
   { to: '/admin/acquisition', label: 'Acquisition' },
+  { to: '/admin/services', label: 'Services' },
 ]
