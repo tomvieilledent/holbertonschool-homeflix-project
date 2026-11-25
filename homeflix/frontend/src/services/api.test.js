@@ -8,6 +8,7 @@ import {
   getAccessToken,
   isAbortError,
   onSessionExpired,
+  refreshAccessToken,
   setAccessToken,
 } from '@/services/api'
 
@@ -272,6 +273,43 @@ describe('requêtes', () => {
   it('renvoie null pour une réponse 204', async () => {
     server.use(http.delete('*/api/library/v1/thing', () => new HttpResponse(null, { status: 204 })))
     await expect(apiFetch('library', '/v1/thing', { method: 'DELETE' })).resolves.toBeNull()
+  })
+})
+
+describe('refresh entre onglets et rechargements', () => {
+  afterEach(() => {
+    delete navigator.locks
+    vi.restoreAllMocks()
+  })
+
+  it('envoie le refresh en keepalive, pour recevoir le nouveau cookie même si la page est quittée', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    server.use(refreshReturning({ count: 0 }))
+    await refreshAccessToken()
+
+    expect(fetchSpy.mock.calls[0][1]).toMatchObject({ method: 'POST', keepalive: true })
+  })
+
+  it('attend le verrou commun aux onglets avant d’utiliser le refresh token', async () => {
+    let grant
+    const request = vi.fn(
+      (name, task) =>
+        new Promise((resolve) => {
+          grant = () => resolve(task())
+        }),
+    )
+    Object.defineProperty(navigator, 'locks', { value: { request }, configurable: true })
+    const refresh = { count: 0 }
+    server.use(refreshReturning(refresh))
+
+    const pending = refreshAccessToken()
+    await delay(20)
+    expect(request).toHaveBeenCalledWith('homeflix:refresh', expect.any(Function))
+    expect(refresh.count).toBe(0) // un autre onglet détient le verrou
+    grant()
+
+    await expect(pending).resolves.toBe('nouveau-jeton')
+    expect(refresh.count).toBe(1)
   })
 })
 
