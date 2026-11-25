@@ -94,11 +94,11 @@ describe('DetailPage', () => {
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
-  it('propose « Reprendre à mm:ss » avec la position dans le lien, et la barre de progression', async () => {
+  it('propose « Reprendre à mm:ss » vers le lecteur, et la barre de progression', async () => {
     fetchMock.mockImplementation(serve({ progress: progressStarted })) // 212 s
     renderDetail()
     const link = await playLink('Reprendre à 3:32')
-    expect(link).toHaveAttribute('href', `/watch/${mediaDetail.id}?t=212`)
+    expect(link).toHaveAttribute('href', `/watch/${mediaDetail.id}`) // aucune position dans l’URL
     expect(screen.getByRole('progressbar', { name: 'Progression de visionnage' })).toBeInTheDocument()
   })
 
@@ -246,6 +246,6 @@ describe('DetailPage', () => {
     const router = renderDetail()
     await user.click(await playLink('Reprendre à 3:32'))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/watch/${mediaDetail.id}`))
-    expect(router.state.location.search).toBe('?t=212')
+    expect(router.state.location.search).toBe('')
   })
 })

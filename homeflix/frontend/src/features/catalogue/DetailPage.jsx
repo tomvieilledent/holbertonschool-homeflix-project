@@ -91,7 +91,7 @@ export default function DetailPage() {
   const meta = [year, genres.join(', '), formatDuration(durationSeconds)].filter(Boolean).join(' · ')
   const play = playAction(progress)
   const playable = availability === 'AVAILABLE'
-  const watchUrl = `/watch/${encodeURIComponent(mediaId)}${play.startAt > 0 ? `?t=${play.startAt}` : ''}`
+  const watchUrl = `/watch/${encodeURIComponent(mediaId)}` // le lecteur reprend à la position enregistrée
 
   return (
     <article className="detail">

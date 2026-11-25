@@ -22,6 +22,11 @@ describe('safeNext', () => {
     ['URL absolue', 'https://evil.example/phish'],
     ['URL relative au protocole', '//evil.example'],
     ['antislash', '/\\evil.example'],
+    // Les navigateurs retirent ces caractères d'une adresse : « /<tab>/evil.example » y devient « //evil.example ».
+    ['tabulation cachée', '/\t/evil.example'],
+    ['saut de ligne caché', '/\n/evil.example'],
+    ['retour chariot caché', '/\r/evil.example'],
+    ['caractère nul', '/catalogue\u0000'],
     ['sans barre initiale', 'admin'],
     ['boucle vers /login', '/login'],
     ['boucle vers /login avec requête', '/login?next=%2F'],

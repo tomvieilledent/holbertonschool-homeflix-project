@@ -106,12 +106,19 @@ export default function AcquisitionPage() {
     return rights
   }
 
-  /** Lance le téléchargement ; en cas de succès, annonce le résultat et recharge le catalogue. */
+  /**
+   * Lance le téléchargement ; en cas de succès, annonce le résultat et recharge le catalogue. La liste des
+   * téléchargements est relue même après un refus : le serveur a pu enregistrer un téléchargement « Échoué » (client
+   * BitTorrent injoignable).
+   */
   const download = async (entry) => {
-    await startDownload(entry.id)
+    try {
+      await startDownload(entry.id)
+    } finally {
+      downloads.reload().catch(() => {}) // le nouveau téléchargement apparaît tout de suite, et le suivi redémarre
+    }
     setNotice(`Téléchargement de « ${entry.title} » lancé.`)
     load()
-    downloads.reload().catch(() => {}) // le nouveau téléchargement apparaît tout de suite, et le suivi redémarre
   }
 
   /** Annule un téléchargement : son nouvel état s'affiche aussitôt. */
