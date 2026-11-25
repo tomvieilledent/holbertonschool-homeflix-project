@@ -2,7 +2,7 @@
 
 Ce document dit **honnêtement** ce que HomeFlix fait, ce qu'il ne fait pas encore, et dans quelles conditions il a été testé. Il complète le [README](../README.md) (installation, dépannage courant) et le [registre des risques](RISKS.md).
 
-**État au 24/11/2026**, après la recette du frontend et le test d'installation à froid. Chaque limite renvoie à une **issue** ou à un **choix** assumé du MVP. Une ligne « en attente » est une PR ouverte qui, une fois fusionnée, retire la limite : la mettre à jour alors.
+**État au 25/11/2026**, après la fusion des écrans d'administration, de « Mon compte » et des parcours de test. Chaque limite renvoie à une **issue** ou à un **choix** assumé du MVP. Une ligne « en attente » est une PR ouverte qui, une fois fusionnée, retire la limite : la mettre à jour alors.
 
 ## 1. Livré et vérifié
 
@@ -27,16 +27,16 @@ Vérifié sur la pile Docker Compose complète, par le reverse proxy, comme un n
 | # | Limite | Effet pour l'utilisateur | Issue ou décision |
 |---|---|---|---|
 | L1 | **La synchronisation des téléchargements n'est pas livrée** : l'état d'un téléchargement reste « DOWNLOADING » à 0 % et le fichier reçu n'est pas indexé automatiquement. | Le scénario « acquérir un contenu manquant » n'est vérifié que pour le démarrage et l'annulation. | [#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99), puis [#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111) (transfert réel de bout en bout) |
-| L2 | **Aucun téléchargement P2P réel n'a été mené jusqu'au bout.** | Le plan B de la démonstration (vidéo, captures) remplace le transfert en direct. | #111 ; risques R11 et R12 de [`RISKS.md`](RISKS.md) |
+| L2 | **Aucun téléchargement P2P n'a été mené de bout en bout dans HomeFlix.** Un essai du 25/11 a montré que Transmission télécharge bien (Sintel, 129,3 Mo en 43 s, 15 pairs), mais l'état côté Acquisition est resté à « DOWNLOADING » à 0 % (L1). | Sans #99, le plan B de la démonstration (Transmission observé directement, réindexation manuelle) remplace le suivi automatique. À revérifier sur le réseau de la soutenance. | #111 ; risques R11 et R12 de [`RISKS.md`](RISKS.md) |
 | L3 | **Revue de l'agent IA non réalisée** : le rapport n'existe pas. | Le scénario 10 du plan d'acceptation est marqué « non fait ». | [#113](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/113) ; rôle décrit dans [`AI_AGENT_ROLE.md`](AI_AGENT_ROLE.md) |
 | L4 | **L'installation n'a pas été essayée par une personne extérieure** au projet. | Le test à froid a été fait par un membre de l'équipe. | [#112](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/112) |
-| L5 | **Les écrans d'administration** (comptes, dossiers, indexation, métadonnées, acquisition, suivi des téléchargements, état des services) **ne sont pas encore fusionnés**. En attendant, ces actions se font par l'API. | Le README décrit les commandes d'API. | PR en attente #246 à #254 ; issues #69, #77, #83, #84, #85, #94, #95, #101 |
-| L6 | **Les métadonnées** (titre, genre, année) **ne se corrigent que par l'API** : les titres affichés sont les noms de fichier et le filtre par genre est vide tant qu'aucun genre n'est saisi. | Un catalogue de démonstration a des titres bruts. | #84 (PR #251 en attente) |
+| L5 | **Les écrans d'administration** (comptes, dossiers, indexation, métadonnées, acquisition, suivi des téléchargements, état des services) sont **fusionnés (PR #246 à #254) mais n'ont pas encore été recettés visuellement sur la pile réelle** : ils sont couverts par les tests automatisés et par les parcours de test (#248). | Un défaut d'affichage reste possible. Le suivi des téléchargements ne montrera une progression qu'une fois #99 livrée (L1). | Recette à faire ; issues #95 et #101 à fermer après vérification |
+| L6 | **Les métadonnées** (titre, genre, année) **ne sont pas récupérées automatiquement** : elles se corrigent à la main dans l'écran d'administration (PR #251). Tant qu'on ne l'a pas fait, les titres affichés sont les noms de fichier et le filtre par genre est vide. | Un catalogue de démonstration a des titres bruts tant qu'ils ne sont pas corrigés. | #84 (fermée) |
 | L7 | **Pas d'affiches, pas de durée sur les cartes, pas de sous-titres** dans le lecteur. | Les cartes affichent un pictogramme à la place de l'affiche. | Choix du MVP : pas de récupération de métadonnées externes ni de sous-titres |
-| L8 | **Le profil actif se perd** quand le jeton se renouvelle (toutes les 15 minutes) ou à un rechargement de la page : l'écran « Qui regarde ? » réapparaît. | Il faut rechoisir son profil. | [#222](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/222) (cause côté Identity) ; contournement côté frontend en attente (PR #243) |
+| L8 | **Le serveur perd le profil actif** au renouvellement du jeton (toutes les 15 minutes). Le frontend le rétablit à partir de l'onglet (`sessionStorage`, PR #243), mais **pas dans un nouvel onglet** ni après la fermeture de l'onglet. | Il faut rechoisir son profil dans ces cas. | [#222](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/222) (cause côté Identity) |
 | L9 | **Un mot de passe réinitialisé par l'administrateur ne peut pas être changé** par son titulaire : aucune route de changement de mot de passe n'existe. | Le mot de passe temporaire reste valable indéfiniment. | [#223](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/223) |
 | L10 | **Le profil actif n'apparaît pas dans l'en-tête**, et l'écran « Qui regarde ? » n'a pas de « Se déconnecter » (la maquette en prévoit un). | Il faut ouvrir le menu du compte, ou choisir un profil, pour se déconnecter. | [#242](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/242), [#255](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/255) |
-| L11 | **Suppression de son propre compte** : disponible côté serveur, **sans écran** pour l'utilisateur. | À demander à un administrateur. | #102 |
+| L11 | **Suppression de son propre compte** : l'écran « Mon compte » existe (PR #260), mais **la purge des favoris et de la progression côté Library n'est pas vérifiée** : elle dépend de #97. | La page annonce la suppression de ces données ; tant que #97 n'est pas vérifiée, elles peuvent rester orphelines. | [#97](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/97) ; #102 (fermée) |
 | L12 | **Premier lancement guidé** (onboarding, états vides pédagogiques) non réalisé. | La première connexion se fait avec le README. | #105 (priorité P3, abandonnée si le temps manque) |
 
 ## 3. Limites techniques et de sécurité assumées
@@ -88,6 +88,6 @@ Le tableau complet est dans le [README, section 8](../README.md#8-dépannage). I
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
-| L'écran « Qui regarde ? » réapparaît après un rechargement | Le renouvellement du jeton perd le profil actif (L8) | Rechoisir son profil |
+| L'écran « Qui regarde ? » réapparaît | Nouvel onglet ou onglet fermé : le profil n'est retenu que par onglet (L8) | Rechoisir son profil |
 | Un compte désactivé peut encore agir un moment | Son jeton d'accès reste valable jusqu'à 15 minutes (T1) | Patienter ; il ne peut plus se reconnecter |
 | Un service Java s'arrête au démarrage (code 137 ou 139) | Mémoire insuffisante, ou rare plantage de la JVM (T8) | Relancer `docker compose up -d --wait`, et vérifier la mémoire allouée à Docker |
