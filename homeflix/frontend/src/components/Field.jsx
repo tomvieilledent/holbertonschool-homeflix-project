@@ -11,6 +11,7 @@ import './Field.css'
  * @param {boolean} [props.required] Ajoute `required` et un astérisque.
  * @param {boolean} [props.disabled] Désactive le champ.
  * @param {string} [props.type] Type de l'input (`text`, `email`, `password`…).
+ * @param {boolean} [props.multiline] Zone de texte sur plusieurs lignes (`<textarea>`) au lieu d'un `<input>` ; `rows` règle sa hauteur.
  * @param {string} [props.id] Identifiant ; généré si absent.
  */
 export default function Field({
@@ -20,11 +21,13 @@ export default function Field({
   required = false,
   disabled = false,
   type = 'text',
+  multiline = false,
   id,
   className = '',
   ...rest
 }) {
   const generatedId = useId()
+  const Control = multiline ? 'textarea' : 'input'
   const inputId = id ?? generatedId
   const hintId = `${inputId}-hint`
   const errorId = `${inputId}-error`
@@ -36,10 +39,10 @@ export default function Field({
         {label}
         {required && <span aria-hidden="true"> *</span>}
       </label>
-      <input
+      <Control
         id={inputId}
         className="field__input"
-        type={type}
+        {...(!multiline && { type })}
         required={required}
         disabled={disabled}
         aria-invalid={error ? true : undefined}

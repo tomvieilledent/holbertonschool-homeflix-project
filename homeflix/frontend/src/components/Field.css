@@ -20,6 +20,12 @@
   font-size: var(--text-base);
 }
 
+.field__input:is(textarea) {
+  resize: vertical;
+  font-family: inherit;
+  line-height: var(--text-base-lh);
+}
+
 .field__input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
