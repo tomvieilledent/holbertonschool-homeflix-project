@@ -1,3 +1,4 @@
+import { forgetProfile, rememberProfile } from '@/services/activeProfile'
 import { apiFetch, refreshAccessToken, SESSION_HEADER, setAccessToken } from '@/services/api'
 
 export { getAccessToken } from '@/services/api'
@@ -32,6 +33,7 @@ export function restoreSession() {
  * @returns {Promise<{account: object, activeProfileId?: string}>}
  */
 export async function signIn(username, password) {
+  forgetProfile() // le profil retenu appartenait peut-être à un autre compte
   const token = await apiFetch('identity', '/v1/auth/login', {
     method: 'POST',
     auth: false,
@@ -49,11 +51,13 @@ export async function signOut() {
     // le jeton local est de toute façon abandonné
   } finally {
     setAccessToken(null)
+    forgetProfile()
   }
 }
 
 /**
- * Choisit le profil actif : le serveur renvoie un nouvel access token portant le claim `pid`.
+ * Choisit le profil actif : le serveur renvoie un nouvel access token portant le claim `pid`. Le profil est
+ * retenu pour cet onglet, afin de le rétablir après un rechargement ou un renouvellement du jeton.
  * @param {string} profileId
  * @returns {Promise<void>}
  */
@@ -62,4 +66,5 @@ export async function selectProfile(profileId) {
     method: 'POST',
   })
   setAccessToken(token.accessToken)
+  rememberProfile(profileId)
 }
