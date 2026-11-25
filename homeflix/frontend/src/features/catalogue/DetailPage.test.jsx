@@ -9,6 +9,7 @@ import progressNotStarted from '@fixtures/library/progress-not-started.json'
 import progressStarted from '@fixtures/library/progress-started.json'
 import DetailPage from '@/features/catalogue/DetailPage'
 import ProfileScope from '@/features/favourites/ProfileScope'
+import { expectAvailable, expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -93,11 +94,11 @@ describe('DetailPage', () => {
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
-  it('propose « Reprendre à mm:ss » avec la position dans le lien, et la barre de progression', async () => {
+  it('propose « Reprendre à mm:ss » vers le lecteur, et la barre de progression', async () => {
     fetchMock.mockImplementation(serve({ progress: progressStarted })) // 212 s
     renderDetail()
     const link = await playLink('Reprendre à 3:32')
-    expect(link).toHaveAttribute('href', `/watch/${mediaDetail.id}?t=212`)
+    expect(link).toHaveAttribute('href', `/watch/${mediaDetail.id}`) // aucune position dans l’URL
     expect(screen.getByRole('progressbar', { name: 'Progression de visionnage' })).toBeInTheDocument()
   })
 
@@ -201,9 +202,9 @@ describe('DetailPage', () => {
       // La requête n'est pas terminée : l'état est déjà celui du succès, et le bouton est bloqué.
       const pressed = screen.getByRole('button', { name: 'Dans ma liste' })
       expect(pressed).toHaveAttribute('aria-pressed', 'true')
-      expect(pressed).toBeDisabled()
+      expectBusy(pressed)
       release()
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Dans ma liste' })).toBeEnabled())
+      await waitFor(() => expectAvailable(screen.getByRole('button', { name: 'Dans ma liste' })))
     })
 
     it('restaure l’état précédent avec un message si la mise à jour échoue', async () => {
@@ -245,6 +246,6 @@ describe('DetailPage', () => {
     const router = renderDetail()
     await user.click(await playLink('Reprendre à 3:32'))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/watch/${mediaDetail.id}`))
-    expect(router.state.location.search).toBe('?t=212')
+    expect(router.state.location.search).toBe('')
   })
 })

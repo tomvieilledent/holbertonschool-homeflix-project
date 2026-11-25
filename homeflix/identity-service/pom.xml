@@ -129,6 +129,7 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
 			<version>3.2.1</version>
+			<scope>test</scope>
 		</dependency>
 </dependencies>
 

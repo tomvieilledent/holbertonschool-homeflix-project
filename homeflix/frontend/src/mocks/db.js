@@ -88,6 +88,8 @@ export function createDb() {
     favourites,
     progress,
     session: readSession(),
+    // État des services relevé par `GET /admin/system/status` (`UP` par défaut).
+    services: { identity: 'UP', library: 'UP', acquisition: 'UP' },
     acquisition: {
       rightsAcknowledged: false,
       noticeVersion: '2026-11',

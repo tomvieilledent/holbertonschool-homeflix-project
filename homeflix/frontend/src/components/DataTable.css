@@ -1,0 +1,95 @@
+.data-table {
+  container-type: inline-size;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.data-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table__table th,
+.data-table__table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.data-table__table tbody tr:last-child th,
+.data-table__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table__table thead th {
+  background: var(--color-surface);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.data-table__table tbody th {
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+/* Conteneur un peu juste (tablette) : des marges plus serrées suffisent à garder le tableau entier. */
+@container (max-width: 48rem) {
+  .data-table__table th,
+  .data-table__table td {
+    padding: var(--space-3) var(--space-2);
+  }
+}
+
+/* Conteneur étroit (téléphone) : une fiche par ligne, chaque valeur sous le nom de sa colonne. */
+@container (max-width: 40rem) {
+  .data-table__table,
+  .data-table__table tbody,
+  .data-table__table tr,
+  .data-table__table th,
+  .data-table__table td {
+    display: block;
+  }
+
+  /* Les en-têtes restent annoncés par les lecteurs d'écran, sans être affichés. */
+  .data-table__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .data-table__table tr {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .data-table__table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .data-table__table tbody th,
+  .data-table__table tbody td {
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .data-table__table tbody td:empty {
+    display: none;
+  }
+
+  .data-table__table tbody td::before {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-lh);
+    content: attr(data-label);
+    content: attr(data-label) / ''; /* déjà annoncé par l'en-tête de colonne (navigateurs qui le comprennent) */
+  }
+}

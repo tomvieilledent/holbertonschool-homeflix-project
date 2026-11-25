@@ -136,11 +136,7 @@ export default function CataloguePage() {
   } else {
     content = (
       <>
-        {filtered && (
-          <p role="status" className="catalogue__count">
-            {data.total} résultat{data.total > 1 ? 's' : ''}
-          </p>
-        )}
+        <h2 className="visually-hidden">Films</h2>
         <ul className="catalogue__grid">
           {data.items.map((media) => (
             <li key={media.id}>
@@ -158,6 +154,9 @@ export default function CataloguePage() {
     )
   }
 
+  // Toujours présente : un lecteur d'écran n'annonce de façon fiable que les changements d'une zone déjà là.
+  const found = filtered && data !== null && !error ? `${data.total} résultat${data.total > 1 ? 's' : ''}` : ''
+
   return (
     <section className="catalogue">
       <h1 ref={headingRef} tabIndex={-1}>
@@ -170,6 +169,9 @@ export default function CataloguePage() {
         onQueryChange={(value) => setFilter('q', value, { replace: true })}
         onGenreChange={(value) => setFilter('genre', value)}
       />
+      <p aria-live="polite" className={data?.total ? 'catalogue__count' : 'visually-hidden'}>
+        {found}
+      </p>
       {content}
     </section>
   )

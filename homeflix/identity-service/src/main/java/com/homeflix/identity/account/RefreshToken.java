@@ -40,6 +40,10 @@ public class RefreshToken {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
+    /** Profil actif de la session, rendu dans le jeton rafraîchi (claim `pid`). */
+    @Column(name = "active_profile_id")
+    private UUID activeProfileId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -61,5 +65,7 @@ public class RefreshToken {
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getRevokedAt() { return revokedAt; }
     public void revoke(Instant when) { this.revokedAt = when; }
+    public UUID getActiveProfileId() { return activeProfileId; }
+    public void setActiveProfileId(UUID activeProfileId) { this.activeProfileId = activeProfileId; }
     public Instant getCreatedAt() { return createdAt; }
 }

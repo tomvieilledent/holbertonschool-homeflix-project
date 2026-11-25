@@ -1,0 +1,173 @@
+package com.homeflix.acquisition.download;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.homeflix.acquisition.catalogue.CatalogueEntry;
+import com.homeflix.acquisition.catalogue.CatalogueEntryRepository;
+import com.homeflix.acquisition.library.LibraryClient;
+import com.homeflix.acquisition.library.LibraryUnavailableException;
+import com.homeflix.acquisition.torrent.TorrentClient;
+import com.homeflix.acquisition.torrent.TorrentClientUnavailableException;
+import com.homeflix.acquisition.torrent.TorrentStatus;
+
+/**
+ * Synchronise les téléchargements actifs avec le client BitTorrent. Un tick ne lève jamais d'exception : un client
+ * injoignable est toléré quelques ticks, puis les téléchargements actifs passent en FAILED (message lisible).
+ * À la complétion, le fichier vidéo est vérifié (extension, chemin relatif sûr) puis déclaré à Library.
+ *
+ * <p>Aucune transaction n'enveloppe les appels réseau ; chaque changement d'état est enregistré tout de suite, et
+ * un téléchargement annulé entre-temps n'est jamais réécrit.
+ */
+@Service
+public class DownloadSyncService {
+
+    private static final Logger log = LoggerFactory.getLogger(DownloadSyncService.class);
+    static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mkv", "webm", "avi", "mov", "m4v");
+
+    private final DownloadRepository downloads;
+    private final CatalogueEntryRepository entries;
+    private final TorrentClient torrent;
+    private final LibraryClient library;
+    private final Duration noPeersTimeout;
+    private final int unavailableTicks;
+    private int consecutiveClientFailures;
+
+    public DownloadSyncService(DownloadRepository downloads, CatalogueEntryRepository entries, TorrentClient torrent,
+            LibraryClient library, @Value("${acquisition.sync.no-peers-timeout:15m}") Duration noPeersTimeout,
+            @Value("${acquisition.sync.unavailable-ticks:6}") int unavailableTicks) {
+        this.downloads = downloads;
+        this.entries = entries;
+        this.torrent = torrent;
+        this.library = library;
+        this.noPeersTimeout = noPeersTimeout;
+        this.unavailableTicks = unavailableTicks;
+    }
+
+    /** Un passage de synchronisation ; ne lève jamais. */
+    public synchronized void sync() {
+        try {
+            List<Download> active = downloads.findByStateIn(DownloadState.ACTIVE).stream()
+                .filter(d -> d.getTorrentId() != null).toList();
+            if (active.isEmpty()) {
+                consecutiveClientFailures = 0;
+                return;
+            }
+            boolean clientReachable = true;
+            for (Download download : active) {
+                try {
+                    syncOne(download.getId(), download.getTorrentId());
+                    consecutiveClientFailures = 0;
+                } catch (TorrentClientUnavailableException e) {
+                    clientReachable = false;
+                    break;
+                } catch (RuntimeException e) {
+                    log.error("Synchronisation du téléchargement {} en échec", download.getId(), e);
+                }
+            }
+            if (!clientReachable && ++consecutiveClientFailures >= unavailableTicks) {
+                active.forEach(d -> fail(d.getId(), "TORRENT_CLIENT_UNAVAILABLE"));
+                consecutiveClientFailures = 0;
+            }
+        } catch (RuntimeException e) {
+            log.error("Synchronisation des téléchargements en échec", e);
+        }
+    }
+
+    private void syncOne(UUID id, String torrentId) {
+        Optional<TorrentStatus> status = torrent.status(torrentId);
+        if (status.isEmpty()) {
+            fail(id, "TORRENT_LOST");
+            return;
+        }
+        TorrentStatus s = status.get();
+        switch (s.state()) {
+            case FAILED -> fail(id, s.errorCode() == null ? "DOWNLOAD_FAILED" : s.errorCode());
+            case COMPLETED -> complete(id, s);
+            case DOWNLOADING -> update(id, d -> {
+                d.setState(DownloadState.DOWNLOADING);
+                d.setProgressPercent(s.progressPercent());
+            });
+            case QUEUED -> {
+                Download d = downloads.findById(id).orElse(null);
+                if (d != null && Duration.between(d.getCreatedAt(), Instant.now()).compareTo(noPeersTimeout) > 0) {
+                    try {
+                        torrent.cancel(torrentId);
+                    } catch (TorrentClientUnavailableException e) {
+                        log.warn("Annulation du torrent sans source impossible : client indisponible");
+                    }
+                    fail(id, "NO_PEERS");
+                }
+            }
+        }
+    }
+
+    private void complete(UUID id, TorrentStatus s) {
+        Optional<String> file = videoFile(s.files());
+        if (file.isEmpty()) {
+            fail(id, "INVALID_FILE");
+            return;
+        }
+        Download current = downloads.findById(id).orElse(null);
+        if (current == null || !DownloadState.ACTIVE.contains(current.getState())) {
+            return;
+        }
+        String title = entries.findById(current.getEntryId()).map(CatalogueEntry::getTitle).orElse(null);
+        try {
+            library.registerCompleted(file.get(), title);
+        } catch (LibraryUnavailableException e) {
+            fail(id, "LIBRARY_UNAVAILABLE");
+            return;
+        }
+        update(id, d -> {
+            d.setState(DownloadState.COMPLETED);
+            d.setProgressPercent(100);
+            d.setFileRelativePath(file.get());
+            d.setFinishedAt(Instant.now());
+        });
+    }
+
+    /** Premier fichier vidéo du torrent, chemin relatif sûr (ni absolu, ni `..`, ni NUL). */
+    static Optional<String> videoFile(List<String> files) {
+        return files.stream().filter(DownloadSyncService::isSafeVideoPath).findFirst();
+    }
+
+    static boolean isSafeVideoPath(String path) {
+        if (path == null || path.isBlank() || path.startsWith("/") || path.contains("\\") || path.indexOf('\0') >= 0) {
+            return false;
+        }
+        for (String part : path.split("/", -1)) {
+            if (part.isEmpty() || part.equals("..") || part.equals(".")) {
+                return false;
+            }
+        }
+        int dot = path.lastIndexOf('.');
+        return dot > 0 && VIDEO_EXTENSIONS.contains(path.substring(dot + 1).toLowerCase(Locale.ROOT));
+    }
+
+    private void fail(UUID id, String code) {
+        update(id, d -> {
+            d.setState(DownloadState.FAILED);
+            d.setErrorCode(code);
+            d.setFinishedAt(Instant.now());
+        });
+    }
+
+    /** N'écrit que si le téléchargement est encore actif (une annulation concurrente reste CANCELLED). */
+    private void update(UUID id, java.util.function.Consumer<Download> change) {
+        downloads.findById(id).filter(d -> DownloadState.ACTIVE.contains(d.getState())).ifPresent(d -> {
+            change.accept(d);
+            downloads.save(d);
+        });
+    }
+}

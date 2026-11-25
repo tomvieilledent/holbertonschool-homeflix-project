@@ -114,7 +114,8 @@ export function acquisitionHandlers(db) {
       if (auth.error) return auth.error
       const download = state.downloads.find((d) => d.id === params.downloadId)
       if (!download) return problem('not-found')
-      if (TERMINAL.includes(download.state)) return problem('conflict')
+      if (download.state === 'CANCELLED') return HttpResponse.json(download) // idempotent (contrat)
+      if (TERMINAL.includes(download.state)) return problem('conflict') // COMPLETED ou FAILED
       download.state = 'CANCELLED'
       download.finishedAt = nowIso()
       const entry = state.catalogue.find((e) => e.id === download.catalogueEntryId)

@@ -18,8 +18,8 @@ function ProfileButton({ profile, active, disabled, onSelect }) {
         type="button"
         className="profile-choice"
         aria-current={active || undefined}
-        disabled={disabled}
-        onClick={() => onSelect(profile)}
+        aria-disabled={disabled || undefined} // pas `disabled` : le bouton garde le focus pendant le choix
+        onClick={() => !disabled && onSelect(profile)}
       >
         <ProfileAvatar name={profile.name} />
         <span className="profile-choice__name">{profile.name}</span>
@@ -61,13 +61,13 @@ export default function ProfilesPage() {
     }
   }, [onlyProfile]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loadFailed) return <ErrorState onRetry={reload} />
+  if (loadFailed) return <ErrorState titleAs="h1" onRetry={reload} />
   if (profiles === null || (onlyProfile && !selectError)) {
     return <Spinner size="lg" label="Chargement des profils…" />
   }
   if (profiles.length === 0) {
     return (
-      <EmptyState title="Aucun profil" description="Ce compte n’a pas encore de profil de visionnage.">
+      <EmptyState titleAs="h1" title="Aucun profil" description="Ce compte n’a pas encore de profil de visionnage.">
         <Link className="btn btn--primary" to="/profiles/manage">
           Créer un profil
         </Link>
@@ -90,7 +90,7 @@ export default function ProfilesPage() {
           />
         ))}
       </ul>
-      <Link className="profiles__manage" to="/profiles/manage">
+      <Link className="profiles__manage touch-link" to="/profiles/manage">
         Gérer les profils
       </Link>
     </section>

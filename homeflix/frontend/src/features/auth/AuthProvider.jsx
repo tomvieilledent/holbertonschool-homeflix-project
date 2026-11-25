@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '@/features/auth/authContext'
+import { forgetProfile as forgetRememberedProfile } from '@/services/activeProfile'
 import { onSessionExpired } from '@/services/api'
-import { restoreSession, selectProfile as selectProfileRequest, signIn, signOut } from '@/services/auth'
+import { deleteOwnAccount, restoreSession, selectProfile as selectProfileRequest, signIn, signOut } from '@/services/auth'
 
-const ANONYMOUS = { status: 'anonymous', account: null, activeProfileId: null, sessionExpired: false }
+const ANONYMOUS = { status: 'anonymous', account: null, activeProfileId: null, sessionExpired: false, accountDeleted: false }
 
 const authenticated = (me) => ({
   status: 'authenticated',
   account: me.account,
   activeProfileId: me.activeProfileId ?? null,
   sessionExpired: false,
+  accountDeleted: false,
 })
 
 /**
@@ -46,6 +48,12 @@ export default function AuthProvider({ children }) {
     setSession(ANONYMOUS)
   }, [])
 
+  // Le compte est supprimé : le serveur a fermé ses sessions, l'état local suit.
+  const deleteAccount = useCallback(async (password) => {
+    await deleteOwnAccount(password)
+    setSession({ ...ANONYMOUS, accountDeleted: true }) // les gardes renvoient à la connexion avec une explication
+  }, [])
+
   const selectProfile = useCallback(async (profileId) => {
     await selectProfileRequest(profileId)
     setSession((current) => ({ ...current, activeProfileId: profileId }))
@@ -53,14 +61,15 @@ export default function AuthProvider({ children }) {
 
   // Le profil actif vient d'être supprimé : il n'y en a plus d'actif tant qu'un autre n'est pas choisi.
   const forgetProfile = useCallback((profileId) => {
+    forgetRememberedProfile() // sinon le prochain refresh ré-sélectionnerait ce profil supprimé
     setSession((current) =>
       current.activeProfileId === profileId ? { ...current, activeProfileId: null } : current,
     )
   }, [])
 
   const value = useMemo(
-    () => ({ ...session, login, logout, selectProfile, forgetProfile }),
-    [session, login, logout, selectProfile, forgetProfile],
+    () => ({ ...session, login, logout, deleteAccount, selectProfile, forgetProfile }),
+    [session, login, logout, deleteAccount, selectProfile, forgetProfile],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

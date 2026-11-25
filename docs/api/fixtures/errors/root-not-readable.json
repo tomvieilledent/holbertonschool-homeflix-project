@@ -1,0 +1,8 @@
+{
+  "type": "https://homeflix.local/problems/root-not-readable",
+  "title": "Dossier illisible",
+  "status": 400,
+  "code": "ROOT_NOT_READABLE",
+  "detail": "Ce dossier existe mais HomeFlix n'a pas le droit de le lire. Vérifiez les permissions du montage.",
+  "instance": "/api/v1/admin/media-roots"
+}

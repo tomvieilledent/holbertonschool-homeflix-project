@@ -80,6 +80,7 @@ Vitest + Testing Library + jest-dom, environnement jsdom (configuration dans `vi
 npm test                              # une exécution (celle de la CI)
 npm run test:watch                    # relance les tests concernés à chaque modification
 npm test -- src/components/Button.test.jsx   # un seul fichier
+npm run test:journeys                 # seulement les parcours critiques (voir ci-dessous)
 npm run lint                          # oxlint, y compris les règles des tests
 ```
 
@@ -88,6 +89,23 @@ npm run lint                          # oxlint, y compris les règles des tests
 - **Appels d'API** : MSW côté Node (`setupServer` de `msw/node`), voir `src/mocks/mocks.test.js`.
 - **Lint des tests** : un `it.only` ou `describe.only` oublié (qui ferait passer la CI en ne lançant presque rien) et deux tests au même titre sont des erreurs ; un test désactivé (`it.skip`) est signalé.
 - **Windows** : `npm test` passe par `scripts/vitest.mjs`, qui relance Vitest depuis le chemin canonique. Sans cela, un terminal ouvert en `c:\...` (lettre de lecteur en minuscule, fréquent dans VS Code) fait échouer tous les fichiers avec « Vitest failed to find the runner ». Si vous lancez `npx vitest` directement depuis un tel terminal, passez plutôt par `npm test`.
+
+### Parcours critiques
+
+`src/journeys/parcours.test.jsx` rejoue les parcours de l'utilisateur **de bout en bout dans l'application** : routeur et session réels, pages réelles, et seulement le réseau simulé par MSW à partir des contrats et des fixtures (`src/mocks`, voir « Développer sans backend »). Chaque test décrit un comportement visible, pas une implémentation. Le banc d'essai (`src/journeys/harness.jsx`) fournit les gestes communs : `openApp`, `signInAs`, `switchProfile`, `goTo`, `loadVideo`, `pauseAt`.
+
+| Parcours | Ce que les tests vérifient |
+| --- | --- |
+| Connexion | Redirection vers la connexion puis retour à la page demandée après le choix du profil ; mot de passe incorrect sans révéler si le compte existe ; session conservée au rechargement ; déconnexion ; session perdue expliquée |
+| Garde de route | Un utilisateur ordinaire ne voit pas l'administration et reçoit « Accès refusé » par URL directe ; un administrateur y accède ; sans profil, on est renvoyé vers « Qui regarde ? » |
+| Sélection de profil | Chaque profil a ses propres données (reprise de lecture, « Ma liste ») ; créer un profil puis le choisir |
+| Lecteur et progression | Trouver un film, le lire, le mettre en pause, le reprendre à la bonne position après un rechargement ; enregistrement en quittant la page ; « Recommencer » ; positions distinctes par profil ; reprise depuis « Continuer à regarder » |
+| Favoris | Ajouter ou retirer met à jour toutes les vues tout de suite ; favoris propres à chaque profil ; un refus du serveur restaure l'état précédent avec un message sans détail technique |
+| Erreurs | Fichier manquant, ticket de lecture expiré (renouvelé sans perdre sa place), film indisponible, service injoignable avec « Réessayer » |
+
+Ce qui complète ces parcours : les tests de chaque écran (à côté de son code), `src/services/*.test.js` pour le client d'API, la session et la progression, et `src/mocks/mocks.test.js` pour la conformité des mocks aux contrats. La CI exécute le tout avec `npm test` (job « Frontend »). Les parcours sur la vraie pile Compose, dans un navigateur, sont dans `homeflix/e2e` (Playwright).
+
+**Limites assumées** : jsdom ne lit pas de vidéo, les parcours de lecture simulent donc les événements de la balise `<video>` (`loadedmetadata`, `timeupdate`, `pause`, `error`) ; l'API simulée est plus stricte que le vrai service sur une chose : après une déconnexion, elle refuse aussitôt le jeton, alors que le vrai service accepte un jeton JWT jusqu'à son expiration.
 
 ## Composants de base
 

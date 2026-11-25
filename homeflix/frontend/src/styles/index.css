@@ -69,6 +69,13 @@ a {
   }
 }
 
+/* Lien isolé (retour, action) : une cible tactile aussi haute qu'un bouton. */
+.touch-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

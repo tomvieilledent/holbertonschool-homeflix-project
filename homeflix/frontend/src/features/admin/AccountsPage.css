@@ -1,0 +1,44 @@
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.accounts__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.accounts__header h2 {
+  margin: 0;
+}
+
+.accounts__notice:empty {
+  display: none;
+}
+
+.accounts__count,
+.accounts__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.accounts__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.accounts__badge {
+  color: var(--color-text-muted);
+  font-weight: normal;
+}
+
+.accounts__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
