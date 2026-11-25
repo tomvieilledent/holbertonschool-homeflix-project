@@ -261,6 +261,29 @@ describe('administration', () => {
     expect((await call(`${IDENTITY}/admin/accounts/${created.body.id}`, { method: 'DELETE' })).status).toBe(204)
   })
 
+  it('refuse un identifiant ou un e-mail déjà utilisé à la création d’un compte', async () => {
+    await login('admin')
+    const create = (username, email) =>
+      call(`${IDENTITY}/admin/accounts`, {
+        method: 'POST',
+        body: { username, email, password: 'un-mot-de-passe-long', role: 'USER' },
+      })
+    const sameUsername = await create('FAMILLE', 'autre@maison.fr')
+    expect(sameUsername.status).toBe(409)
+    expect(sameUsername.body.code).toBe('CONFLICT')
+    expect((await create('autre-nom', 'Famille@Homeflix.local')).body.code).toBe('CONFLICT')
+    const ok = await create('autre-nom', 'autre@maison.fr')
+    expect(ok.status).toBe(201)
+    expect(ok.body.mustChangePassword).toBe(false) // comme le vrai service
+
+    const reset = await call(`${IDENTITY}/admin/accounts/${ok.body.id}/password-reset`, {
+      method: 'POST',
+      body: { temporaryPassword: 'temporaire-12345' },
+    })
+    expect(reset.status).toBe(204)
+    expect((await call(`${IDENTITY}/admin/accounts/${ok.body.id}`)).body.mustChangePassword).toBe(true)
+  })
+
   it('valide, ajoute et retire un dossier autorisé', async () => {
     await login('admin')
     const [existing] = (await call(`${LIBRARY}/admin/media-roots`)).body

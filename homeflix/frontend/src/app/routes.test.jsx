@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import accountsFixture from '@fixtures/identity/accounts-page.json'
 import { routes } from '@/app/router'
 import { AuthContext } from '@/features/auth/authContext'
 
@@ -28,13 +29,19 @@ function open(path, session) {
 }
 
 describe('routes protégées', () => {
-  // L'accueil et les pages d'administration chargent leurs données : une réponse vide mais bien formée (accueil et page
-  // vide) suffit à ces tests de routage. Une page qui recevrait une forme inattendue planterait après son premier rendu,
-  // et le titre qu'on attend disparaîtrait selon le rythme de la machine (test instable en CI).
+  // Les pages d'administration sont chargées à la demande : la première transformation de leur code, sur un exécuteur
+  // de CI chargé, dépassait le délai d'attente des requêtes asynchrones. On les charge une fois pour toutes ici.
+  beforeAll(async () => {
+    await Promise.all(Object.values(import.meta.glob('/src/features/admin/*Page.jsx')).map((load) => load()))
+  }, 60_000)
+
+  // L'accueil charge ses données : une réponse vide suffit à ces tests de routage.
   beforeEach(() => {
+    const respond = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    const emptyHome = { continueWatching: [], recentlyAdded: [], categories: [], favourites: [] }
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({ continueWatching: [], recentlyAdded: [], categories: [], favourites: [], items: [], page: 0, size: 20, total: 0, totalPages: 0 }), { status: 200, headers: { 'Content-Type': 'application/json' } })),
+      vi.fn(async (url) => respond(String(url).includes('/admin/accounts') ? accountsFixture : emptyHome)),
     )
   })
   afterEach(() => vi.unstubAllGlobals())
@@ -134,7 +141,7 @@ describe('routes protégées', () => {
     it('autorise un ADMIN : /admin ouvre la première section avec la navigation latérale', async () => {
       const router = open('/admin', 'admin')
       expect(await screen.findByRole('heading', { level: 1, name: 'Administration' })).toBeInTheDocument()
-      expect(await screen.findByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Comptes' })).toBeInTheDocument())
       expect(router.state.location.pathname).toBe('/admin/comptes')
       const nav = screen.getByRole('navigation', { name: 'Sections de l’administration' })
       expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes', 'Acquisition'])
@@ -147,7 +154,7 @@ describe('routes protégées', () => {
       await screen.findByRole('heading', { level: 2, name: 'Comptes' })
       await user.click(within(screen.getByRole('navigation', { name: 'Sections de l’administration' })).getByRole('link', { name: 'Acquisition' }))
 
-      expect(await screen.findByRole('heading', { level: 2, name: 'Acquisition' })).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Acquisition' })).toBeInTheDocument())
       expect(router.state.location.pathname).toBe('/admin/acquisition')
       expect(screen.getByRole('link', { name: 'Acquisition' })).toHaveAttribute('aria-current', 'page')
       expect(screen.getByRole('link', { name: 'Comptes' })).not.toHaveAttribute('aria-current')
