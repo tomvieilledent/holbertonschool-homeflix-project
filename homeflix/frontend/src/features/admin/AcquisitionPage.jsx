@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
 import EmptyState from '@/components/EmptyState'
@@ -6,13 +6,21 @@ import ErrorState from '@/components/ErrorState'
 import Pagination from '@/components/Pagination'
 import Skeleton from '@/components/Skeleton'
 import { formatBytes, safeHttpUrl } from '@/features/admin/acquisitionFormat'
+import DownloadsPanel, { isActiveDownload } from '@/features/admin/DownloadsPanel'
 import RightsModal from '@/features/admin/RightsModal'
+import usePolling from '@/features/admin/usePolling'
 import { pageFromParams } from '@/features/catalogue/CataloguePage'
-import { acknowledgeRights, getRightsNotice, listCatalogue, startDownload } from '@/services/acquisition'
+import { acknowledgeRights, cancelDownload, getRightsNotice, listCatalogue, listDownloads, startDownload } from '@/services/acquisition'
 import { isAbortError } from '@/services/api'
 import '@/features/admin/AcquisitionPage.css'
 
 const PAGE_SIZE = 20
+const DOWNLOADS_SIZE = 50
+/** Intervalle entre deux consultations des téléchargements tant que l'un d'eux est actif. */
+export const DOWNLOADS_POLL_MS = 3000
+export const DOWNLOADS_MAX_FAILURES = 3
+const fetchDownloads = (signal) => listDownloads({ size: DOWNLOADS_SIZE }, signal)
+const hasActiveDownload = (list) => list.items.some(isActiveDownload)
 const NOTICE_UPDATED = 'Le rappel des droits a été mis à jour. Relisez-le, puis acceptez-le de nouveau.'
 const acquisitionUrl = (page) => (page <= 1 ? '/admin/acquisition' : `/admin/acquisition?page=${page}`)
 
@@ -57,6 +65,12 @@ export default function AcquisitionPage() {
   const [notice, setNotice] = useState('')
   const [actionError, setActionError] = useState('')
   const [busyId, setBusyId] = useState(null)
+  const downloads = usePolling({
+    fetch: fetchDownloads,
+    isActive: hasActiveDownload,
+    intervalMs: DOWNLOADS_POLL_MS,
+    maxFailures: DOWNLOADS_MAX_FAILURES,
+  })
 
   const load = useCallback(
     (signal) => {
@@ -76,6 +90,14 @@ export default function AcquisitionPage() {
     return () => controller.abort()
   }, [load])
 
+  // Quand le dernier transfert actif se termine, le catalogue change (« Dans la bibliothèque ») : on le relit.
+  const activeCount = downloads.data?.items.filter(isActiveDownload).length ?? 0
+  const previousActive = useRef(0)
+  useEffect(() => {
+    if (previousActive.current > 0 && activeCount === 0) load()
+    previousActive.current = activeCount
+  }, [activeCount, load])
+
   /** Relit le rappel (sa version a pu changer) et le met à jour dans l'écran. */
   const refreshRights = async () => {
     const rights = await getRightsNotice()
@@ -88,6 +110,23 @@ export default function AcquisitionPage() {
     await startDownload(entry.id)
     setNotice(`Téléchargement de « ${entry.title} » lancé.`)
     load()
+    downloads.reload().catch(() => {}) // le nouveau téléchargement apparaît tout de suite, et le suivi redémarre
+  }
+
+  /** Annule un téléchargement : son nouvel état s'affiche aussitôt. */
+  const cancel = async (download) => {
+    try {
+      const updated = await cancelDownload(download.id)
+      downloads.setData((current) => ({ ...current, items: current.items.map((item) => (item.id === updated.id ? updated : item)) }))
+      setNotice(`Téléchargement de « ${download.title} » annulé.`)
+      load()
+    } catch (failure) {
+      if (failure.code === 'CONFLICT') {
+        downloads.reload().catch(() => {})
+        throw new Error('Ce téléchargement est déjà terminé ou échoué : la liste a été actualisée.')
+      }
+      throw failure
+    }
   }
 
   const requestDownload = async (entry) => {
@@ -231,6 +270,18 @@ export default function AcquisitionPage() {
           </div>
           <Pagination page={page} totalPages={catalogue.totalPages} hrefFor={acquisitionUrl} label="Pagination du catalogue d’acquisition" />
         </>
+      )}
+
+      {downloads.loadError && (
+        <p role="alert">
+          {downloads.loadError.message}{' '}
+          <Button variant="secondary" onClick={() => downloads.reload().catch(() => {})}>
+            Réessayer
+          </Button>
+        </p>
+      )}
+      {downloads.data && (
+        <DownloadsPanel downloads={downloads.data} stalled={downloads.stalled} onResume={downloads.resume} onCancel={cancel} />
       )}
 
       {dialog && (
