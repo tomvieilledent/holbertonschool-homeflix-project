@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { forgetProfile, rememberedProfile, rememberProfile } from '@/services/activeProfile'
 import {
   ApiError,
   apiFetch,
@@ -45,6 +46,7 @@ let unsubscribe
 beforeEach(() => {
   server.resetHandlers()
   setAccessToken('ancien-jeton')
+  forgetProfile()
 })
 afterEach(() => unsubscribe?.())
 
@@ -270,5 +272,97 @@ describe('requêtes', () => {
   it('renvoie null pour une réponse 204', async () => {
     server.use(http.delete('*/api/library/v1/thing', () => new HttpResponse(null, { status: 204 })))
     await expect(apiFetch('library', '/v1/thing', { method: 'DELETE' })).resolves.toBeNull()
+  })
+})
+
+describe('profil actif après un renouvellement du jeton', () => {
+  const SELECT = '*/api/identity/v1/profiles/:profileId/select'
+  const WITH_PROFILE = 'jeton-avec-profil'
+
+  /** Le refresh renvoie un jeton sans profil ; seul le jeton issu de la sélection ouvre la bibliothèque. */
+  function protectedByProfile(seen) {
+    return http.get(MEDIA, ({ request }) => {
+      const auth = request.headers.get('Authorization')
+      seen.push(auth)
+      if (auth === `Bearer ${WITH_PROFILE}`) return HttpResponse.json({ ok: true })
+      return auth === 'Bearer ancien-jeton' ? problem(401, 'SESSION_EXPIRED') : problem(409, 'PROFILE_NOT_SELECTED')
+    })
+  }
+
+  function selecting(calls, behaviour = () => HttpResponse.json({ accessToken: WITH_PROFILE })) {
+    return http.post(SELECT, ({ request, params }) => {
+      calls.push({ profileId: params.profileId, auth: request.headers.get('Authorization') })
+      return behaviour()
+    })
+  }
+
+  it('ré-sélectionne le profil retenu et rejoue la requête avec le jeton qui porte le profil', async () => {
+    rememberProfile('p1')
+    const refresh = { count: 0 }
+    const seen = []
+    const selects = []
+    server.use(protectedByProfile(seen), refreshReturning(refresh), selecting(selects))
+
+    await expect(apiFetch('library', '/v1/media')).resolves.toEqual({ ok: true })
+    expect(refresh.count).toBe(1)
+    expect(selects).toEqual([{ profileId: 'p1', auth: 'Bearer nouveau-jeton' }])
+    expect(seen).toEqual(['Bearer ancien-jeton', `Bearer ${WITH_PROFILE}`])
+    expect(getAccessToken()).toBe(WITH_PROFILE)
+  })
+
+  it('sans profil retenu, ne fait aucune sélection', async () => {
+    const refresh = { count: 0 }
+    const selects = []
+    server.use(protectedMedia([]), refreshReturning(refresh), selecting(selects))
+    await apiFetch('library', '/v1/media')
+    expect(selects).toHaveLength(0)
+  })
+
+  it('un seul refresh et une seule sélection pour des requêtes simultanées', async () => {
+    rememberProfile('p1')
+    const refresh = { count: 0 }
+    const selects = []
+    server.use(protectedByProfile([]), refreshReturning(refresh), selecting(selects))
+    await Promise.all([
+      apiFetch('library', '/v1/media'),
+      apiFetch('library', '/v1/media'),
+      apiFetch('library', '/v1/media'),
+    ])
+    expect(refresh.count).toBe(1)
+    expect(selects).toHaveLength(1)
+  })
+
+  it('oublie un profil introuvable (supprimé) et garde la session, sans profil actif', async () => {
+    rememberProfile('supprime')
+    const refresh = { count: 0 }
+    const selects = []
+    server.use(protectedMedia([]), refreshReturning(refresh), selecting(selects, () => problem(404, 'NOT_FOUND')))
+
+    await expect(apiFetch('library', '/v1/media')).resolves.toEqual({ ok: true })
+    expect(rememberedProfile()).toBeNull()
+    expect(getAccessToken()).toBe('nouveau-jeton')
+  })
+
+  it('une panne de la sélection ne fait pas perdre la session et garde le profil pour plus tard', async () => {
+    rememberProfile('p1')
+    const refresh = { count: 0 }
+    const lost = vi.fn()
+    unsubscribe = onSessionExpired(lost)
+    server.use(protectedMedia([]), refreshReturning(refresh), selecting([], () => problem(500, 'INTERNAL_ERROR')))
+
+    await expect(apiFetch('library', '/v1/media')).resolves.toEqual({ ok: true })
+    expect(lost).not.toHaveBeenCalled()
+    expect(rememberedProfile()).toBe('p1')
+  })
+
+  it('une session perdue oublie le profil retenu', async () => {
+    rememberProfile('p1')
+    unsubscribe = onSessionExpired(() => {})
+    server.use(
+      http.get(MEDIA, () => problem(401, 'SESSION_EXPIRED')),
+      http.post(REFRESH, () => problem(401, 'SESSION_EXPIRED')),
+    )
+    await expect(apiFetch('library', '/v1/media')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' })
+    expect(rememberedProfile()).toBeNull()
   })
 })
