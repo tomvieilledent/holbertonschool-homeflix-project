@@ -1,4 +1,5 @@
 import { config } from '@/app/config'
+import { forgetProfile, rememberedProfile } from '@/services/activeProfile'
 import { ApiError } from '@/services/apiError'
 
 export { ApiError }
@@ -74,7 +75,29 @@ async function request(service, path, { method = 'GET', query, body, headers, si
 }
 
 /**
- * Renouvelle l'access token via le cookie de rafraîchissement.
+ * Le refresh renvoie un jeton sans profil actif : on ré-sélectionne le profil retenu pour retrouver le claim
+ * `pid`. Un échec ne perd pas la session : sans profil actif, l'interface redemande simplement le choix. Un
+ * profil introuvable (supprimé, ou d'un autre compte) est oublié.
+ * @param {string} token Jeton fraîchement obtenu, sans profil.
+ * @returns {Promise<string>} Le jeton portant le profil, ou `token` si la sélection échoue.
+ */
+async function restoreActiveProfile(token) {
+  const profileId = rememberedProfile()
+  if (!profileId) return token
+  try {
+    const selected = await request('identity', `/v1/profiles/${encodeURIComponent(profileId)}/select`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return selected.accessToken
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) forgetProfile()
+    return token
+  }
+}
+
+/**
+ * Renouvelle l'access token via le cookie de rafraîchissement, puis rétablit le profil actif retenu.
  * Les appels concurrents partagent la même requête : le refresh token est à usage unique, et deux
  * appels simultanés (ex. React StrictMode en développement) révoqueraient la session.
  * @returns {Promise<string>} Le nouvel access token.
@@ -86,7 +109,7 @@ export function refreshAccessToken() {
         method: 'POST',
         headers: SESSION_HEADER,
       })
-      accessToken = token.accessToken
+      accessToken = await restoreActiveProfile(token.accessToken)
       return accessToken
     } catch (error) {
       accessToken = null
@@ -106,6 +129,7 @@ const shouldRefresh = (error) =>
 
 function sessionLost() {
   accessToken = null
+  forgetProfile()
   sessionExpiredHandler()
   return new ApiError(401, 'SESSION_EXPIRED')
 }
