@@ -21,12 +21,21 @@ function progressState(position, duration) {
   return position >= duration * COMPLETED_RATIO ? 'COMPLETED' : 'STARTED'
 }
 
+/**
+ * Valide un chemin dans l'ordre du contrat : absolu et autorisé, puis existant, dossier, lisible, sans chevauchement.
+ * Le système de fichiers est simulé par le nom du dernier segment : `introuvable` n'existe pas, `illisible` n'est pas
+ * lisible, une extension (`film.mp4`) désigne un fichier ; tout autre dossier sous un emplacement autorisé est valide.
+ */
 function checkRoot(db, rawPath) {
   const path = String(rawPath ?? '')
   const refuse = (code, problemName) => ({ valid: false, code, problemName })
   if (!path.startsWith('/') || path.split('/').includes('..') || !ALLOWED_BASES.some((b) => path === b || path.startsWith(`${b}/`))) {
     return refuse('ROOT_NOT_ALLOWED', 'root-not-allowed')
   }
+  const name = path.split('/').filter(Boolean).pop() ?? ''
+  if (name.includes('introuvable')) return refuse('ROOT_NOT_FOUND', 'root-not-found')
+  if (/\.[a-z0-9]{2,4}$/i.test(name)) return refuse('ROOT_NOT_A_DIRECTORY', 'root-not-a-directory')
+  if (name.includes('illisible')) return refuse('ROOT_NOT_READABLE', 'root-not-readable')
   const overlap = db.roots.find((r) => path.startsWith(r.path) || r.path.startsWith(path))
   if (overlap) return refuse('ROOT_OVERLAP', 'root-overlap')
   return { valid: true }

@@ -5,5 +5,6 @@
  */
 export const ADMIN_SECTIONS = [
   { to: '/admin/comptes', label: 'Comptes' },
+  { to: '/admin/bibliotheque', label: 'Bibliothèque' },
   { to: '/admin/acquisition', label: 'Acquisition' },
 ]
