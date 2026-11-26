@@ -18,6 +18,7 @@ const ANONYMOUS = {
   sessionExpired: false,
   accountDisabled: false,
   accountDeleted: false,
+  signedOut: false,
 }
 
 const authenticated = (me) => ({
@@ -63,7 +64,7 @@ export default function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     await signOut()
-    setSession(ANONYMOUS)
+    setSession({ ...ANONYMOUS, signedOut: true }) // les gardes renvoient à la connexion, sans destination
   }, [])
 
   // Le compte est supprimé : le serveur a fermé ses sessions, l'état local suit.

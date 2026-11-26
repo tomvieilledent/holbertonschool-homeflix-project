@@ -23,14 +23,14 @@ function Home() {
 }
 
 /** Fournisseur minimal : `selectProfile` met à jour le profil actif comme le vrai. */
-function Session({ children, selectProfile, initialProfileId = null }) {
+function Session({ children, selectProfile, logout, initialProfileId = null }) {
   const [activeProfileId, setActive] = useState(initialProfileId)
   const value = {
     status: 'authenticated',
     account: { id: 'a', username: 'camille', role: 'USER' },
     activeProfileId,
     login: vi.fn(),
-    logout: vi.fn(),
+    logout,
     selectProfile: async (id) => {
       await selectProfile(id)
       setActive(id)
@@ -43,6 +43,7 @@ function renderFlow({
   selectProfile = vi.fn().mockResolvedValue(undefined),
   url = '/profiles',
   initialProfileId = null,
+  logout = vi.fn(),
 } = {}) {
   const router = createMemoryRouter(
     [
@@ -52,11 +53,11 @@ function renderFlow({
     { initialEntries: [url] },
   )
   render(
-    <Session selectProfile={selectProfile} initialProfileId={initialProfileId}>
+    <Session selectProfile={selectProfile} logout={logout} initialProfileId={initialProfileId}>
       <RouterProvider router={router} />
     </Session>,
   )
-  return { router, selectProfile }
+  return { router, selectProfile, logout }
 }
 
 describe('ProfilesPage', () => {
@@ -123,6 +124,32 @@ describe('ProfilesPage', () => {
     await router.navigate('/profiles')
     await user.click(await screen.findByRole('button', { name: 'Léo' }))
     await waitFor(() => expect(loads).toBe(2))
+  })
+
+  describe('déconnexion sans choisir de profil', () => {
+    it.each([
+      ['avec la liste des profils', () => json(PROFILES), 'Qui regarde ?'],
+      ['sans aucun profil', () => json([]), 'Aucun profil'],
+      ['quand le chargement échoue', () => json({ code: 'INTERNAL_ERROR' }, 500), 'Une erreur est survenue'],
+    ])('propose « Se déconnecter » %s', async (_, response, heading) => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation(async () => response())
+      const { logout, selectProfile } = renderFlow()
+      await screen.findByRole('heading', { level: 1, name: heading })
+      await user.click(screen.getByRole('button', { name: 'Se déconnecter' }))
+      expect(logout).toHaveBeenCalledTimes(1)
+      expect(selectProfile).not.toHaveBeenCalled()
+    })
+
+    it('ne se déconnecte pas pendant qu’un profil est en cours de sélection', async () => {
+      const user = userEvent.setup()
+      const { logout } = renderFlow({ selectProfile: vi.fn(() => new Promise(() => {})) })
+      await user.click(await screen.findByRole('button', { name: 'Camille' }))
+      const signOut = screen.getByRole('button', { name: 'Se déconnecter' })
+      expect(signOut).toHaveAttribute('aria-disabled', 'true')
+      await user.click(signOut)
+      expect(logout).not.toHaveBeenCalled()
+    })
   })
 
   describe('compte à un seul profil', () => {

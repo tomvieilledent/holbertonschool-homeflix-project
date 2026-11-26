@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import '@/components/Button.css'
+import Button from '@/components/Button'
 import EmptyState from '@/components/EmptyState'
 import ErrorState from '@/components/ErrorState'
 import Spinner from '@/components/Spinner'
@@ -28,9 +28,12 @@ function ProfileButton({ profile, active, disabled, onSelect }) {
   )
 }
 
-/** « Qui regarde ? » : choisit le profil actif puis revient à la destination demandée (ou l'accueil). */
+/**
+ * « Qui regarde ? » : choisit le profil actif puis revient à la destination demandée (ou l'accueil). On peut aussi se
+ * déconnecter sans entrer dans un profil, quel que soit l'état de la liste (mauvais compte, appareil partagé).
+ */
 export default function ProfilesPage() {
-  const { activeProfileId, selectProfile } = useAuth()
+  const { activeProfileId, selectProfile, logout } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { profiles, loadFailed, reload } = useProfiles() // profiles : null = chargement
@@ -61,38 +64,48 @@ export default function ProfilesPage() {
     }
   }, [onlyProfile]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loadFailed) return <ErrorState titleAs="h1" onRetry={reload} />
-  if (profiles === null || (onlyProfile && !selectError)) {
-    return <Spinner size="lg" label="Chargement des profils…" />
-  }
-  if (profiles.length === 0) {
+  const content = () => {
+    if (loadFailed) return <ErrorState titleAs="h1" onRetry={reload} />
+    if (profiles === null || (onlyProfile && !selectError)) {
+      return <Spinner size="lg" label="Chargement des profils…" />
+    }
+    if (profiles.length === 0) {
+      return (
+        <EmptyState titleAs="h1" title="Aucun profil" description="Ce compte n’a pas encore de profil de visionnage.">
+          <Link className="btn btn--primary" to="/profiles/manage">
+            Créer un profil
+          </Link>
+        </EmptyState>
+      )
+    }
     return (
-      <EmptyState titleAs="h1" title="Aucun profil" description="Ce compte n’a pas encore de profil de visionnage.">
-        <Link className="btn btn--primary" to="/profiles/manage">
-          Créer un profil
+      <section className="profiles">
+        <h1>Qui regarde ?</h1>
+        {selectError && <p role="alert">{selectError}</p>}
+        <ul className="profiles__list">
+          {profiles.map((profile) => (
+            <ProfileButton
+              key={profile.id}
+              profile={profile}
+              active={profile.id === activeProfileId}
+              disabled={selecting}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+        <Link className="profiles__manage touch-link" to="/profiles/manage">
+          Gérer les profils
         </Link>
-      </EmptyState>
+      </section>
     )
   }
 
   return (
-    <section className="profiles">
-      <h1>Qui regarde ?</h1>
-      {selectError && <p role="alert">{selectError}</p>}
-      <ul className="profiles__list">
-        {profiles.map((profile) => (
-          <ProfileButton
-            key={profile.id}
-            profile={profile}
-            active={profile.id === activeProfileId}
-            disabled={selecting}
-            onSelect={onSelect}
-          />
-        ))}
-      </ul>
-      <Link className="profiles__manage touch-link" to="/profiles/manage">
-        Gérer les profils
-      </Link>
-    </section>
+    <>
+      <Button variant="ghost" className="profiles__sign-out" busy={selecting} onClick={logout}>
+        Se déconnecter
+      </Button>
+      {content()}
+    </>
   )
 }

@@ -11,6 +11,7 @@ export const AuthContext = createContext(null)
  *   sessionExpired: boolean,
  *   accountDisabled: boolean,
  *   accountDeleted: boolean,
+ *   signedOut: boolean,
  *   login: (username: string, password: string) => Promise<void>,
  *   logout: () => Promise<void>,
  *   changePassword: (currentPassword: string, newPassword: string) => Promise<void>,
