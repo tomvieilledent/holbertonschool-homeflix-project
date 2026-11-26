@@ -6,14 +6,13 @@ Ce document donne la vue d'ensemble. Le détail est dans les ADR (`docs/adr/`), 
 
 ## Comment lire l'état d'avancement
 
-Le contrat d'API (OpenAPI) est écrit avant le code. Les tableaux et diagrammes de ce document décrivent l'architecture **cible**, et la colonne « État » dit ce qui est réellement fusionné sur `main`.
+Le contrat d'API (OpenAPI) est écrit avant le code. La colonne « État » des tableaux dit ce qui est réellement fusionné sur `main`.
 
 | État | Sens |
 |---|---|
 | fait | codé, testé, fusionné sur `main` |
-| contrat seul | décrit dans l'OpenAPI, pas encore codé |
 
-État relevé le 18/11/2026 (J3). Les éléments « contrat seul » sont suivis par des issues du projet ; ce document est à relire avant la soutenance.
+État relevé le 26/11/2026 (J9) sur `main` : toutes les routes des trois contrats existent dans le code. Les écarts qui restent sont listés dans [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md).
 
 ## 1. Vue d'ensemble
 
@@ -49,6 +48,8 @@ flowchart LR
     acquisition -.->|JWKS| identity
     acquisition -->|RPC| transmission
     acquisition -.->|appel interne| library
+    identity -.->|purge| library
+    identity -.->|purge| acquisition
     transmission -->|sortant uniquement| internet
     library --> media
     library --> downloads
@@ -60,16 +61,16 @@ Lecture du schéma :
 - **Un seul point d'entrée** : nginx (port 8080). Il sert l'application et redirige `/api/identity/`, `/api/library/` et `/api/acquisition/` vers le bon service. Aucun autre port n'est publié.
 - **Une base par service** : même serveur PostgreSQL, trois bases et trois rôles. La base empêche un service de se connecter à celle d'un autre.
 - **Transmission isolé** : il n'est que sur le réseau `torrent`, avec Acquisition. Library, Identity, le frontend et la base ne peuvent ni le joindre ni résoudre son nom.
-- **Traits pointillés** : appels entre services (clés publiques d'Identity, appels internes d'Acquisition vers Library).
+- **Traits pointillés** : appels entre services (clés publiques d'Identity, appels internes d'Acquisition vers Library, purges demandées par Identity à la suppression d'un compte ou d'un profil).
 
 ## 2. Les services
 
 | Service | Responsabilité | Données | État |
 |---|---|---|---|
-| **identity-service** (8081) | Comptes, rôles, profils, connexion, jetons, premier administrateur | base `identity` | `/setup`, JWKS : fait. Connexion, refresh, profils, comptes : contrat seul |
-| **library-service** (8082) | Dossiers autorisés, indexation des vidéos, catalogue, flux avec Range, progression, favoris, accueil | base `library` ; lit `/media` et `/downloads` en lecture seule | dossiers autorisés et indexation : fait. Catalogue, flux, progression, favoris, accueil : contrat seul |
-| **acquisition-service** (8083) | Catalogue autorisé, rappel des droits, téléchargements pilotés sur Transmission | base `acquisition` ; écrit dans `/downloads` | liste du catalogue : faite. Droits, téléchargements, adaptateur Transmission : contrat seul |
-| **frontend** | Interface (React, Vite) et reverse proxy (nginx) | aucune | pages d'authentification, de profils et de première configuration, carte film : faites ou en relecture ; accueil, fiche et lecteur : emplacements vides |
+| **identity-service** (8081) | Comptes, rôles, profils, connexion, jetons, premier administrateur | base `identity` | fait |
+| **library-service** (8082) | Dossiers autorisés, indexation des vidéos, catalogue, affiches, flux avec Range, progression, favoris, accueil | base `library` ; lit `/media` et `/downloads` en lecture seule | fait |
+| **acquisition-service** (8083) | Catalogue autorisé, rappel des droits, téléchargements pilotés sur Transmission | base `acquisition` ; écrit dans `/downloads` | fait |
+| **frontend** | Interface (React, Vite) et reverse proxy (nginx) | aucune | fait : première configuration, connexion, profils, accueil, catalogue, fiche, lecteur, mon compte, administration |
 | **transmission** | Télécharge les fichiers BitTorrent | `transmission-config` ; écrit dans `/downloads` | fait (configuration, isolation, réglages) |
 | **db** | PostgreSQL 17 | volume `pgdata` | fait (3 bases, 3 rôles) |
 
@@ -80,17 +81,16 @@ Contrats complets : [`identity.openapi.yaml`](api/identity.openapi.yaml), [`libr
 | Service | Routes (préfixe `/api/v1`, vu du service) | État |
 |---|---|---|
 | Identity | `GET /setup/status`, `POST /setup` | fait |
-| Identity | `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `GET /auth/me` | contrat seul |
-| Identity | `GET/POST /profiles`, `PATCH/DELETE /profiles/{id}`, `POST /profiles/{id}/select` | contrat seul |
-| Identity | `/admin/accounts…`, `DELETE /accounts/me` | contrat seul |
+| Identity | `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me` | fait |
+| Identity | `GET/POST /profiles`, `PATCH/DELETE /profiles/{id}`, `POST /profiles/{id}/select` | fait |
+| Identity | `/admin/accounts…`, `DELETE /accounts/me`, `GET /admin/system/status` | fait |
 | Identity | `GET /.well-known/jwks.json` (réseau interne) | fait |
-| Library | `/admin/media-roots…` (dossiers autorisés), `POST /admin/index`, `GET /admin/index/status` | fait |
-| Library | `GET /media`, `GET /media/{id}`, `GET /genres`, `GET /home` | contrat seul |
-| Library | `POST /media/{id}/stream-ticket`, `GET /stream/{id}` | contrat seul |
-| Library | `/media/{id}/progress`, `/me/favourites…`, `/me/continue-watching` | contrat seul |
-| Acquisition | `GET /catalogue` | fait |
-| Acquisition | `GET /rights-notice`, `POST /rights-notice/ack` | contrat seul |
-| Acquisition | `POST/GET /downloads`, `GET /downloads/{id}`, `POST /downloads/{id}/cancel` | contrat seul |
+| Library | `/admin/media-roots…` (dossiers autorisés), `POST /admin/index`, `GET /admin/index/status`, `PATCH/DELETE /admin/media/{id}` | fait |
+| Library | `GET /media`, `GET /media/{id}`, `GET /genres`, `GET /home`, `GET /posters/{id}` | fait |
+| Library | `POST /media/{id}/stream-ticket`, `GET /stream/{id}` | fait |
+| Library | `/media/{id}/progress`, `/me/favourites…`, `/me/continue-watching`, `/me/completed` | fait |
+| Acquisition | `GET /catalogue`, `GET /rights-notice`, `POST /rights-notice/ack` | fait |
+| Acquisition | `POST/GET /downloads`, `GET /downloads/{id}`, `POST /downloads/{id}/cancel` | fait |
 
 Vu du navigateur, une route s'écrit avec le préfixe du service : `/api/library/v1/media`. Le proxy retire le nom du service avant de transmettre (`/api/library/v1/media` devient `library-service:8082/api/v1/media`).
 
@@ -135,7 +135,7 @@ sequenceDiagram
     Note over F,I: à l'expiration (401 SESSION_EXPIRED)<br/>POST /auth/refresh, le cookie est remplacé à chaque appel
 ```
 
-État : la validation du jeton par Library et Acquisition (JWKS, 3 s de délai) est **faite** ; la connexion, le refresh, les profils et l'accueil sont en **contrat seul**. Si Identity est injoignable pendant la vérification d'un jeton, le comportement voulu par l'ADR 0001 est un **503 `IDENTITY_UNAVAILABLE`** et non un 401 qui ferait croire à une session expirée : correction en relecture (PR #189), à jour dans ce document après sa fusion.
+État : fait. Le profil actif est conservé au renouvellement du jeton, et `select` est refusé à un compte désactivé ou à une session fermée. Si Identity est injoignable pendant la vérification d'un jeton, la réponse est un **503 `IDENTITY_UNAVAILABLE`** et non un 401 qui ferait croire à une session expirée.
 
 Décisions détaillées : [ADR 0001](adr/0001-auth-and-service-security.md).
 
@@ -160,7 +160,7 @@ sequenceDiagram
     F->>L: PUT /media/{id}/progress (position, idempotent)
 ```
 
-État : contrat seul. Le ticket de streaming remplace le jeton de session dans l'URL : il est court, lié à un média et signé par une clé que seule Library connaît. Le proxy ne met pas en mémoire tampon les réponses de Library, pour laisser passer le streaming et les requêtes `Range`.
+État : fait. Le ticket de streaming remplace le jeton de session dans l'URL : il est court, lié à un média et signé par une clé que seule Library connaît. Le proxy ne met pas en mémoire tampon les réponses de Library, pour laisser passer le streaming et les requêtes `Range`.
 
 ### 4.3 Acquisition d'un contenu autorisé
 
@@ -182,17 +182,17 @@ sequenceDiagram
     F->>Q: POST /downloads (identifiant d'entrée, jamais un lien magnet)
     Q->>Q: vérifie l'acquittement, un seul téléchargement actif par entrée
     Q->>T: RPC torrent-add (magnet lu en base)
-    loop tant que le téléchargement dure
-        F->>Q: GET /downloads/{id}
+    loop toutes les 5 secondes, côté serveur
         Q->>T: RPC torrent-get
-        Q-->>F: état et progression
+        T-->>Q: état et progression
     end
-    T-->>Q: terminé (vu au prochain torrent-get), fichier dans /downloads/complete
+    F->>Q: GET /downloads (l'écran relit l'état)
+    T-->>Q: terminé, fichier dans /downloads/complete
     Q->>L: appel interne : nouveau fichier à indexer
     L->>L: indexe sans copier, le média apparaît dans le catalogue
 ```
 
-État : le catalogue est **fait** ; les droits, les téléchargements, l'adaptateur Transmission et l'appel interne vers Library sont en **contrat seul**. La partie Transmission (réseau isolé, réglages, arrêt du partage à la fin) est **faite** et prouvée sur un vrai téléchargement (voir [`docs/legal/P2P_DEMO.md`](legal/P2P_DEMO.md)).
+État : fait, essayé de bout en bout depuis l'interface les 25 et 26/11 (voir [`ACCEPTANCE_REPORT.md`](ACCEPTANCE_REPORT.md)). La partie Transmission (réseau isolé, réglages, arrêt du partage à la fin) est prouvée sur un vrai téléchargement (voir [`docs/legal/P2P_DEMO.md`](legal/P2P_DEMO.md)).
 
 Garde-fous : Acquisition n'accepte que des identifiants d'entrées du catalogue autorisé, jamais une URL ni un lien magnet fournis par l'utilisateur ; une entrée sans licence ni preuve ne peut pas exister en base.
 
@@ -206,6 +206,7 @@ Garde-fous : Acquisition n'accepte que des identifiants d'entrées du catalogue 
 | Flux vidéo | ticket court lié au média, signé par Library | ADR 0001 |
 | Routes internes | `/internal` et `/actuator` ne sont jamais routés par le proxy (404) ; secret partagé `X-Internal-Key` entre services | ADR 0001, ADR 0002 |
 | Rôle administrateur | Acquisition : `/api/v1/**` réservé à ADMIN, vérifié deux fois (règle d'URL et annotation `@PreAuthorize`). Library : `/api/v1/admin/**` réservé à ADMIN (règle d'URL) | code |
+| Affiches | adresse signée, liée au média, avec échéance (la balise `img` n'envoie pas d'en-tête) | contrat Library |
 | Navigateur | CSP stricte, `frame-ancestors 'none'`, `Permissions-Policy`, pas de version nginx | ADR 0002 §11 |
 | Mots de passe | Argon2id, 12 caractères minimum | ADR 0001 |
 | Secrets | aucun dans le dépôt ; `.env` ignoré, généré par `scripts/gen-secrets.sh` | ADR 0002 §9 |
@@ -297,9 +298,11 @@ Justifications complètes et alternatives : [ADR 0001](adr/0001-auth-and-service
 
 ## 9. Limites connues
 
+La liste complète, avec les issues, est dans [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md). Les principales limites d'architecture :
+
 - Le rôle d'un jeton est celui de son émission : une désactivation de compte prend effet au prochain refresh (15 min au plus).
 - `.env` ignoré par Git suffit pour le MVP ; les secrets Docker (`secrets:`) seraient mieux isolés.
 - La rotation de la clé de signature des jetons n'est pas prévue (le JWKS ne publie qu'une clé).
 - Le port de pairs BitTorrent n'est pas publié : les téléchargements fonctionnent en trafic sortant seul, parfois plus lentement.
-- Environnements testés : Docker Engine sur Linux et Docker Desktop (Windows, WSL2). NAS et partages SMB/NFS : sans garantie.
+- Environnements testés : Linux (dont GitHub Actions) et Linux sous WSL 2. macOS, Windows sans WSL 2, ARM, NAS et partages SMB/NFS : non testés.
 - Connexion en HTTP hors `localhost` : un cookie `Secure` n'est pas conservé par le navigateur ; utiliser HTTPS (ADR 0002 §11).

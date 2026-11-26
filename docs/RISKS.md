@@ -44,7 +44,7 @@ Ce registre recense les risques du projet (techniques, sécurité, droits, organ
 | R26 | Démo | **Imprévu pendant la soutenance** (réseau, machine, base vide) | 2 | 3 | 6 | Répétition chronométrée avec plan B, environnement de démonstration réinitialisable, comptes de démo, vidéo de secours, captures du parcours | Haitu | #93, #125 |
 | R27 | Agent IA | **L'agent IA dépasse son rôle** (accès aux secrets, modification de l'authentification, fusion non relue) | 1 | 3 | 3 | Rôle borné par écrit (objectif, entrées, outils, limites) ; l'agent ne fusionne jamais ; chaque constat est vérifié par un humain avant toute modification | Tom | #17, #113 |
 | R28 | Organisation | **Connaissance concentrée** : un membre ne peut pas expliquer une partie du projet à l'oral | 2 | 2 | 4 | Revue croisée des PR, entraide en équipe, chaque membre présente sa partie ; fiches de révision | Toute l'équipe | #126, #127, #128 |
-| R29 | Retards | **Contrat non codé** : des routes du contrat OpenAPI n'existent pas encore dans les services (ex. `GET /auth/me`, profils, accueil, favoris, progression), donc le parcours connexion → catalogue → lecture ne tourne pas de bout en bout sur la vraie pile alors que les écrans passent sur des mocks | 3 | 2 | 6 | Ne fermer une issue que lorsque **toutes** ses routes sont codées ; dérouler le parcours sur la pile Compose à chaque point d'intégration (J5, J7) ; lister les routes du contrat non codées à chaque revue | Haitu | #55, #82, #58, #68, #59, #87 |
+| R29 | Retards | **Contrat non codé** : des routes du contrat OpenAPI n'existent pas dans les services, et le parcours ne tourne pas de bout en bout sur la vraie pile. **Levé le 26/11** : toutes les routes des trois contrats existent dans le code, et le parcours a été déroulé sur la pile Compose | 1 | 2 | 2 | Surveillance : passage final des scénarios sur la version livrée | Haitu | #55, #82, #115 |
 | R30 | Technique | **Défaut d'intégration invisible des tests de chaque service** : proxy, cookies, journaux (ex. chemin du cookie de refresh réécrit par nginx, ticket de streaming écrit dans les journaux) | 3 | 2 | 6 | Test de fumée étendu à travers nginx (création de l'administrateur, connexion, refresh) ; parcours dans un vrai navigateur (Chromium sans interface) à chaque point d'intégration | Haitu | #197, #198 |
 
 ## Les risques à surveiller en priorité
@@ -52,7 +52,7 @@ Ce registre recense les risques du projet (techniques, sécurité, droits, organ
 | Rang | Risque | Criticité |
 |---|---|---|
 | 1 | R19 — Charge supérieure à la capacité | 9 |
-| 2 | R1, R3, R5, R6, R8, R11, R12, R17, R21, R25, R26, R29, R30 | 6 |
+| 2 | R1, R3, R5, R6, R8, R11, R12, R17, R21, R25, R26, R30 | 6 |
 
 ## Révisions
 
@@ -62,4 +62,4 @@ Ce registre recense les risques du projet (techniques, sécurité, droits, organ
 |---|---|---|
 | 2026-11-16 | Création (J1) | Registre initial de 28 risques |
 | 2026-11-20 | J5 : revue de mi-parcours | Préparée le 18/11 au soir (à confirmer le 20/11) : ajout de R29 (routes du contrat non codées : `GET /auth/me` manquant, issue #45 fermée sans cette route) et R30 (défauts visibles seulement à travers le proxy : cookie de refresh, ticket journalisé). R19 inchangé à 9 : charge restante 126,5 h, soit 65 % (Haitu), 96 % (Jason) et 94 % (Tom) de la capacité d'ici le 25/11 ; seules 4 issues P2/P3 (7,5 h) sont coupables |
-| 2026-11-26 | J9 : avant le gel du périmètre | _à compléter_ |
+| 2026-11-26 | J9 : avant le gel du périmètre | R29 levé (criticité 6 à 2). Transfert P2P réussi sur le réseau de développement ; R11 et R12 restent à vérifier sur le réseau de la soutenance (#111). R21 reste ouvert : pas d'installation par une personne extérieure (#112) |
