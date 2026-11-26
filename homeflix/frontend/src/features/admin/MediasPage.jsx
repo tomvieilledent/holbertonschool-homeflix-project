@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import Button from '@/components/Button'
 import '@/components/Button.css'
@@ -56,6 +56,7 @@ export default function MediasPage() {
   const [error, setError] = useState(null)
   const [dialog, setDialog] = useState(null) // { type: 'edit' | 'delete', media }
   const [notice, setNotice] = useState('')
+  const searchRef = useRef(null)
 
   const load = useCallback(
     (signal) => {
@@ -87,6 +88,13 @@ export default function MediasPage() {
   const submitSearch = (event) => {
     event.preventDefault()
     setParams(search.trim() ? { q: search.trim() } : {}, { replace: true })
+  }
+
+  /** Revient à la liste complète ; le focus retourne au champ, car le bouton disparaît. */
+  const clearSearch = () => {
+    setSearch('')
+    setParams({}, { replace: true })
+    searchRef.current?.focus()
   }
 
   if (error) return <ErrorState description={error.message} onRetry={() => load()} />
@@ -138,6 +146,7 @@ export default function MediasPage() {
 
       <form className="medias__search" role="search" aria-label="Rechercher un film" onSubmit={submitSearch}>
         <Field
+          ref={searchRef}
           label="Rechercher un titre"
           type="search"
           value={search}
@@ -147,6 +156,11 @@ export default function MediasPage() {
         <Button type="submit" variant="secondary">
           Rechercher
         </Button>
+        {q && (
+          <Button variant="ghost" onClick={clearSearch}>
+            Effacer la recherche
+          </Button>
+        )}
       </form>
 
       <div role="status" className="medias__notice">
