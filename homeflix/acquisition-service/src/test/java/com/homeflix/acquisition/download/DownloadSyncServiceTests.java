@@ -85,6 +85,31 @@ class DownloadSyncServiceTests {
 	}
 
 	@Test
+	void theFileBeingDownloadedIsAnnouncedOnceThenReleasedIfItFails() {
+		torrentIs(TorrentStatus.State.DOWNLOADING, 5, null, "complete/a.mp4");
+		sync.sync();
+		sync.sync();
+		verify(library).registerDownloading("complete/a.mp4", null);
+
+		torrentIs(TorrentStatus.State.FAILED, 5, "DISK_FULL");
+		sync.sync();
+
+		verify(library).registerFailed("complete/a.mp4");
+	}
+
+	@Test
+	void anAnnouncementThatFailsIsRetriedWithoutFailingTheDownload() {
+		doThrow(new LibraryUnavailableException()).doNothing().when(library).registerDownloading(anyString(), any());
+		torrentIs(TorrentStatus.State.DOWNLOADING, 5, null, "complete/a.mp4");
+		sync.sync();
+		assertThat(download.getFileRelativePath()).isNull();
+		sync.sync();
+
+		assertThat(download.getState()).isEqualTo(DownloadState.DOWNLOADING);
+		assertThat(download.getFileRelativePath()).isEqualTo("complete/a.mp4");
+	}
+
+	@Test
 	void aCompletedTorrentIsDeclaredToLibraryAndCompleted() {
 		torrentIs(TorrentStatus.State.COMPLETED, 100, null, "Sintel/sintel.mkv");
 		sync.sync();

@@ -22,6 +22,9 @@ import com.homeflix.acquisition.catalogue.CatalogueEntry;
 import com.homeflix.acquisition.catalogue.CatalogueEntryRepository;
 import com.homeflix.acquisition.catalogue.CatalogueService;
 import com.homeflix.acquisition.catalogue.DownloadSource;
+import com.homeflix.acquisition.library.LibraryClient;
+import com.homeflix.acquisition.library.LibraryRejectedException;
+import com.homeflix.acquisition.library.LibraryUnavailableException;
 import com.homeflix.acquisition.rights.RightsNoticeService;
 import com.homeflix.acquisition.torrent.TorrentClient;
 import com.homeflix.acquisition.torrent.TorrentClientUnavailableException;
@@ -44,14 +47,16 @@ public class DownloadService {
     private final CatalogueService catalogue;
     private final RightsNoticeService rights;
     private final TorrentClient torrent;
+    private final LibraryClient library;
 
     public DownloadService(DownloadRepository downloads, CatalogueEntryRepository entries, CatalogueService catalogue,
-            RightsNoticeService rights, TorrentClient torrent) {
+            RightsNoticeService rights, TorrentClient torrent, LibraryClient library) {
         this.downloads = downloads;
         this.entries = entries;
         this.catalogue = catalogue;
         this.rights = rights;
         this.torrent = torrent;
+        this.library = library;
     }
 
     public DownloadResponse start(UUID entryId, UUID accountId) {
@@ -97,7 +102,15 @@ public class DownloadService {
         }
         download.setState(DownloadState.CANCELLED);
         download.setFinishedAt(Instant.now());
-        return toResponse(downloads.save(download));
+        Download saved = downloads.save(download);
+        if (saved.getFileRelativePath() != null) {
+            try {
+                library.registerFailed(saved.getFileRelativePath());
+            } catch (LibraryUnavailableException | LibraryRejectedException e) {
+                log.warn("Library n'a pas pu être prévenue de l'annulation d'un téléchargement");
+            }
+        }
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

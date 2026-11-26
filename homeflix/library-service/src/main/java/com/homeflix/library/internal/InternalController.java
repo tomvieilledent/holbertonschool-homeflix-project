@@ -42,6 +42,12 @@ public class InternalController {
         return Map.of("mediaId", service.registerCompleted(request));
     }
 
+    @PostMapping("/downloads/failed")
+    public ResponseEntity<Void> failed(@Valid @RequestBody DownloadRequest request) {
+        service.releaseDownload(request);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/reindex")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public IndexStatus reindex() {

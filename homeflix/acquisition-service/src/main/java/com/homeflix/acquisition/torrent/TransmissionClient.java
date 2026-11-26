@@ -149,7 +149,8 @@ public class TransmissionClient implements TorrentClient {
             case CHECK_WAIT, CHECKING, DOWNLOAD_WAIT -> new TorrentStatus(TorrentStatus.State.QUEUED, progress, null, List.of());
             // Arrêté sans être terminé (jamais mis en pause par nous) : le client ne le téléchargera plus.
             case STOPPED -> new TorrentStatus(TorrentStatus.State.FAILED, progress, "TORRENT_CLIENT_UNAVAILABLE", List.of());
-            default -> new TorrentStatus(TorrentStatus.State.DOWNLOADING, progress, null, List.of(), idleSince(torrent));
+            default -> new TorrentStatus(TorrentStatus.State.DOWNLOADING, progress, null,
+                metadata >= 1.0 ? files(torrent, relativeDownloadDir) : List.of(), idleSince(torrent));
         };
     }
 

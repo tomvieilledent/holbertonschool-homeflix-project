@@ -9,8 +9,9 @@ Tous les appels de service à service de HomeFlix : qui appelle qui, avec quelle
 | 1 | Library, Acquisition | Identity | `GET /.well-known/jwks.json` (clés publiques, mises en cache) | aucune (clés publiques) | 3 s (`IDENTITY_JWKS_TIMEOUT`) | `503 IDENTITY_UNAVAILABLE` sur la requête en cours ; un jeton déjà vérifié avec une clé en cache continue de passer | fait |
 | 2 | Identity | Library | `POST /internal/purge` portée `PROFILE` (suppression d'un profil) | `X-Internal-Key` | 2 s connexion, 5 s lecture, 1 tentative | `503 LIBRARY_UNAVAILABLE` : **rien n'est supprimé**, l'appel se rejoue tel quel | fait (#59) |
 | 3 | Identity | Library | `POST /internal/purge` portée `ACCOUNT` (suppression d'un compte) | `X-Internal-Key` | idem | idem | fait (#97) |
-| 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | — | sans objet : aucun appel n'est fait | côté Library fait (#72), **non appelé** par Acquisition |
+| 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | 3 s, 3 essais | sans effet sur le téléchargement ; retenté au passage suivant | fait (#72, #292) |
 | 5 | Acquisition | Library | `POST /internal/downloads/completed` (téléchargement terminé) | `X-Internal-Key` | 3 s, 3 essais (aucun nouvel essai après un refus `4xx`) | le téléchargement passe `FAILED` ; le fichier reste dans `/downloads`, une réindexation manuelle le reprend | fait (#72, #99) |
+| 5 bis | Acquisition | Library | `POST /internal/downloads/failed` (échec ou annulation) | `X-Internal-Key` | 3 s, 3 essais | journalisé, non rejoué : l'entrée peut rester « en téléchargement » | fait (#292) |
 | 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | — | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), **non appelé** par Acquisition |
 | 7 | Acquisition | Transmission | RPC HTTP (`/transmission/rpc`) | identifiants Transmission (`TRANSMISSION_USER`, `TRANSMISSION_PASS`) | 3 s (`TRANSMISSION_TIMEOUT`) | `503 TORRENT_CLIENT_UNAVAILABLE`, sans détail technique | fait (#74) |
 | 8 | Identity | Acquisition | purge des données d'un compte (acquittements, historique) | `X-Internal-Key` | — | — | **pas encore** : Acquisition n'a pas d'API interne |
@@ -75,7 +76,9 @@ Admin ─ POST /downloads ─▶ Acquisition ─ RPC ─▶ Transmission        
   ── échec après les essais, ou refus : le téléchargement passe FAILED, sans reprise automatique.
 ```
 
-Non branché : `POST /internal/downloads` (statut « en téléchargement » dans le catalogue) et `libraryMediaId`.
+Dès que le nom du fichier est connu, Acquisition appelle `POST /internal/downloads` : le catalogue l'affiche « en téléchargement ». Après un échec ou une annulation, `POST /internal/downloads/failed` retire cet état.
+
+Non branché : `libraryMediaId`.
 
 ## Gestion des pannes
 
@@ -85,7 +88,7 @@ Non branché : `POST /internal/downloads` (statut « en téléchargement » dans
 | Identity injoignable pour charger les clés | `503 IDENTITY_UNAVAILABLE` | pas de faux 401 ; les clés déjà en cache restent utilisables |
 | Transmission injoignable | `503 TORRENT_CLIENT_UNAVAILABLE` | le téléchargement concerné passe `FAILED` (code `TORRENT_CLIENT_UNAVAILABLE`), l'entrée du catalogue n'est pas bloquée |
 | Secret interne absent, faux ou jeton utilisateur sur `/internal` | `401` | aucun traitement, aucune fuite d'information |
-| Appel interne rejoué | même résultat que le premier | purge, « téléchargement démarré » et « terminé » sont idempotents |
+| Appel interne rejoué | même résultat que le premier | purge, « téléchargement démarré », « arrêté » et « terminé » sont idempotents |
 
 Écart connu avec l'ADR 0001 (décision 6, « 3 s et 2 tentatives ») : les appels d'Identity vers Library ont aujourd'hui 2 s de délai de connexion, 5 s de lecture et **une seule tentative** ; l'échec est rendu à l'utilisateur, qui peut réessayer. L'appel d'Acquisition vers Library a un délai de 3 s et fait **3 essais** au plus.
 
@@ -125,6 +128,11 @@ Même corps. Le fichier doit exister dans le dossier de téléchargements (liens
 une vidéo (`mp4`, `mkv`, `webm`). L'entrée passe à `AVAILABLE` (créée si besoin). Idempotent.
 
 Réponses : `200 {"mediaId":"<uuid>"}` ; `404 MEDIA_FILE_MISSING` ; `400` chemin invalide ; `409`.
+
+### `POST /internal/downloads/failed` — Acquisition (échec ou annulation)
+Même corps (`title` ignoré). Une entrée créée pour ce téléchargement est supprimée ; une entrée qui existait déjà redevient `UNAVAILABLE` ; une entrée dans un autre état ne change pas. Idempotent.
+
+Réponses : `204` ; `400` chemin invalide.
 
 ### `POST /internal/reindex` — Acquisition
 Lance l'indexation de tous les dossiers autorisés. Si une indexation tourne déjà, son état est renvoyé (pas d'erreur).
