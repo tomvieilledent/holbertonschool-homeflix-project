@@ -23,8 +23,9 @@ export async function listAccounts(query = {}, signal) {
 export const createAccount = (account) => apiFetch('identity', '/v1/admin/accounts', { method: 'POST', body: account })
 
 /**
- * Active ou désactive un compte, ou change son rôle (`PATCH /admin/accounts/{id}`). La désactivation ferme les
- * sessions tout de suite. Le dernier administrateur ne peut être ni désactivé ni rétrogradé (`LAST_ADMIN`).
+ * Active ou désactive un compte, ou change son rôle (`PATCH /admin/accounts/{id}`). La désactivation empêche de
+ * renouveler la session et de choisir un profil, mais un jeton d'accès déjà émis reste valable jusqu'à son expiration
+ * (15 min au plus). Le dernier administrateur ne peut être ni désactivé ni rétrogradé (`LAST_ADMIN`).
  * @param {string} accountId
  * @param {{enabled?: boolean, role?: 'USER'|'ADMIN'}} changes
  */

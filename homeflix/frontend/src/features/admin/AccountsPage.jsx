@@ -252,8 +252,8 @@ export default function AccountsPage() {
           onClose={close}
         >
           <p>
-            Ses sessions sont fermées immédiatement et il ne pourra plus se connecter. Vous pourrez le réactiver à
-            tout moment.
+            Il ne pourra plus se connecter ni renouveler sa session. Une session déjà ouverte peut continuer jusqu’à 15
+            minutes. Vous pourrez le réactiver à tout moment.
           </p>
         </ConfirmModal>
       )}
