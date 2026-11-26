@@ -1,8 +1,11 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from '@/app/AppLayout'
 import BareLayout from '@/app/BareLayout'
 import NotFoundPage from '@/app/NotFoundPage'
+import RouteAccessibility from '@/app/RouteAccessibility'
 import RouteErrorPage from '@/app/RouteErrorPage'
+import AccountPage from '@/features/auth/AccountPage'
+import AdminLayout from '@/features/admin/AdminLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
@@ -25,6 +28,8 @@ export const routes = [
   {
     // Erreur de rendu ou de chargement d'une route : écran d'erreur au lieu d'une page blanche.
     errorElement: <RouteErrorPage />,
+    // Titre de l'onglet (`handle.title`) et suivi du focus, pour toutes les pages.
+    element: <RouteAccessibility />,
     children: [
       {
         // Sans en-tête : pages publiques et choix du profil.
@@ -33,21 +38,22 @@ export const routes = [
           {
             // L'intro du logo précède la connexion, une fois par session.
             path: '/login',
+            handle: { title: 'Connexion' },
             element: (
               <IntroGate>
                 <LoginPage />
               </IntroGate>
             ),
           },
-          { path: '/setup', element: <SetupPage /> },
+          { path: '/setup', handle: { title: 'Première configuration' }, element: <SetupPage /> },
           {
             element: <RequireAuth />,
             children: [
-              { path: '/profiles', element: <ProfilesPage /> },
-              { path: '/profiles/manage', element: <ManageProfilesPage /> },
+              { path: '/profiles', handle: { title: 'Qui regarde ?' }, element: <ProfilesPage /> },
+              { path: '/profiles/manage', handle: { title: 'Gérer les profils' }, element: <ManageProfilesPage /> },
             ],
           },
-          { path: '*', element: <NotFoundPage /> },
+          { path: '*', handle: { title: 'Page introuvable' }, element: <NotFoundPage /> },
         ],
       },
       {
@@ -57,24 +63,34 @@ export const routes = [
           {
             element: <AppLayout />,
             children: [
+              // Le compte ne dépend pas du profil : accessible même sans profil actif.
+              { path: '/compte', handle: { title: 'Mon compte' }, element: <AccountPage /> },
               {
                 // Pas d'accueil, de fiche ni de lecture sans profil actif.
                 element: <RequireProfile />,
                 children: [
-                  { path: '/', element: <HomePage /> },
-                  { path: '/catalogue', element: <CataloguePage /> },
-                  { path: '/ma-liste', element: <MyListPage /> },
-              { path: '/media/:mediaId', element: <DetailPage /> },
-                  { path: '/watch/:mediaId', element: <PlayerPage /> },
+                  { path: '/', handle: { title: 'Accueil' }, element: <HomePage /> },
+                  { path: '/catalogue', handle: { title: 'Catalogue' }, element: <CataloguePage /> },
+                  { path: '/ma-liste', handle: { title: 'Ma liste' }, element: <MyListPage /> },
+              { path: '/media/:mediaId', handle: { title: 'Fiche du film' }, element: <DetailPage /> },
+                  { path: '/watch/:mediaId', handle: { title: 'Lecture' }, element: <PlayerPage /> },
                 ],
               },
               {
                 element: <RequireRole role="ADMIN" />,
                 children: [
-                  { path: '/admin', ...lazyPage(() => import('@/features/admin/AdminPage')) },
                   {
-                    path: '/admin/acquisition',
-                    ...lazyPage(() => import('@/features/admin/AcquisitionPage')),
+                    // Section d'administration : navigation latérale commune à toutes ses pages.
+                    path: '/admin',
+                    element: <AdminLayout />,
+                    children: [
+                      { index: true, element: <Navigate to="/admin/comptes" replace /> },
+                      { path: 'comptes', handle: { title: 'Comptes · Administration' }, ...lazyPage(() => import('@/features/admin/AccountsPage')) },
+                      { path: 'bibliotheque', handle: { title: 'Bibliothèque · Administration' }, ...lazyPage(() => import('@/features/admin/LibraryPage')) },
+                      { path: 'medias', handle: { title: 'Médias · Administration' }, ...lazyPage(() => import('@/features/admin/MediasPage')) },
+                      { path: 'acquisition', handle: { title: 'Acquisition · Administration' }, ...lazyPage(() => import('@/features/admin/AcquisitionPage')) },
+                      { path: 'services', handle: { title: 'Services · Administration' }, ...lazyPage(() => import('@/features/admin/ServicesPage')) },
+                    ],
                   },
                 ],
               },

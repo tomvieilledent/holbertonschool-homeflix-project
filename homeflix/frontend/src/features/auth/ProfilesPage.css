@@ -29,7 +29,7 @@
   cursor: pointer;
 }
 
-.profile-choice:hover:not(:disabled),
+.profile-choice:hover:not([aria-disabled='true']),
 .profile-choice[aria-current='true'] {
   border-color: var(--color-border-strong);
 }
@@ -39,7 +39,7 @@
   outline-offset: 2px;
 }
 
-.profile-choice:disabled {
+.profile-choice[aria-disabled='true'] {
   cursor: progress;
   opacity: 0.6;
 }

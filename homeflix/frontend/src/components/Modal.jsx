@@ -1,9 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { FOCUSABLE } from '@/components/focusable'
 import './Modal.css'
-
-const FOCUSABLE =
-  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
 /**
  * Boîte de dialogue modale : `role="dialog"`, piège de focus, fermeture par Échap ou clic sur le fond,

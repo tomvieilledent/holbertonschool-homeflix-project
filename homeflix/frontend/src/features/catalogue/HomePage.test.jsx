@@ -4,8 +4,10 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import home from '@fixtures/library/home.json'
 import homeEmpty from '@fixtures/library/home-empty.json'
+import { AuthContext } from '@/features/auth/authContext'
 import HomePage from '@/features/catalogue/HomePage'
 import ProfileScope from '@/features/favourites/ProfileScope'
+import { expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -33,11 +35,13 @@ function serve({ homeBody = home, favourites = home.favourites } = {}) {
 
 const renderHome = () =>
   render(
-    <ProfileScope>
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    </ProfileScope>,
+    <AuthContext.Provider value={{ account: { id: '1', username: 'camille', role: 'USER' } }}>
+      <ProfileScope>
+        <MemoryRouter>
+          <HomePage />
+        </MemoryRouter>
+      </ProfileScope>
+    </AuthContext.Provider>,
   )
 
 const row = (name) => screen.getByRole('region', { name })
@@ -80,11 +84,10 @@ describe('HomePage', () => {
     expect(within(row('Ajoutés récemment')).queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
-  it('invite à demander à l’administrateur quand la bibliothèque est vide', async () => {
+  it('explique quoi attendre quand la bibliothèque est vide (voir `EmptyLibrary` pour chaque rôle)', async () => {
     fetchMock.mockImplementation(serve({ homeBody: homeEmpty, favourites: [] }))
     renderHome()
-    expect(await screen.findByRole('heading', { name: 'Votre bibliothèque est vide' })).toBeInTheDocument()
-    expect(screen.getByText(/Demandez à l’administrateur/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Aucun film pour le moment' })).toBeInTheDocument()
   })
 
   it('masque les rangées vides et explique « Ma liste » vide', async () => {
@@ -198,7 +201,10 @@ describe('HomePage', () => {
       const first = home.favourites[0]
       await user.click(favouriteButton(list, 'retirer', first.title))
       const again = screen.getAllByRole('button', { name: new RegExp(`« ${first.title} »`) })
-      for (const button of again) expect(button).toBeDisabled()
+      for (const button of again) {
+        expectBusy(button)
+        await user.click(button) // un second clic est ignoré
+      }
       release()
       await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1))
     })

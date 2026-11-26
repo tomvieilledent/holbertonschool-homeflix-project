@@ -33,4 +33,17 @@ describe('Field', () => {
     expect(input).toBeDisabled()
     expect(input).toBeRequired()
   })
+
+  it('multiline : une zone de texte avec les mêmes label, aide et erreur', async () => {
+    const user = userEvent.setup()
+    render(<Field label="Description" multiline rows={4} hint="2000 caractères maximum." error="Trop longue." />)
+    const area = screen.getByLabelText('Description')
+    expect(area.tagName).toBe('TEXTAREA')
+    expect(area).not.toHaveAttribute('type')
+    expect(area).toHaveAttribute('rows', '4')
+    expect(area).toHaveAccessibleDescription('2000 caractères maximum. Trop longue.')
+    expect(area).toBeInvalid()
+    await user.type(area, 'ligne 1{Enter}ligne 2')
+    expect(area).toHaveValue('ligne 1\nligne 2')
+  })
 })

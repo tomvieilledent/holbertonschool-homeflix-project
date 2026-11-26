@@ -14,7 +14,7 @@ import '@/features/catalogue/MovieCard.css'
  *   availability: 'AVAILABLE'|'UNAVAILABLE'|'DOWNLOADING'}} props.media Résumé de média (contrat Library).
  * @param {boolean} [props.isFavourite]
  * @param {(media: object) => void} [props.onToggleFavourite] Si absent, le bouton « Ma liste » n'est pas affiché.
- * @param {boolean} [props.favouritePending] Désactive le bouton pendant l'appel serveur.
+ * @param {boolean} [props.favouritePending] Bloque le bouton pendant l'appel serveur.
  * @param {{positionSeconds: number, durationSeconds?: number|null}} [props.progress] Reprise de lecture :
  *   affiche une barre de progression (« Continuer à regarder »).
  */
@@ -49,7 +49,7 @@ export default function MovieCard({
           <Button
             variant="ghost"
             aria-pressed={isFavourite}
-            disabled={favouritePending}
+            busy={favouritePending}
             onClick={() => onToggleFavourite(media)}
           >
             {isFavourite ? 'Dans ma liste' : 'Ma liste'}

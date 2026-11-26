@@ -142,6 +142,8 @@ public class DownloadService {
             case "NO_PEERS" -> "Aucune source ne partage ce fichier pour le moment.";
             case "DISK_FULL" -> "Il n'y a plus assez de place sur le disque.";
             case "TORRENT_CLIENT_UNAVAILABLE" -> "Le service de téléchargement est indisponible.";
+            case "LIBRARY_UNAVAILABLE" -> "Le fichier est téléchargé mais la bibliothèque est indisponible.";
+            case "INVALID_FILE" -> "Le fichier téléchargé n'est pas une vidéo reconnue.";
             default -> "Le téléchargement a échoué.";
         };
     }

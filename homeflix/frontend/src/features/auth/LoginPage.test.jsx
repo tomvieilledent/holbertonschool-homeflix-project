@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '@/features/auth/authContext'
 import LoginPage from '@/features/auth/LoginPage'
 import { ApiError } from '@/services/apiError'
+import { expectBusy } from '@/test/busy'
 
 function renderLogin({ login = vi.fn(), status = 'anonymous', url = '/login' } = {}) {
   const router = createMemoryRouter(
@@ -12,6 +13,7 @@ function renderLogin({ login = vi.fn(), status = 'anonymous', url = '/login' } =
       { path: '/login', element: <LoginPage /> },
       { path: '/', element: <p>accueil</p> },
       { path: '/admin', element: <p>administration</p> },
+      { path: '/setup', element: <p>première configuration</p> },
     ],
     { initialEntries: [url] },
   )
@@ -80,7 +82,7 @@ describe('LoginPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(text)
   })
 
-  it('désactive le bouton pendant l’envoi', async () => {
+  it('bloque le formulaire pendant l’envoi sans faire perdre le focus', async () => {
     const user = userEvent.setup()
     let resolve
     renderLogin({
@@ -92,12 +94,52 @@ describe('LoginPage', () => {
       ),
     })
     await submit(user)
-    expect(screen.getByRole('button', { name: /Se connecter/ })).toBeDisabled()
+    expectBusy(screen.getByRole('button', { name: /Se connecter/ }))
+    expect(screen.getByLabelText(/Identifiant/)).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/Mot de passe/)).toHaveAttribute('readonly')
+    expect(document.body).not.toHaveFocus()
     resolve()
+  })
+
+  describe('premier lancement', () => {
+    const answer = (body, status = 200) =>
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })))
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('mène à la première configuration quand aucun administrateur n’existe', async () => {
+      answer({ setupRequired: true })
+      const { router } = renderLogin()
+      await waitFor(() => expect(router.state.location.pathname).toBe('/setup'))
+    })
+
+    it.each([
+      ['l’installation est faite', { setupRequired: false }, 200],
+      ['le serveur ne répond pas', {}, 503],
+    ])('reste sur la connexion quand %s', async (_label, body, status) => {
+      answer(body, status)
+      const { router } = renderLogin()
+      await waitFor(() => expect(fetch).toHaveBeenCalled())
+      expect(await screen.findByRole('button', { name: 'Se connecter' })).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/login')
+    })
   })
 
   it('renvoie un utilisateur déjà connecté vers l’accueil', async () => {
     const { router } = renderLogin({ status: 'authenticated' })
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+  })
+})
+
+describe('LoginPage — compte supprimé', () => {
+  it('explique que le compte et ses données ont été supprimés', () => {
+    const router = createMemoryRouter([{ path: '/login', element: <LoginPage /> }], {
+      initialEntries: [{ pathname: '/login', state: { reason: 'account-deleted' } }],
+    })
+    render(
+      <AuthContext.Provider value={{ status: 'anonymous', login: vi.fn(), logout: vi.fn() }}>
+        <RouterProvider router={router} />
+      </AuthContext.Provider>,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Votre compte et ses données ont été supprimés.')
   })
 })

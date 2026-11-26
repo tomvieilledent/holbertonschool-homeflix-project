@@ -1,0 +1,42 @@
+.medias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.medias > h2 {
+  margin: 0;
+}
+
+.medias__hint,
+.medias__count {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.medias__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.medias__search .field {
+  flex: 1 1 16rem;
+}
+
+.medias__notice:empty {
+  display: none;
+}
+
+.medias__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.medias__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

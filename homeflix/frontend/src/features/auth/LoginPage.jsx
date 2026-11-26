@@ -7,6 +7,7 @@ import '@/features/auth/AuthForm.css'
 import { useAuth } from '@/features/auth/authContext'
 import { safeNext } from '@/features/auth/redirect'
 import SessionExpiredNotice from '@/features/auth/SessionExpiredNotice'
+import useSetupRequired from '@/features/auth/useSetupRequired'
 
 /** Message d'échec de connexion : le 401 reste générique (rien sur l'existence du compte). */
 const failureMessage = (error) =>
@@ -25,9 +26,12 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const next = safeNext(params.get('next'))
+  const setupRequired = useSetupRequired(status === 'anonymous')
 
   if (status === 'loading') return <Spinner size="lg" label="Vérification de votre session…" />
   if (status === 'authenticated' && !submitting) return <Navigate to={next} replace />
+  // Premier lancement : aucun compte n'existe encore, la connexion mène à la création de l'administrateur.
+  if (setupRequired) return <Navigate to="/setup" replace />
 
   if (state?.reason === 'session-expired') {
     // Même URL (donc `?next=`), sans l'état : l'écran d'expiration laisse place à la connexion.
@@ -63,6 +67,9 @@ export default function LoginPage() {
       {state?.reason === 'setup-done' && (
         <p role="status">Administrateur créé. Connectez-vous pour continuer.</p>
       )}
+      {state?.reason === 'account-deleted' && (
+        <p role="status">Votre compte et ses données ont été supprimés.</p>
+      )}
       {error && (
         <p className="auth-form__error" role="alert">
           {error}
@@ -75,7 +82,7 @@ export default function LoginPage() {
         autoComplete="username"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
-        disabled={submitting}
+        readOnly={submitting}
       />
       <Field
         label="Mot de passe"
@@ -85,9 +92,9 @@ export default function LoginPage() {
         autoComplete="current-password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        disabled={submitting}
+        readOnly={submitting}
       />
-      <Button type="submit" loading={submitting} disabled={submitting}>
+      <Button type="submit" loading={submitting}>
         Se connecter
       </Button>
     </form>

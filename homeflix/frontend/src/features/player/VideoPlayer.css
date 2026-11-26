@@ -29,11 +29,13 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  max-height: max(10rem, calc(100dvh - 6rem)); /* écran bas (téléphone en paysage) : image et contrôles visibles */
   aspect-ratio: 16 / 9;
   background: #000;
 }
 
 .player--fullscreen .player__stage {
+  max-height: none;
   aspect-ratio: auto;
 }
 
@@ -63,6 +65,12 @@
   background: var(--color-surface);
 }
 
+/* Boutons resserrés (la hauteur tactile reste celle de .btn) : les contrôles tiennent sur moins de lignes. */
+.player__controls .btn {
+  min-width: 2.75rem;
+  padding-inline: var(--space-3);
+}
+
 .player__time {
   min-width: 6.5rem;
   color: var(--color-text);
@@ -76,7 +84,7 @@
 }
 
 .player__slider--seek {
-  flex: 1 1 12rem;
+  flex: 1 1 6rem; /* prend la place restante ; en paysage, tous les contrôles tiennent sur une ligne */
   min-width: 0;
 }
 
@@ -87,4 +95,11 @@
 .player__slider:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* Téléphone en portrait : la barre de position occupe sa propre ligne, entre la lecture et le son. */
+@media (max-width: 34.99rem) {
+  .player__slider--seek {
+    flex-basis: 100%;
+  }
 }

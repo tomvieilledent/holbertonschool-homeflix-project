@@ -19,7 +19,7 @@ const BY_CODE = {
   ROOT_NOT_FOUND: 'Ce dossier est introuvable. Vérifiez le chemin et que le dossier est bien monté.',
   ROOT_NOT_READABLE: 'HomeFlix n’a pas le droit de lire ce dossier. Vérifiez ses permissions.',
   ROOT_NOT_A_DIRECTORY: 'Ce chemin est un fichier, pas un dossier.',
-  ROOT_NOT_ALLOWED: 'Ce dossier n’est pas dans un emplacement autorisé.',
+  ROOT_NOT_ALLOWED: 'Ce dossier n’est pas dans un emplacement autorisé : choisissez un dossier situé sous /media ou /downloads.',
   ROOT_OVERLAP: 'Ce dossier chevauche un dossier déjà configuré.',
   INDEX_ALREADY_RUNNING: 'Une indexation est déjà en cours.',
   MEDIA_FILE_MISSING: 'Le fichier de ce film est introuvable.',

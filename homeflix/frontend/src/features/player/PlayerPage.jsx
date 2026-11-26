@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Button from '@/components/Button'
 import ErrorState from '@/components/ErrorState'
 import Spinner from '@/components/Spinner'
@@ -11,25 +11,17 @@ import { isAbortError } from '@/services/api'
 import { getProgress, resetProgress } from '@/services/library'
 import { diagnoseStream, getStreamTicket } from '@/services/streaming'
 
-/** Position de départ de l'URL (`?t=312`, en secondes) ; toute valeur invalide ou négative donne 0. */
-export const startFromParams = (params) => {
-  const seconds = Number(params.get('t'))
-  return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0
-}
-
 /**
  * Lecture d'un film : demande un ticket de streaming (`POST /media/{id}/stream-ticket`) puis charge le
- * flux dans le lecteur, à la position `?t=` si elle est donnée, sinon à la dernière position du profil
- * (un film terminé repart du début). La position est sauvegardée pendant la lecture (voir `useProgressSaver`),
- * et « Recommencer » l'efface. Si la lecture échoue en cours de route, on cherche pourquoi (voir
- * `resolvePlaybackFailure`) : ticket expiré → nouveau ticket demandé une fois et reprise à la même position ;
- * sinon un message clair (fichier manquant, accès refusé, format non supporté, connexion perdue…).
+ * flux dans le lecteur, à la dernière position enregistrée du profil (un film terminé repart du début). La
+ * position ne vient jamais de l'URL : un rechargement reviendrait à un point dépassé. Elle est sauvegardée
+ * pendant la lecture (voir `useProgressSaver`), et « Recommencer » l'efface. Si la lecture échoue en cours de
+ * route, on cherche pourquoi (voir `resolvePlaybackFailure`) : ticket expiré → nouveau ticket demandé une fois et
+ * reprise à la même position ; sinon un message clair (fichier manquant, accès refusé, format non supporté,
+ * connexion perdue…).
  */
 export default function PlayerPage() {
   const { mediaId } = useParams()
-  const [params] = useSearchParams()
-  const explicitStart = params.has('t')
-  const startParam = startFromParams(params)
   const [ticket, setTicket] = useState(null) // null = chargement
   const [resumeKnown, setResumeKnown] = useState(false)
   const [playerKey, setPlayerKey] = useState(0)
@@ -55,26 +47,20 @@ export default function PlayerPage() {
   useEffect(() => {
     refreshes.current = 0
     const controller = new AbortController()
-    const setStart = (seconds) => {
-      if (controller.signal.aborted) return
-      resumeAt.current = seconds
-      setResumeKnown(true)
-    }
-    if (explicitStart) {
-      setStart(startParam) // reprise demandée par la fiche (« Reprendre à … »)
-    } else {
-      setResumeKnown(false)
-      // Sans position dans l'URL (ex. rechargement de la page) : dernière position du profil.
-      getProgress(mediaId, controller.signal)
-        .then((progress) => playAction(progress).startAt, () => 0)
-        .then(setStart)
-    }
+    setResumeKnown(false)
+    getProgress(mediaId, controller.signal)
+      .then((progress) => playAction(progress).startAt, () => 0)
+      .then((seconds) => {
+        if (controller.signal.aborted) return
+        resumeAt.current = seconds
+        setResumeKnown(true)
+      })
     load(controller.signal)
     return () => {
       controller.abort()
       diagnosing.current?.abort()
     }
-  }, [load, mediaId, explicitStart, startParam])
+  }, [load, mediaId])
 
   const restart = () => {
     discard() // la position en attente ne doit pas repartir après la réinitialisation
@@ -116,7 +102,11 @@ export default function PlayerPage() {
     load()
   }
 
-  const back = <Link to={`/media/${encodeURIComponent(mediaId)}`}>Retour à la fiche</Link>
+  const back = (
+    <Link className="touch-link" to={`/media/${encodeURIComponent(mediaId)}`}>
+      Retour à la fiche
+    </Link>
+  )
 
   let content
   if (error) {
