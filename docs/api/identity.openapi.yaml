@@ -114,6 +114,7 @@ paths:
     get:
       tags: [Auth]
       summary: Compte, rôle et profil actif de la session
+      description: Compte désactivé → `403 ACCOUNT_DISABLED`.
       responses:
         "200":
           description: Session courante
@@ -124,6 +125,7 @@ paths:
                 account: { id: 0b2f6c1e-3c7a-4a3e-9d55-1f0a6a1d2c10, username: admin, email: admin@maison.fr, role: ADMIN, enabled: true, createdAt: "2026-11-16T08:00:00Z" }
                 activeProfileId: 7d9e1b52-0f4c-4a52-8a10-2c1c5f6f3a01
         "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /profiles:
     get:
       tags: [Profiles]
