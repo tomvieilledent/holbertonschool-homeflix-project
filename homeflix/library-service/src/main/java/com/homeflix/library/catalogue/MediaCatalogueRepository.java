@@ -91,6 +91,26 @@ public class MediaCatalogueRepository {
         return total == null ? 0 : total;
     }
 
+    private static final String COMPLETED = """
+         FROM progress p
+        JOIN media_items i ON i.id = p.media_id
+        JOIN media_metadata m ON m.media_id = i.id
+        WHERE p.profile_id = :profileId AND p.state = 'COMPLETED' AND i.deleted = false""";
+
+    /** Titres terminés par ce profil (médias non retirés), dernière lecture en premier. */
+    public List<MediaView> findCompleted(UUID profileId, int limit, long offset) {
+        return jdbc.query("""
+            SELECT i.id, m.title, m.description, m.poster_path, m.genres, m.year, m.duration_seconds,
+                   i.availability, i.added_at""" + COMPLETED + " ORDER BY p.updated_at DESC, i.id LIMIT :limit OFFSET :offset",
+            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), mapper);
+    }
+
+    public long countCompleted(UUID profileId) {
+        Long total = jdbc.queryForObject("SELECT count(*)" + COMPLETED,
+            new MapSqlParameterSource("profileId", profileId), Long.class);
+        return total == null ? 0 : total;
+    }
+
     /** Titre commencé par un profil : le média et sa progression (voir `ContinueWatching`). */
     public record ContinueWatching(MediaView media, int positionSeconds, int durationSeconds, String state,
             Instant updatedAt) {

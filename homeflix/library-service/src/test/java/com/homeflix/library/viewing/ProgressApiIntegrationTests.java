@@ -157,6 +157,20 @@ class ProgressApiIntegrationTests {
     }
 
     @Test
+    void completedTitlesAreListedPerProfileUntilTheyAreReset() throws Exception {
+        save(lea, 590, 600).andExpect(jsonPath("$.state").value("COMPLETED"));
+        save(tom, 100, 600).andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/me/completed").with(as(lea))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].id").value(media.toString()));
+        mvc.perform(get("/api/v1/me/completed").with(as(tom))).andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/me/completed?size=51").with(as(lea))).andExpect(status().isBadRequest());
+
+        mvc.perform(delete("/api/v1/media/" + media + "/progress").with(as(lea))).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/me/completed").with(as(lea))).andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
     void deleteResetsToNotStartedAndIsIdempotent() throws Exception {
         save(lea, 300, 600).andExpect(status().isOk());
         mvc.perform(delete("/api/v1/media/" + media + "/progress").with(as(lea))).andExpect(status().isNoContent());
