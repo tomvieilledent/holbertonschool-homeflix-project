@@ -64,7 +64,7 @@ class HttpLibraryClientTests {
 		HttpServer s = server(400, calls, new String[1]);
 		try {
 			assertThatThrownBy(() -> client(s).registerCompleted("a.mkv", "A"))
-					.isInstanceOf(LibraryUnavailableException.class);
+					.isInstanceOf(LibraryRejectedException.class);
 			assertThat(calls).hasValue(1);
 		} finally {
 			s.stop(0);

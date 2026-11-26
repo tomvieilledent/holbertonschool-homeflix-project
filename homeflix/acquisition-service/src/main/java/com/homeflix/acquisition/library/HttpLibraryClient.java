@@ -48,7 +48,7 @@ class HttpLibraryClient implements LibraryClient {
                 return;
             } catch (HttpClientErrorException e) {
                 log.warn("Library a refusé le fichier terminé (HTTP {})", e.getStatusCode().value());
-                throw new LibraryUnavailableException(); // une requête refusée ne se rejoue pas
+                throw new LibraryRejectedException(); // une requête refusée ne se rejoue pas
             } catch (RestClientException e) {
                 log.warn("Appel à Library en échec (essai {}/{})", attempt, ATTEMPTS);
                 if (attempt < ATTEMPTS) {

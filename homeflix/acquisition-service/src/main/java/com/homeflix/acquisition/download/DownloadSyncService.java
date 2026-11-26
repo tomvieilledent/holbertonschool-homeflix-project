@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.homeflix.acquisition.catalogue.CatalogueEntry;
 import com.homeflix.acquisition.catalogue.CatalogueEntryRepository;
 import com.homeflix.acquisition.library.LibraryClient;
+import com.homeflix.acquisition.library.LibraryRejectedException;
 import com.homeflix.acquisition.library.LibraryUnavailableException;
 import com.homeflix.acquisition.torrent.TorrentClient;
 import com.homeflix.acquisition.torrent.TorrentClientUnavailableException;
@@ -33,7 +34,8 @@ import com.homeflix.acquisition.torrent.TorrentStatus;
 public class DownloadSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadSyncService.class);
-    static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mkv", "webm", "avi", "mov", "m4v");
+    /** Mêmes extensions que l'indexation de Library : tout autre fichier y serait refusé. */
+    static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mkv", "webm");
 
     private final DownloadRepository downloads;
     private final CatalogueEntryRepository entries;
@@ -146,6 +148,9 @@ public class DownloadSyncService {
             library.registerCompleted(file.get(), title);
         } catch (LibraryUnavailableException e) {
             fail(id, "LIBRARY_UNAVAILABLE");
+            return;
+        } catch (LibraryRejectedException e) {
+            fail(id, "LIBRARY_REJECTED");
             return;
         }
         update(id, d -> {
