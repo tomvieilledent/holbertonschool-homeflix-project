@@ -129,7 +129,12 @@ export default function DownloadsPanel({ downloads, stalled, onResume, onCancel 
           onClose={() => setTarget(null)}
         >
           <p>
-            Le téléchargement sera arrêté. Vous pourrez le relancer plus tard depuis le catalogue ci-dessus.
+            Le téléchargement sera arrêté et les données reçues en partie seront supprimées. Un fichier déjà reçu en
+            entier reste sur le serveur.
+          </p>
+          <p>
+            Aucun film de la bibliothèque n’est supprimé. Vous pourrez relancer le téléchargement depuis le catalogue
+            ci-dessus.
           </p>
         </ConfirmModal>
       )}

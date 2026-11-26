@@ -136,6 +136,16 @@ describe('DownloadsPanel : annulation confirmée', () => {
     expect(onCancel).not.toHaveBeenCalled()
   })
 
+  it('dit ce qui reste sur le serveur et dans la bibliothèque après une annulation', async () => {
+    renderPanel(SAMPLE)
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler le téléchargement de Film en cours' }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/les données reçues en partie seront supprimées/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Un fichier déjà reçu en entier reste sur le serveur/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Aucun film de la bibliothèque n’est supprimé/)).toBeInTheDocument()
+  })
+
   it('annule le bon téléchargement après confirmation, puis ferme', async () => {
     const onCancel = vi.fn().mockResolvedValue()
     renderPanel(SAMPLE, { onCancel })
