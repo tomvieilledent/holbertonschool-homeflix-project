@@ -36,8 +36,8 @@ class IndexScannerTests {
 		when(roots.findByRemovedFalseOrderByCreatedAtAsc()).thenReturn(List.of(root));
 		IndexWriter writer = mock(IndexWriter.class);
 		UUID bId = UUID.randomUUID();
-		when(writer.upsert(any(), eq("a.mp4"), anyLong(), any())).thenThrow(new IllegalStateException("écriture impossible"));
-		when(writer.upsert(any(), eq("b.mp4"), anyLong(), any())).thenReturn(new IndexWriter.Outcome(IndexWriter.Result.UNCHANGED, bId));
+		when(writer.upsert(any(), eq("a.mp4"), anyLong(), any(), any())).thenThrow(new IllegalStateException("écriture impossible"));
+		when(writer.upsert(any(), eq("b.mp4"), anyLong(), any(), any())).thenReturn(new IndexWriter.Outcome(IndexWriter.Result.UNCHANGED, bId));
 		IndexJob job = new IndexJob();
 
 		new IndexScanner(roots, writer, new SafePathResolver()).scan(job);
