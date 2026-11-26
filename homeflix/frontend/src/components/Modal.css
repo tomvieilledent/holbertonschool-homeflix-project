@@ -47,8 +47,10 @@
   cursor: pointer;
 }
 
+/* Sur un téléphone, les boutons aux libellés longs passent à la ligne au lieu de sortir de la fenêtre. */
 .modal__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-3);
   margin-top: var(--space-5);
