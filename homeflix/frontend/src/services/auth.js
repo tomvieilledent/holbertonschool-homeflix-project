@@ -43,6 +43,24 @@ export async function signIn(username, password) {
   return loadMe()
 }
 
+/**
+ * Remplace le mot de passe du compte connecté (`POST /auth/change-password`), obligatoire quand il est temporaire. Le
+ * serveur ferme les autres sessions et en ouvre une nouvelle (jeton et cookie). Lève une `ApiError` :
+ * `INVALID_CURRENT_PASSWORD` ou `VALIDATION_ERROR` (la session reste ouverte).
+ * @param {string} currentPassword
+ * @param {string} newPassword 12 à 128 caractères, différent de l'actuel.
+ * @returns {Promise<{account: object, activeProfileId?: string}>} Le compte relu avec la nouvelle session.
+ */
+export async function changePassword(currentPassword, newPassword) {
+  const token = await apiFetch('identity', '/v1/auth/change-password', {
+    method: 'POST',
+    body: { currentPassword, newPassword },
+  })
+  setAccessToken(token.accessToken)
+  forgetProfile() // la nouvelle session n'a pas de profil actif
+  return loadMe()
+}
+
 /** Déconnexion (idempotente) : la session locale est effacée même si le serveur est injoignable. */
 export async function signOut() {
   try {

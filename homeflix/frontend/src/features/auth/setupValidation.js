@@ -13,6 +13,21 @@ export function passwordError(password) {
 }
 
 /**
+ * Validation du remplacement d'un mot de passe temporaire. Retourne `{ champ: message }`, vide si valide.
+ * @param {{currentPassword: string, newPassword: string, confirmation: string}} values
+ */
+export function validatePasswordChange({ currentPassword, newPassword, confirmation }) {
+  const errors = {}
+  if (!currentPassword) errors.currentPassword = 'Saisissez le mot de passe temporaire.'
+  const problem = passwordError(newPassword)
+  if (problem) errors.newPassword = problem
+  else if (newPassword === currentPassword) {
+    errors.newPassword = 'Le nouveau mot de passe doit être différent du mot de passe temporaire.'
+  } else if (confirmation !== newPassword) errors.confirmation = 'Les mots de passe ne correspondent pas.'
+  return errors
+}
+
+/**
  * Validation côté client (le serveur reste l'autorité). Retourne `{ champ: message }`, vide si valide.
  * @param {{setupToken: string, username: string, email: string, password: string, confirmation: string}} values
  */
