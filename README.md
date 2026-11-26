@@ -123,7 +123,7 @@ Dans **Administration → Comptes**, cliquez sur **Créer un compte** (rôle « 
 3. Ouvrez l'**Accueil** ou le **Catalogue** (recherche par titre, filtre par genre), choisissez un film, puis lancez la lecture.
 4. Vous pouvez avancer et reculer dans la vidéo. La position est enregistrée : le film reprend là où vous vous êtes arrêté.
 
-> **À savoir.** Il n'y a ni affiches, ni durée sur les cartes, ni sous-titres dans le lecteur. Les autres limites sont dans [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md).
+> **À savoir.** Il n'y a ni affiches ni sous-titres dans le lecteur, et la durée n'est affichée que pour les fichiers MP4. Les autres limites sont dans [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md).
 
 ### Télécharger un film autorisé en P2P (administrateur)
 
@@ -133,7 +133,7 @@ Le catalogue des contenus téléchargeables est **fermé** : seules des entrées
 2. Ouvrez **Administration → Acquisition** et cliquez sur **Télécharger**. La première fois, lisez et acceptez le rappel des droits.
 3. Suivez la progression dans « Téléchargements » jusqu'à « Terminé » : le film apparaît alors dans le catalogue. Il n'a que son titre : complétez année et genres dans « Médias ».
 
-Un film déjà présent dans la bibliothèque n'est pas proposé au téléchargement (« Dans la bibliothèque »). Le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur. Les fichiers terminés arrivent dans `/downloads/complete`.
+Un film arrivé par un téléchargement HomeFlix est ensuite signalé « Dans la bibliothèque » ; un film seulement indexé depuis un dossier reste proposé au téléchargement. Le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur. Les fichiers terminés arrivent dans `/downloads/complete`.
 
 ## 4. Configuration
 

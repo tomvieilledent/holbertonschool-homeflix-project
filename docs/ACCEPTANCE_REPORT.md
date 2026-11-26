@@ -21,11 +21,11 @@
 | 3 | Chercher et lire | Conforme (préliminaire) | _à faire_ | |
 | 4 | Pause puis reprise | Conforme (préliminaire) | _à faire_ | |
 | 5 | Changer de profil | Conforme (préliminaire) | _à faire_ | |
-| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Essai sur le réseau de la soutenance ; torrent non retiré après un échec ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
+| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Essai sur le réseau de la soutenance ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
 | 7 | Action non autorisée | Conforme (préliminaire) | _à faire_ | |
 | 8 | Redémarrer les conteneurs | Conforme (préliminaire) | _à faire_ | |
 | 9 | Fichier ou service indisponible | Conforme (préliminaire) | _à faire_ | |
-| 10 | Revue de l'agent IA | **Non exécuté** | _à faire_ | Le rapport de l'agent n'existe pas ([#113](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/113)) |
+| 10 | Revue de l'agent IA | Conforme (préliminaire) | _à faire_ | |
 
 **Automatisation déjà en place :** tests d'intégration des services, tests Playwright du parcours principal (`homeflix/e2e`, #110), test de fumée de la pile complète, `scripts/test-persistence.sh` et `scripts/test-backup-restore.sh`, lancés par la CI.
 
@@ -85,7 +85,7 @@
 
 ## Scénario 6 : acquérir un contenu manquant (P2P)
 
-**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 à 8 depuis l'interface les 25 et 26/11 (commit `4652b9f`). Reste l'essai sur le réseau de la soutenance, et un défaut relevé à l'étape 8.
+**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 à 8 depuis l'interface les 25 et 26/11 (commit `4652b9f`, étape 8 rejouée après #282). Reste l'essai sur le réseau de la soutenance.
 
 | Étape | Attendu | Obtenu (préliminaire) | Preuve | Statut |
 |---|---|---|---|---|
@@ -96,7 +96,7 @@
 | S6.5 Suivre jusqu'à `COMPLETED` | La progression avance, état final `COMPLETED` | Progression visible sans recharger (20 % relevé), « Terminé » à 100 % en moins d'une minute (25/11) | `acceptance/s06-03-progression-20-pourcent.png`, `s06-04-etat-termine-100-pourcent.png` | Conforme (préliminaire) |
 | S6.6 Le fichier est indexé, visible puis lisible | Film dans le catalogue et lisible | Sintel dans « Médias » et sur l'accueil (« Disponible »), lecture démarrée, durée 14:48 ; ni année ni genre | `acceptance/s06-05-sintel-dans-medias.png`, `s06-06-sintel-accueil.png`, `s06-07-lecture-sintel.png` | Conforme (préliminaire) |
 | S6.7 Annuler en cours de route | État `CANCELLED`, aucun film ajouté | Annulé à 60 % ; aucune donnée dans `/downloads` ; Sintel absent de la bibliothèque (26/11) | `acceptance/s06-08-annulation.png`, `s06-09-annulation-medias-sans-sintel.png` | Conforme (préliminaire) |
-| S6.8 Arrêter le client BitTorrent pendant un transfert | État `FAILED`, message lisible, relance possible | « Échoué » à 13 % avec « Le service de téléchargement est injoignable. » ; après redémarrage le torrent a terminé seul sans que l'état change ; « Télécharger » de nouveau → « Terminé », film indexé (26/11) | `acceptance/s06-10-echec-client-coupe.png`, `s06-12-relance-terminee.png`, `s06-13-sintel-apres-relance.png` | **Partiel** (`KNOWN_LIMITS.md` L15) |
+| S6.8 Arrêter le client BitTorrent pendant un transfert | État `FAILED`, message lisible, relance possible | « Échoué » à 53 % avec « Le service de téléchargement est injoignable. » ; après redémarrage, liste des torrents vide et aucune donnée dans `/downloads` ; relance depuis zéro réussie, film indexé (26/11, après #282) | `acceptance/s06-14-echec-apres-correctif.png`, `s06-15-relance-apres-echec.png`, `s06-16-sintel-apres-relance.png` | Conforme (préliminaire) |
 
 ## Scénario 7 : action non autorisée
 
@@ -141,14 +141,14 @@ Contrôles complémentaires faits le 24/11 : compte désactivé refusé (403 `AC
 
 ## Scénario 10 : revue de l'agent IA
 
-**Statut : Non exécuté.** Le rapport de l'agent (`docs/ai-review/REPORT.md`) n'existe pas ([#113](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/113)). La mission écrite existe ([`AI_AGENT_ROLE.md`](AI_AGENT_ROLE.md)).
+**Statut : Conforme (préliminaire).** Rapport dans [`ai-review/REPORT.md`](ai-review/REPORT.md) (#289).
 
-| Étape | Attendu | Obtenu | Preuve | Statut |
+| Étape | Attendu | Obtenu (préliminaire) | Preuve | Statut |
 |---|---|---|---|---|
 | S10.1 Mission écrite | Objectif, entrées, outils, limites, livrable, revue | Écrite | `AI_AGENT_ROLE.md` | Conforme |
-| S10.2 Rapport de l'agent | `docs/ai-review/REPORT.md`, constats numérotés | _inexistant_ | | Non exécuté |
-| S10.3 Décision humaine sur chaque constat | Accepté, ou rejeté avec justification | _non fait_ | | Non exécuté |
-| S10.4 PR liée à un constat accepté | Mention « Constat AI-NN, vérifié par … » | _non fait_ | | Non exécuté |
+| S10.2 Rapport de l'agent | `docs/ai-review/REPORT.md`, constats numérotés | 14 constats (AI-01 à AI-14) | `ai-review/REPORT.md` | Conforme |
+| S10.3 Décision humaine sur chaque constat | Accepté, ou rejeté avec justification | 12 acceptés, 1 à clarifier (AI-12, tranché par #313), 1 rejeté (AI-14), décisions validées par Tom | `ai-review/REPORT.md`, « Tableau de suivi » | Conforme |
+| S10.4 PR liée à un constat accepté | Mention « Constat AI-NN, vérifié par … » | « Constat AI-01 (agent IA), vérifié par Tom » ; AI-01 reproduit puis corrigé, seconde relecture par Haitu | [#286](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/286) | Conforme |
 
 ## Complément : recette visuelle des écrans d'administration (25/11/2026)
 
@@ -159,7 +159,7 @@ Passage manuel sous Chrome (Firefox pour les sessions et le contrôle d'accès) 
 | Accès | Bouton « Administration » réservé au rôle ADMIN ; `/admin/comptes` avec `demo-invite` : « Accès refusé » ; `/compte` sans session : redirection vers la connexion | Conforme |
 | Comptes | Création (champs obligatoires, doublon), promotion et rétrogradation avec confirmation, désactivation puis réactivation, suppression ; administrateur actuel verrouillé | Conforme |
 | Connexion d'un compte désactivé ou inexistant | Même message « Identifiant ou mot de passe incorrect. » avec un mauvais mot de passe ; message « Ce compte est désactivé » seulement avec le bon | Conforme |
-| Session d'un compte désactivé | Elle répond encore jusqu'au prochain rechargement (jeton de 15 min), F5 la ferme ; la confirmation annonce à tort une fermeture « immédiate » | **Écart de texte** ([#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265)) |
+| Session d'un compte désactivé | Elle répond encore jusqu'au prochain rechargement (jeton de 15 min), F5 la ferme ; la confirmation annonçait à tort une fermeture « immédiate » (texte corrigé depuis par #317) | **Écart de texte** ([#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265)) |
 | Dossiers médias | Chemin vide, introuvable, hors zone (`/etc`), déjà couvert : messages clairs ; retrait et ajout de `/downloads` | Conforme |
 | Indexation | Compteurs, aucun doublon, bouton désactivé pendant l'exécution, fichiers intacts | Conforme (rechargement en cours d'indexation : non testé) |
 | Médias | Recherche, état vide, modification (titre visible côté utilisateur), année invalide refusée, retrait sans suppression du fichier | Conforme |
@@ -170,23 +170,38 @@ Passage manuel sous Chrome (Firefox pour les sessions et le contrôle d'accès) 
 
 Preuves à ranger dans `acceptance/` : captures des écrans ci-dessus (sans mot de passe ni jeton).
 
+## Complément : recette après les fusions du 26/11
+
+Passage manuel sur la pile réelle remise à zéro, commit `12d033e`. Il porte sur les principales nouveautés visibles du jour (ni l'échec sans pair #306, ni les titres terminés #310) et ne remplace pas le passage final.
+
+| # | Vérifié | Obtenu | Preuve | Statut |
+|---|---|---|---|---|
+| R1 | Durée des films (#305) | « 10 min » et « 15 min » sur l'accueil, dans « Médias » et sur les fiches | [`s02-duree-accueil.png`](acceptance/s02-duree-accueil.png) | Conforme |
+| R2 | Pause puis reprise | « Reprendre à 2:00 » et barre de progression ; F5 conserve le profil (compte à deux profils) | [`s04-reprendre-a-2-00.png`](acceptance/s04-reprendre-a-2-00.png) | Conforme |
+| R3 | Téléchargement visible dans le catalogue (#307) | « En téléchargement », puis « Terminé » à 100 % | [`s06-17-en-telechargement.png`](acceptance/s06-17-en-telechargement.png) | Conforme |
+| R4 | Film déjà téléchargé (#308) | « Dans la bibliothèque · Voir » à la place de « Télécharger » | [`s06-18-dans-la-bibliotheque.png`](acceptance/s06-18-dans-la-bibliotheque.png) | Conforme |
+| R4 bis | Retélécharger un film retiré | « Échoué » à 0 %, refus de Library (409) | [`s06-19-retelechargement-refuse.png`](acceptance/s06-19-retelechargement-refuse.png) | **Non conforme** ([#316](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/316)) |
+| R5 | Annulation en cours de route (#307) | Aucune fiche « Sintel » au catalogue | | Conforme |
+| R6 | Mot de passe réinitialisé (#274, #315) | Changement imposé ; mauvais mot de passe actuel refusé ; ancien temporaire refusé après le changement | [`s07-changement-impose.png`](acceptance/s07-changement-impose.png) | Conforme |
+| R7 | Compte désactivé avec une session ouverte (#314) | Au changement de profil : retour à la connexion avec « Ce compte est désactivé » | [`s07-compte-desactive.png`](acceptance/s07-compte-desactive.png) | Conforme |
+| R8 | Suppression d'un compte (#309) | Favoris, progression, acquittement et compte : 1 avant, 0 après ; 1 téléchargement conservé, anonymisé | Comptages dans les trois bases | Conforme |
+
 ## Défauts connus
 
 À lire avec [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md), qui détaille chaque limite.
 
 | Défaut | Effet sur les scénarios | Issue |
 |---|---|---|
-| Un mot de passe temporaire ne peut jamais être changé | Hors scénarios, écart de sécurité | [#223](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/223) |
 | Un compte désactivé garde l'accès jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | `ARCHITECTURE.md` §9 |
-| La confirmation de désactivation d'un compte annonce une fermeture « immédiate » des sessions | Hors scénarios, texte inexact | [#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265) |
 | Un film retiré du catalogue ne peut pas être rajouté depuis l'écran | Scénario 2 (si retrait par erreur) | `KNOWN_LIMITS.md` L13 |
-| Après un échec par arrêt du client, le torrent reste et termine seul alors que l'état reste « Échoué » (contournement : relancer) | Scénario 6 | `KNOWN_LIMITS.md` L15 |
+| Un film téléchargé puis retiré ne peut pas être retéléchargé | Scénario 6 (si retrait après téléchargement) | [#316](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/316) |
+| Retirer puis rajouter un dossier duplique les films | Scénario 2 (si retrait d'un dossier) | [#277](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/277) |
 | Les doublons de contenu ne sont pas détectés | Scénarios 2 et 6 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) |
 | Titres affichés = noms de fichier tant que les métadonnées ne sont pas corrigées | Scénarios 2 et 3 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) |
 | Pas de HTTPS dans l'application | Hors scénarios | README, section 6 |
 | Un service Java plante parfois au démarrage (réessai automatique) | Durée du reset | `DEMO.md` |
 | Le P2P dépend de pairs extérieurs | Scénario 6 | `legal/P2P_DEMO.md` |
-| Pas de « Se déconnecter » sur « Qui regarde ? », profil actif absent de l'en-tête | Un clic de plus | [#255](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/255), [#242](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/242) |
+| Profil actif absent de l'en-tête | Confort | [#242](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/242) |
 
 ## Preuves
 
