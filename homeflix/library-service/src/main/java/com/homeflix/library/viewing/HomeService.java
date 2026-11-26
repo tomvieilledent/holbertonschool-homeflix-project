@@ -9,7 +9,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.homeflix.library.api.ApiException;
 import com.homeflix.library.catalogue.MediaCatalogueRepository;
+import com.homeflix.library.catalogue.MediaPage;
 import com.homeflix.library.catalogue.MediaView;
 
 /**
@@ -37,6 +39,19 @@ public class HomeService {
             .map(e -> new HomeResponse.GenreSection(e.getKey(), e.getValue())).toList();
         return new HomeResponse(continueWatching(profileId), catalogue.findRecentlyAdded(SECTION_SIZE), categories,
             catalogue.findFavourites(profileId, SECTION_SIZE, 0));
+    }
+
+    @Transactional(readOnly = true)
+    public MediaPage completed(UUID profileId, int page, int size) {
+        if (page < 0) {
+            throw ApiException.validation("page", "La page doit être positive ou nulle.");
+        }
+        if (size < 1 || size > FavouriteService.MAX_SIZE) {
+            throw ApiException.validation("size", "La taille doit être comprise entre 1 et " + FavouriteService.MAX_SIZE + ".");
+        }
+        long total = catalogue.countCompleted(profileId);
+        List<MediaView> items = catalogue.findCompleted(profileId, size, (long) page * size);
+        return new MediaPage(items, page, size, total, (int) ((total + size - 1) / size));
     }
 
     @Transactional(readOnly = true)
