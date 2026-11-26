@@ -113,6 +113,23 @@ class DownloadSyncServiceTests {
 	}
 
 	@Test
+	void aTorrentAbandonedByAClientOutageIsRemovedOnceTheClientIsBack() {
+		download.setState(DownloadState.FAILED);
+		download.setErrorCode("TORRENT_CLIENT_UNAVAILABLE");
+		when(downloads.findByStateAndErrorCodeAndTorrentIdIsNotNull(DownloadState.FAILED, "TORRENT_CLIENT_UNAVAILABLE"))
+				.thenReturn(List.of(download));
+		when(downloads.findByStateIn(DownloadState.ACTIVE)).thenReturn(List.of());
+		doThrow(new TorrentClientUnavailableException()).when(torrent).cancel("abc");
+		sync.sync();
+		assertThat(download.getTorrentId()).isEqualTo("abc"); // toujours injoignable : on réessaie plus tard
+		org.mockito.Mockito.doNothing().when(torrent).cancel("abc");
+		sync.sync();
+		verify(torrent, org.mockito.Mockito.times(2)).cancel("abc");
+		assertThat(download.getTorrentId()).isNull();
+		assertThat(download.getState()).isEqualTo(DownloadState.FAILED);
+	}
+
+	@Test
 	void pathChecks() {
 		assertThat(DownloadSyncService.isSafeVideoPath("a/b.MP4")).isTrue();
 		assertThat(DownloadSyncService.isSafeVideoPath("a/../b.mp4")).isFalse();

@@ -14,6 +14,9 @@ public interface DownloadRepository extends JpaRepository<Download, UUID> {
     /** Téléchargements actifs (en file ou en cours) pour ces entrées : sert à renseigner `activeDownloadId`. */
     List<Download> findByEntryIdInAndStateIn(Collection<UUID> entryIds, Collection<DownloadState> states);
 
+    /** Échecs « client injoignable » dont le torrent n'a pas encore été retiré du client (voir DownloadSyncService). */
+    List<Download> findByStateAndErrorCodeAndTorrentIdIsNotNull(DownloadState state, String errorCode);
+
     List<Download> findByStateIn(Collection<DownloadState> states);
 
     Page<Download> findByState(DownloadState state, Pageable pageable);
