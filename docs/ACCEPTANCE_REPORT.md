@@ -21,7 +21,7 @@
 | 3 | Chercher et lire | Conforme (préliminaire) | _à faire_ | |
 | 4 | Pause puis reprise | Conforme (préliminaire) | _à faire_ | |
 | 5 | Changer de profil | Conforme (préliminaire) | _à faire_ | |
-| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Synchronisation des états ([#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99)), transfert réel ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
+| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Essai sur le réseau de la soutenance ; torrent non retiré après un échec ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
 | 7 | Action non autorisée | Conforme (préliminaire) | _à faire_ | |
 | 8 | Redémarrer les conteneurs | Conforme (préliminaire) | _à faire_ | |
 | 9 | Fichier ou service indisponible | Conforme (préliminaire) | _à faire_ | |
@@ -85,7 +85,7 @@
 
 ## Scénario 6 : acquérir un contenu manquant (P2P)
 
-**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 et 6 ne le sont pas, parce que l'état d'un téléchargement ne se met pas à jour tout seul (issue #99).
+**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 à 8 depuis l'interface les 25 et 26/11 (commit `4652b9f`). Reste l'essai sur le réseau de la soutenance, et un défaut relevé à l'étape 8.
 
 | Étape | Attendu | Obtenu (préliminaire) | Preuve | Statut |
 |---|---|---|---|---|
@@ -93,8 +93,10 @@
 | S6.2 Acquitter la bonne version du rappel | 200 | 200 ; mauvaise version 409, version absente 400 | | Conforme (préliminaire) |
 | S6.3 Lister le catalogue fermé | Une entrée (Sintel), source et licence CC BY 3.0, aucun lien magnet | Conforme | | Conforme (préliminaire) |
 | S6.4 Démarrer un téléchargement | 202, `DOWNLOADING` | 202, `DOWNLOADING` ; second démarrage 409 ; annulation `CANCELLED` ; panne de Transmission 503 puis reprise | `INTEGRATION_J7.md` | Conforme (préliminaire) |
-| S6.5 Suivre jusqu'à `COMPLETED` | La progression avance, état final `COMPLETED` | **Bloqué** : aucun code ne lit l'avancement de Transmission (#99) | | Non exécuté |
-| S6.6 Le fichier est indexé, visible puis lisible | Film dans le catalogue et lisible | **Bloqué** (#99, #111) | | Non exécuté |
+| S6.5 Suivre jusqu'à `COMPLETED` | La progression avance, état final `COMPLETED` | Progression visible sans recharger (20 % relevé), « Terminé » à 100 % en moins d'une minute (25/11) | `acceptance/s06-03-progression-20-pourcent.png`, `s06-04-etat-termine-100-pourcent.png` | Conforme (préliminaire) |
+| S6.6 Le fichier est indexé, visible puis lisible | Film dans le catalogue et lisible | Sintel dans « Médias » et sur l'accueil (« Disponible »), lecture démarrée, durée 14:48 ; ni année ni genre | `acceptance/s06-05-sintel-dans-medias.png`, `s06-06-sintel-accueil.png`, `s06-07-lecture-sintel.png` | Conforme (préliminaire) |
+| S6.7 Annuler en cours de route | État `CANCELLED`, aucun film ajouté | Annulé à 60 % ; aucune donnée dans `/downloads` ; Sintel absent de la bibliothèque (26/11) | `acceptance/s06-08-annulation.png`, `s06-09-annulation-medias-sans-sintel.png` | Conforme (préliminaire) |
+| S6.8 Arrêter le client BitTorrent pendant un transfert | État `FAILED`, message lisible, relance possible | « Échoué » à 13 % avec « Le service de téléchargement est injoignable. » ; après redémarrage le torrent a terminé seul sans que l'état change ; « Télécharger » de nouveau → « Terminé », film indexé (26/11) | `acceptance/s06-10-echec-client-coupe.png`, `s06-12-relance-terminee.png`, `s06-13-sintel-apres-relance.png` | **Partiel** (`KNOWN_LIMITS.md` L15) |
 
 ## Scénario 7 : action non autorisée
 
@@ -162,9 +164,9 @@ Passage manuel sous Chrome (Firefox pour les sessions et le contrôle d'accès) 
 | Indexation | Compteurs, aucun doublon, bouton désactivé pendant l'exécution, fichiers intacts | Conforme (rechargement en cours d'indexation : non testé) |
 | Médias | Recherche, état vide, modification (titre visible côté utilisateur), année invalide refusée, retrait sans suppression du fichier | Conforme |
 | Acquisition | Catalogue fermé sans champ de saisie, preuve de licence, rappel des droits obligatoire avant démarrage, annulation | Conforme |
-| Suivi du téléchargement | Ligne créée, mais **reste « En cours » à 0 %** alors que Transmission avait terminé (124 Mo reçus) | **Non livré** ([#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99)) |
+| Suivi du téléchargement | Ligne créée, mais **reste « En cours » à 0 %** alors que Transmission avait terminé (124 Mo reçus) | **Non livré** ([#99](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/99)) à cette date, **livré ensuite par #275** (voir scénario 6) |
 | Services | Trois services opérationnels ; Acquisition arrêtée : état général « Dégradé », Acquisition « Hors service », les deux autres inchangés ; retour à la normale après relance | Conforme |
-| « Mon compte » | Informations, confirmation par mot de passe, mauvais mot de passe refusé sans fermer la session, suppression effective | Conforme (purge côté Library non vérifiée, [#97](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/97)) |
+| « Mon compte » | Informations, confirmation par mot de passe, mauvais mot de passe refusé sans fermer la session, suppression effective | Conforme (purge côté Library vérifiée le 26/11 dans la base : tout à 0, [#97](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/97)) |
 
 Preuves à ranger dans `acceptance/` : captures des écrans ci-dessus (sans mot de passe ni jeton).
 
@@ -174,11 +176,11 @@ Preuves à ranger dans `acceptance/` : captures des écrans ci-dessus (sans mot 
 
 | Défaut | Effet sur les scénarios | Issue |
 |---|---|---|
-| Un rechargement de page (F5) fait perdre le profil actif | Un clic de plus (3, 4, 5, 7) | [#222](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/222) |
 | Un mot de passe temporaire ne peut jamais être changé | Hors scénarios, écart de sécurité | [#223](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/223) |
 | Un compte désactivé garde l'accès jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | `ARCHITECTURE.md` §9 |
 | La confirmation de désactivation d'un compte annonce une fermeture « immédiate » des sessions | Hors scénarios, texte inexact | [#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265) |
 | Un film retiré du catalogue ne peut pas être rajouté depuis l'écran | Scénario 2 (si retrait par erreur) | `KNOWN_LIMITS.md` L13 |
+| Après un échec par arrêt du client, le torrent reste et termine seul alors que l'état reste « Échoué » (contournement : relancer) | Scénario 6 | `KNOWN_LIMITS.md` L15 |
 | Les doublons de contenu ne sont pas détectés | Scénarios 2 et 6 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) |
 | Titres affichés = noms de fichier tant que les métadonnées ne sont pas corrigées | Scénarios 2 et 3 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) |
 | Pas de HTTPS dans l'application | Hors scénarios | README, section 6 |
