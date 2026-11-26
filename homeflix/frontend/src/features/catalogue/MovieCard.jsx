@@ -17,6 +17,7 @@ import '@/features/catalogue/MovieCard.css'
  * @param {boolean} [props.favouritePending] Bloque le bouton pendant l'appel serveur.
  * @param {{positionSeconds: number, durationSeconds?: number|null}} [props.progress] Reprise de lecture :
  *   affiche une barre de progression (« Continuer à regarder »).
+ * @param {React.ReactNode} [props.action] Action propre à la liste affichée, sous les boutons de la carte.
  */
 export default function MovieCard({
   media,
@@ -24,6 +25,7 @@ export default function MovieCard({
   onToggleFavourite,
   favouritePending = false,
   progress,
+  action,
 }) {
   const { id, title, posterUrl, genres = [], durationSeconds, availability } = media
   const details = [genres[0], formatDuration(durationSeconds)].filter(Boolean).join(' · ')
@@ -59,6 +61,7 @@ export default function MovieCard({
           </Button>
         )}
       </div>
+      {action}
     </article>
   )
 }

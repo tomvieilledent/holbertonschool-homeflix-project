@@ -5,6 +5,7 @@ import favouritesFixture from '@fixtures/library/favourites.json'
 import genres from '@fixtures/library/genres.json'
 import mediaPage from '@fixtures/library/media-page.json'
 import mediaRoots from '@fixtures/library/media-roots.json'
+import progressCompleted from '@fixtures/library/progress-completed.json'
 
 const SESSION_KEY = 'homeflix:mock-session'
 const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -57,6 +58,7 @@ export function createDb() {
 
   const progress = new Map(profiles.map((p) => [p.id, new Map()]))
   for (const { progress: p } of continueWatching) progress.get(firstProfile.id).set(p.mediaId, p)
+  progress.get(firstProfile.id).set(progressCompleted.mediaId, structuredClone(progressCompleted))
 
   const bigBuckBunny = media.find((m) => m.title === 'Big Buck Bunny')
   const sintel = entry('Sintel (version 4K)', { sizeBytes: 900_000_000 })

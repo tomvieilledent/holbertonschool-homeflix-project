@@ -59,7 +59,7 @@ export async function getProgress(mediaId, signal) {
 export const saveProgress = (mediaId, position, { keepalive } = {}) =>
   trackWrite(mediaId, apiFetch('library', progressPath(mediaId), { method: 'PUT', body: position, keepalive }))
 
-/** Réinitialise la progression (« Recommencer ») : le média repasse à `NOT_STARTED`. */
+/** Réinitialise la progression (« Recommencer », « Titres terminés ») : le média repasse à `NOT_STARTED`. */
 export const resetProgress = (mediaId) =>
   trackWrite(mediaId, apiFetch('library', progressPath(mediaId), { method: 'DELETE' }))
 
@@ -131,21 +131,37 @@ export const startIndexing = () => apiFetch('library', '/v1/admin/index', { meth
  */
 export const getIndexStatus = (signal) => apiFetch('library', '/v1/admin/index/status', { signal })
 
-const FAVOURITES_PAGE_SIZE = 50
-const FAVOURITES_MAX_PAGES = 20 // garde-fou : 1 000 favoris au plus
+const ALL_PAGES_SIZE = 50
+const ALL_PAGES_MAX = 20 // garde-fou : 1 000 médias au plus
+
+/** Parcourt toutes les pages d'une liste de médias ; `name` désigne la liste dans l'erreur d'une réponse inattendue. */
+async function listAllPages(listPage, name, signal) {
+  const items = []
+  for (let page = 0; page < ALL_PAGES_MAX; page += 1) {
+    const result = await listPage({ page, size: ALL_PAGES_SIZE }, signal)
+    if (!Array.isArray(result?.items)) throw new TypeError(`Réponse inattendue pour ${name}`)
+    items.push(...result.items)
+    if (page + 1 >= result.totalPages) break
+  }
+  return items
+}
 
 /**
  * Tous les favoris du profil actif, les plus récents en premier (parcourt les pages de `GET /me/favourites`).
  * @param {AbortSignal} [signal]
  * @returns {Promise<object[]>}
  */
-export async function listAllFavourites(signal) {
-  const items = []
-  for (let page = 0; page < FAVOURITES_MAX_PAGES; page += 1) {
-    const result = await listFavourites({ page, size: FAVOURITES_PAGE_SIZE }, signal)
-    if (!Array.isArray(result?.items)) throw new TypeError('Réponse inattendue pour « Ma liste »')
-    items.push(...result.items)
-    if (page + 1 >= result.totalPages) break
-  }
-  return items
+export const listAllFavourites = (signal) => listAllPages(listFavourites, '« Ma liste »', signal)
+
+const listCompleted = (query, signal) => apiFetch('library', '/v1/me/completed', { query, signal })
+
+/**
+ * Tous les titres terminés par le profil actif, le dernier vu en premier (parcourt les pages de `GET /me/completed`).
+ * Attend les écritures de progression en cours : un film qu'on vient de terminer y figure.
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<object[]>}
+ */
+export async function listAllCompleted(signal) {
+  await Promise.all(pendingWrites.values())
+  return listAllPages(listCompleted, 'les titres terminés', signal)
 }

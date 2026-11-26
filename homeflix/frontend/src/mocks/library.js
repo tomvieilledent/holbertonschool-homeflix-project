@@ -54,6 +54,11 @@ export function libraryHandlers(db) {
       .filter((p) => p.state === 'STARTED' && findMedia(p.mediaId))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .map((progress) => ({ media: findMedia(progress.mediaId), progress }))
+  const completed = (profileId) =>
+    [...(db.progress.get(profileId)?.values() ?? [])]
+      .filter((p) => p.state === 'COMPLETED' && findMedia(p.mediaId))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((p) => findMedia(p.mediaId))
   const favouriteItems = (profileId) =>
     [...(db.favourites.get(profileId) ?? new Map())]
       .filter(([id]) => findMedia(id))
@@ -105,6 +110,11 @@ export function libraryHandlers(db) {
     http.get(`${BASE}/me/continue-watching`, ({ request }) => {
       const auth = authenticate(db, request, { profile: true })
       return auth.error ?? HttpResponse.json(continueWatching(auth.profileId))
+    }),
+
+    http.get(`${BASE}/me/completed`, ({ request }) => {
+      const auth = authenticate(db, request, { profile: true })
+      return auth.error ?? HttpResponse.json(paginate(completed(auth.profileId), new URL(request.url)))
     }),
 
     http.get(`${BASE}/me/favourites`, ({ request }) => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import ErrorState from '@/components/ErrorState'
 import Skeleton from '@/components/Skeleton'
+import CompletedRow from '@/features/catalogue/CompletedRow'
 import EmptyLibrary from '@/features/catalogue/EmptyLibrary'
 import MediaRow from '@/features/catalogue/MediaRow'
 import FavouriteCard from '@/features/favourites/FavouriteCard'
@@ -55,7 +56,15 @@ function HomeSections() {
 
   if (error) return <ErrorState description={error.message} onRetry={() => load()} />
   if (home === null) return <HomeSkeleton />
-  if (isEmpty(home)) return <EmptyLibrary />
+  if (isEmpty(home)) {
+    // Un catalogue sans film disponible peut garder des titres terminés : ils restent visibles.
+    return (
+      <div className="home">
+        <EmptyLibrary />
+        <CompletedRow />
+      </div>
+    )
+  }
 
   return (
     <div className="home">
@@ -81,15 +90,17 @@ function HomeSections() {
             <p>Votre liste est vide. Ajoutez des films avec le bouton « Ma liste » d’une carte.</p>
           </section>
         ))}
+      <CompletedRow />
     </div>
   )
 }
 
 /**
- * Accueil du profil actif (`GET /home`) : continuer à regarder, ajoutés récemment, catégories et
- * « Ma liste » (celle du magasin partagé `useFavourites`, donc à jour quand on ajoute ou retire un film). Une
- * rangée vide est masquée, sauf « Ma liste » qui explique comment la remplir ; si tout est vide, `EmptyLibrary`
- * dit quoi faire selon le rôle. Le titre de page est présent dans tous les états.
+ * Accueil du profil actif (`GET /home`) : continuer à regarder, ajoutés récemment, catégories,
+ * « Ma liste » (celle du magasin partagé `useFavourites`, donc à jour quand on ajoute ou retire un film) et les
+ * titres terminés (`CompletedRow`). Une rangée vide est masquée, sauf « Ma liste » qui explique comment la remplir ;
+ * si le catalogue est vide, `EmptyLibrary` dit quoi faire selon le rôle. Le titre de page est présent dans tous les
+ * états.
  */
 export default function HomePage() {
   return (
