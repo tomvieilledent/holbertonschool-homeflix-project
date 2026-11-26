@@ -86,7 +86,7 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 | `INDEX_ALREADY_RUNNING` | 409 | Une indexation est déjà en cours |
 | `MEDIA_FILE_MISSING` | 404 | Fichier du média absent ou inaccessible |
 | `MEDIA_UNAVAILABLE` | 409 | Média marqué indisponible |
-| `MEDIA_UNSUPPORTED_FORMAT` | 415 | Format non supporté pour la lecture |
+| `MEDIA_UNSUPPORTED_FORMAT` | 415 | Format non supporté pour la lecture (réservé : aucun service ne le renvoie aujourd'hui) |
 | `RIGHTS_NOT_ACKNOWLEDGED` | 412 | Rappel des droits non acquitté avant téléchargement |
 | `DOWNLOAD_ALREADY_ACTIVE` | 409 | Téléchargement déjà actif pour cette entrée |
 | `TORRENT_CLIENT_UNAVAILABLE` | 503 | Client BitTorrent injoignable |
@@ -104,6 +104,7 @@ Erreurs de protocole du serveur web, **jamais déclenchées par l'interface** : 
 |---|---|---|
 | `METHOD_NOT_ALLOWED` | 405 | Méthode HTTP non prise en charge par la route (en-tête `Allow`) |
 | `NOT_ACCEPTABLE` | 406 | Format de réponse demandé (`Accept`) non disponible |
+| `RANGE_NOT_SATISFIABLE` | 416 | Plage demandée hors des limites du fichier (`Content-Range: bytes */<taille>`) |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` de la requête non pris en charge (à ne pas confondre avec `MEDIA_UNSUPPORTED_FORMAT`, qui concerne un fichier vidéo) |
 
 ### Codes d'échec d'un téléchargement

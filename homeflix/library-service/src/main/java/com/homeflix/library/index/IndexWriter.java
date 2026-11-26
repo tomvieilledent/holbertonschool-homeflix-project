@@ -43,7 +43,7 @@ public class IndexWriter {
 
     /** Ajoute le fichier s'il est nouveau, met à jour l'entrée s'il a changé, sinon ne modifie que la date de passage. */
     @Transactional
-    public Outcome upsert(UUID rootId, String relativePath, long size, Instant mtime) {
+    public Outcome upsert(UUID rootId, String relativePath, long size, Instant mtime, Integer durationSeconds) {
         Instant now = Instant.now();
         String fingerprint = fingerprint(size, mtime, relativePath);
         Optional<MediaItem> existing = items.findByRootIdAndRelativePath(rootId, relativePath);
@@ -51,7 +51,9 @@ public class IndexWriter {
         if (existing.isEmpty()) {
             MediaRoot root = roots.getReferenceById(rootId);
             MediaItem item = items.save(new MediaItem(root, relativePath, size, mtime, fingerprint));
-            metadata.save(new MediaMetadata(item, VideoFiles.titleFrom(relativePath)));
+            MediaMetadata created = new MediaMetadata(item, VideoFiles.titleFrom(relativePath));
+            created.setDurationSeconds(durationSeconds);
+            metadata.save(created);
             return new Outcome(Result.ADDED, item.getId());
         }
 
@@ -69,6 +71,8 @@ public class IndexWriter {
             item.setAvailability(Availability.AVAILABLE);
         }
         item.setLastSeenAt(now);
+        // La durée vient toujours du fichier (jamais saisie) : elle complète aussi les entrées indexées avant sa lecture.
+        metadata.findById(item.getId()).ifPresent(m -> m.setDurationSeconds(durationSeconds));
         return new Outcome(changed ? Result.UPDATED : Result.UNCHANGED, item.getId());
     }
 
