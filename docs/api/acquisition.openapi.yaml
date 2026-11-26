@@ -306,7 +306,7 @@ components:
         errorCode:
           type: string
           nullable: true
-          description: "Présent si `FAILED` (`NO_PEERS`, `DISK_FULL`, `TORRENT_CLIENT_UNAVAILABLE`, voir CONVENTIONS.md). Le frontend choisit le message français."
+          description: "Présent si `FAILED` (`NO_PEERS`, `DISK_FULL`, `TORRENT_CLIENT_UNAVAILABLE`, `TORRENT_LOST`, `DOWNLOAD_FAILED`, `INVALID_FILE`, `LIBRARY_UNAVAILABLE`, `LIBRARY_REJECTED`, voir CONVENTIONS.md). Le frontend choisit le message français."
         errorMessage:
           type: string
           nullable: true

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import com.homeflix.acquisition.catalogue.CatalogueEntryRepository;
 import com.homeflix.acquisition.library.LibraryClient;
+import com.homeflix.acquisition.library.LibraryRejectedException;
 import com.homeflix.acquisition.library.LibraryUnavailableException;
 import com.homeflix.acquisition.torrent.TorrentClient;
 import com.homeflix.acquisition.torrent.TorrentClientUnavailableException;
@@ -83,6 +84,22 @@ class DownloadSyncServiceTests {
 		assertThat(download.getState()).isEqualTo(DownloadState.FAILED);
 		assertThat(download.getErrorCode()).isEqualTo("LIBRARY_UNAVAILABLE");
 		assertThat(DownloadService.messageFor("LIBRARY_UNAVAILABLE")).isNotBlank();
+	}
+
+	@Test
+	void aRefusalFromLibraryIsNotReportedAsAnOutage() {
+		torrentIs(TorrentStatus.State.COMPLETED, 100, null, "a.mp4");
+		doThrow(new LibraryRejectedException()).when(library).registerCompleted(anyString(), any());
+		sync.sync();
+		assertThat(download.getState()).isEqualTo(DownloadState.FAILED);
+		assertThat(download.getErrorCode()).isEqualTo("LIBRARY_REJECTED");
+		assertThat(DownloadService.messageFor("LIBRARY_REJECTED")).contains("refusé");
+	}
+
+	@Test
+	void onlyTheVideoFormatsAcceptedByLibraryAreHandedOver() {
+		assertThat(DownloadSyncService.videoFile(List.of("a.avi", "a.mov", "a.m4v", "a.mp4"))).contains("a.mp4");
+		assertThat(DownloadSyncService.videoFile(List.of("a.avi"))).isEmpty();
 	}
 
 	@Test

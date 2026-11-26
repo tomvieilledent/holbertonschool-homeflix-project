@@ -116,6 +116,18 @@ Valeurs du champ `errorCode` d'un téléchargement `FAILED` (Acquisition). Ce ne
 | `DISK_FULL` | Espace disque insuffisant dans le dossier de téléchargements |
 | `TORRENT_CLIENT_UNAVAILABLE` | Client BitTorrent injoignable pendant le téléchargement |
 
+### Autres codes d'échec (sans message dédié)
+
+Le frontend n'a pas encore de message propre à ces valeurs : il affiche son message générique.
+
+| Code | Sens |
+|---|---|
+| `TORRENT_LOST` | Le client BitTorrent ne connaît plus le torrent |
+| `DOWNLOAD_FAILED` | Échec signalé par le client sans cause précise |
+| `INVALID_FILE` | Aucune vidéo `mp4`, `mkv` ou `webm` dans le torrent |
+| `LIBRARY_UNAVAILABLE` | Fichier téléchargé, Library injoignable ou en erreur |
+| `LIBRARY_REJECTED` | Fichier téléchargé, refusé par Library (fichier absent, dossier non déclaré) |
+
 ## Pagination
 
 Paramètres : `page` (défaut 0), `size` (défaut 20, maximum 50), `sort` (`champ,asc|desc`). Réponse :
