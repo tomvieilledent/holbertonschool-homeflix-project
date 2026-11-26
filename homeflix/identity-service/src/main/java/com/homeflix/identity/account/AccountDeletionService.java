@@ -20,10 +20,13 @@ public class AccountDeletionService {
 
     private final AccountRepository accounts;
     private final LibraryPurgeClient library;
+    private final AcquisitionPurgeClient acquisition;
 
-    public AccountDeletionService(AccountRepository accounts, LibraryPurgeClient library) {
+    public AccountDeletionService(AccountRepository accounts, LibraryPurgeClient library,
+            AcquisitionPurgeClient acquisition) {
         this.accounts = accounts;
         this.library = library;
+        this.acquisition = acquisition;
     }
 
     /**
@@ -44,6 +47,8 @@ public class AccountDeletionService {
             throw new ApiException(HttpStatus.CONFLICT, "LAST_ADMIN", "Dernier administrateur",
                 "Le dernier administrateur ne peut pas être supprimé.");
         }
+        // Acquisition d'abord : si Library échoue ensuite, seul un acquittement des droits est à redonner.
+        acquisition.purgeAccount(accountId);
         library.purgeAccount(accountId);
         accounts.delete(account);
     }

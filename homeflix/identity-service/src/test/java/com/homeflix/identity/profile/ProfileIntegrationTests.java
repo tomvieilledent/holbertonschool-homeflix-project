@@ -77,6 +77,7 @@ class ProfileIntegrationTests {
     @TestConfiguration
     static class LibraryOverride {
         @Bean @Primary FakeLibrary fakeLibrary() { return new FakeLibrary(); }
+        @Bean @Primary com.homeflix.identity.account.AcquisitionPurgeClient fakeAcquisition() { return accountId -> { }; }
     }
 
     @Container

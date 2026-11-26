@@ -60,9 +60,23 @@ class AccountDeletionIntegrationTests {
         }
     }
 
+    static class FakeAcquisition implements AcquisitionPurgeClient {
+        final List<UUID> purgedAccounts = new ArrayList<>();
+        volatile boolean down;
+
+        @Override
+        public void purgeAccount(UUID accountId) {
+            if (down) {
+                throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "ACQUISITION_UNAVAILABLE", "Acquisition indisponible", "KO");
+            }
+            purgedAccounts.add(accountId);
+        }
+    }
+
     @TestConfiguration
     static class LibraryOverride {
         @Bean @Primary FakeLibrary fakeLibrary() { return new FakeLibrary(); }
+        @Bean @Primary FakeAcquisition fakeAcquisition() { return new FakeAcquisition(); }
     }
 
     @Container

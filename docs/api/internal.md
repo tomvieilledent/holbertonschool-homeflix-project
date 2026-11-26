@@ -15,7 +15,7 @@ Tous les appels de service à service de HomeFlix : qui appelle qui, avec quelle
 | 5 ter | Acquisition | Library | `POST /internal/media/present` (films toujours disponibles) | `X-Internal-Key` | 3 s, 1 essai | Acquisition s'en tient aux téléchargements terminés qu'il a enregistrés | fait (#293) |
 | 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | — | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), **non appelé** par Acquisition |
 | 7 | Acquisition | Transmission | RPC HTTP (`/transmission/rpc`) | identifiants Transmission (`TRANSMISSION_USER`, `TRANSMISSION_PASS`) | 3 s (`TRANSMISSION_TIMEOUT`) | `503 TORRENT_CLIENT_UNAVAILABLE`, sans détail technique | fait (#74) |
-| 8 | Identity | Acquisition | purge des données d'un compte (acquittements, historique) | `X-Internal-Key` | — | — | **pas encore** : Acquisition n'a pas d'API interne |
+| 8 | Identity | Acquisition | `POST /internal/purge` (suppression d'un compte) | `X-Internal-Key` | 2 s connexion, 5 s lecture, 1 tentative | `503 ACQUISITION_UNAVAILABLE` : **rien n'est supprimé**, l'appel se rejoue tel quel | fait (#294) |
 | 9 | Identity | Library et Acquisition | `GET /actuator/health` (état des services pour l'administration, `GET /api/v1/admin/system/status`) | aucune : point public, sans détail, jamais routé par le proxy | 2 s de connexion et 2 s de lecture par service, sondes en parallèle, 3 s au total | un service qui ne répond pas est `DOWN`, l'ensemble `DEGRADED` ; l'appel ne rend jamais d'erreur | fait (#81) |
 
 Le frontend ne parle qu'au reverse proxy, jamais directement à un service ; les services ne se font jamais confiance sur l'identité de l'utilisateur à partir d'un en-tête : elle vient du jeton (JWT), vérifié localement.
@@ -92,6 +92,10 @@ Avant d'afficher le catalogue ou de démarrer un téléchargement, `POST /intern
 | Appel interne rejoué | même résultat que le premier | purge, « téléchargement démarré », « arrêté » et « terminé » sont idempotents |
 
 Écart connu avec l'ADR 0001 (décision 6, « 3 s et 2 tentatives ») : les appels d'Identity vers Library ont aujourd'hui 2 s de délai de connexion, 5 s de lecture et **une seule tentative** ; l'échec est rendu à l'utilisateur, qui peut réessayer. L'appel d'Acquisition vers Library a un délai de 3 s et fait **3 essais** au plus.
+
+### Suppression d'un compte (Identity → Acquisition)
+
+Avant la purge de Library, Identity appelle `POST /internal/purge {"accountId": "<uuid>"}` sur Acquisition : les acquittements des droits du compte sont supprimés et ses téléchargements anonymisés. Réponse `204`, rejouable.
 
 ---
 

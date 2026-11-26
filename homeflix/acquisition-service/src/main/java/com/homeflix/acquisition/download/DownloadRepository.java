@@ -8,6 +8,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface DownloadRepository extends JpaRepository<Download, UUID> {
 
@@ -23,6 +26,10 @@ public interface DownloadRepository extends JpaRepository<Download, UUID> {
 
     /** Téléchargements terminés dont le média est connu, du plus récent au plus ancien. */
     List<Download> findByEntryIdInAndLibraryMediaIdIsNotNullOrderByCreatedAtDesc(Collection<UUID> entryIds);
+
+    @Modifying
+    @Query("update Download d set d.requestedBy = :replacement where d.requestedBy = :accountId")
+    void replaceRequester(@Param("accountId") UUID accountId, @Param("replacement") UUID replacement);
 
     Optional<Download> findByEntryIdAndStateIn(UUID entryId, Collection<DownloadState> states);
 }
