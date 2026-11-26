@@ -24,6 +24,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
 
     List<RefreshToken> findByFamilyId(UUID familyId);
 
+    /** Session encore ouverte : un jeton de la famille, propre au compte, ni révoqué ni expiré. */
+    boolean existsByFamilyIdAndAccountIdAndRevokedAtIsNullAndExpiresAtAfter(UUID familyId, UUID accountId,
+            Instant now);
+
     /** Révoque d'un coup toutes les sessions encore valides d'un compte. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update RefreshToken t set t.revokedAt = :now where t.account.id = :accountId and t.revokedAt is null")

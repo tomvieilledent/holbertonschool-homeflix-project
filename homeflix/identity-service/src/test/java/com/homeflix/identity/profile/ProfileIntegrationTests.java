@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,8 @@ import com.homeflix.identity.account.Account;
 import com.homeflix.identity.account.AccountRepository;
 import com.homeflix.identity.account.Profile;
 import com.homeflix.identity.account.ProfileRepository;
+import com.homeflix.identity.account.RefreshToken;
+import com.homeflix.identity.account.RefreshTokenRepository;
 import com.homeflix.identity.account.Role;
 import com.homeflix.identity.account.RoleRepository;
 import com.homeflix.identity.error.ApiException;
@@ -90,6 +93,7 @@ class ProfileIntegrationTests {
     @Autowired JdbcTemplate jdbc;
     @Autowired AccountRepository accounts;
     @Autowired ProfileRepository profiles;
+    @Autowired RefreshTokenRepository refreshTokens;
     @Autowired RoleRepository roles;
     @Autowired PasswordEncoder encoder;
     @Autowired JwtService jwt;
@@ -109,6 +113,21 @@ class ProfileIntegrationTests {
 
     private String bearer(Account a) {
         return "Bearer " + jwt.issueAccessToken(a.getId(), List.of(a.getRole().getName()), null);
+    }
+
+    /** Jeton rattaché à une session de refresh ouverte, comme après une connexion. */
+    private String bearerWithSession(Account a, Instant expiresAt, boolean revoked) {
+        UUID family = UUID.randomUUID();
+        RefreshToken session = new RefreshToken(a, family, UUID.randomUUID().toString(), expiresAt);
+        if (revoked) {
+            session.revoke(Instant.now());
+        }
+        refreshTokens.save(session);
+        return "Bearer " + jwt.issueAccessToken(a.getId(), List.of(a.getRole().getName()), null, family);
+    }
+
+    private String bearerWithSession(Account a) {
+        return bearerWithSession(a, Instant.now().plusSeconds(3600), false);
     }
 
     private static String json(String name, String avatar) {
@@ -207,7 +226,7 @@ class ProfileIntegrationTests {
     void selectReturnsTokenWithSubAndPid() throws Exception {
         Profile lea = profile(alice, "Léa");
         String body = mvc.perform(post("/api/v1/profiles/" + lea.getId() + "/select")
-                .header("Authorization", bearer(alice)))
+                .header("Authorization", bearerWithSession(alice)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.tokenType").value("Bearer"))
             .andReturn().getResponse().getContentAsString();
         String token = body.replaceAll(".*\"accessToken\":\"([^\"]+)\".*", "$1");
@@ -215,6 +234,28 @@ class ProfileIntegrationTests {
         assertThat(claims.getSubject()).isEqualTo(alice.getId().toString());
         assertThat(claims.getStringClaim("pid")).isEqualTo(lea.getId().toString());
         assertThat(claims.getStringListClaim("roles")).containsExactly("USER");
+    }
+
+    @Test
+    void selectIsRefusedToADisabledAccount() throws Exception {
+        Profile lea = profile(alice, "Léa");
+        String token = bearerWithSession(alice);
+        jdbc.update("UPDATE accounts SET enabled = false WHERE id = ?", alice.getId());
+        mvc.perform(post("/api/v1/profiles/" + lea.getId() + "/select").header("Authorization", token))
+            .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ACCOUNT_DISABLED"));
+    }
+
+    @Test
+    void selectIsRefusedWithoutAnOpenSession() throws Exception {
+        Profile lea = profile(alice, "Léa");
+        List<String> tokens = List.of(
+            bearer(alice),
+            bearerWithSession(alice, Instant.now().plusSeconds(3600), true),
+            bearerWithSession(alice, Instant.now().minusSeconds(1), false));
+        for (String token : tokens) {
+            mvc.perform(post("/api/v1/profiles/" + lea.getId() + "/select").header("Authorization", token))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_EXPIRED"));
+        }
     }
 
     @Test

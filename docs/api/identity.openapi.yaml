@@ -190,7 +190,7 @@ paths:
     post:
       tags: [Profiles]
       summary: Sélectionne le profil actif
-      description: Retourne un nouvel access token contenant le claim `pid`. Profil d'un autre compte → 404.
+      description: Retourne un nouvel access token contenant le claim `pid`. Profil d'un autre compte → 404. Compte désactivé → `403 ACCOUNT_DISABLED`. Session révoquée ou expirée → `401 SESSION_EXPIRED`.
       responses:
         "200":
           description: Jeton avec profil actif
@@ -198,6 +198,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/TokenResponse" }
         "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
   /accounts/me:
     delete:
@@ -268,7 +269,7 @@ paths:
     patch:
       tags: [Admin]
       summary: Active/désactive un compte ou change son rôle (ADMIN)
-      description: La désactivation révoque immédiatement les sessions. Le dernier administrateur ne peut être ni désactivé ni rétrogradé (`LAST_ADMIN`).
+      description: La désactivation révoque les sessions de refresh et bloque la sélection de profil ; un access token déjà émis reste valable jusqu'à son expiration (15 min au plus). Le dernier administrateur ne peut être ni désactivé ni rétrogradé (`LAST_ADMIN`).
       requestBody:
         required: true
         content:

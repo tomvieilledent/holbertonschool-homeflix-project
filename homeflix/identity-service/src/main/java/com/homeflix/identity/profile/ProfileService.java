@@ -1,5 +1,6 @@
 package com.homeflix.identity.profile;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,8 +34,11 @@ public class ProfileService {
     private final LibraryPurgeClient library;
     private final RefreshTokenRepository refreshTokens;
 
+    private final Clock clock;
+
     public ProfileService(ProfileRepository profiles, AccountRepository accounts, JwtService jwt,
-            JwtProperties jwtProps, LibraryPurgeClient library, RefreshTokenRepository refreshTokens) {
+            JwtProperties jwtProps, LibraryPurgeClient library, RefreshTokenRepository refreshTokens, Clock clock) {
+        this.clock = clock;
         this.refreshTokens = refreshTokens;
         this.profiles = profiles;
         this.accounts = accounts;
@@ -88,17 +92,30 @@ public class ProfileService {
         profiles.delete(profile);
     }
 
-    /** @param familyId session de refresh du jeton appelant (claim `fid`), nul pour un jeton sans session */
+    /**
+     * Émet un jeton neuf portant le profil. Comme il prolonge l'accès, le compte doit être actif et la session de
+     * refresh encore ouverte : sinon une désactivation ou une déconnexion pourrait être contournée sans limite.
+     *
+     * @param familyId session de refresh du jeton appelant (claim `fid`), nul pour un jeton sans session
+     * @throws ApiException 404 profil inconnu ou d'un autre compte ; 403 ACCOUNT_DISABLED ; 401 SESSION_EXPIRED
+     */
     @Transactional
     public TokenResponse select(UUID accountId, UUID profileId, UUID familyId) {
         Profile profile = owned(accountId, profileId);
         Account account = profile.getAccount();
+        if (!account.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Compte désactivé",
+                "Ce compte est désactivé.");
+        }
+        if (familyId == null || !refreshTokens.existsByFamilyIdAndAccountIdAndRevokedAtIsNullAndExpiresAtAfter(
+                familyId, accountId, clock.instant())) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "SESSION_EXPIRED", "Session expirée",
+                "Votre session a expiré. Reconnectez-vous.");
+        }
         UUID id = profile.getId();
         List<String> roles = List.of(account.getRole().getName());
         // Lecture du compte avant la mise à jour : elle vide le contexte de persistance.
-        if (familyId != null) {
-            refreshTokens.setActiveProfile(familyId, id);
-        }
+        refreshTokens.setActiveProfile(familyId, id);
         String access = jwt.issueAccessToken(accountId, roles, id, familyId);
         return TokenResponse.bearer(access, jwtProps.accessTtl().toSeconds());
     }

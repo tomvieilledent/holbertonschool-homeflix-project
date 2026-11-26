@@ -61,7 +61,7 @@ public class ProfileController {
         try {
             family = fid == null ? null : UUID.fromString(fid);
         } catch (IllegalArgumentException e) {
-            // claim illisible : la sélection fonctionne, mais sans mémorisation pour le refresh
+            // claim illisible : traité comme une session absente (401)
         }
         return service.select(account, profileId, family);
     }

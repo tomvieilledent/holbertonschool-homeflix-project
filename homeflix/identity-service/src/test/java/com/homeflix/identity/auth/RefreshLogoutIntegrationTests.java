@@ -136,6 +136,21 @@ class RefreshLogoutIntegrationTests {
         assertThat(me).contains(profile.getId().toString());
     }
 
+    @Test
+    void selectCannotExtendAccessAfterLogout() throws Exception {
+        Account alice = accounts.findByUsername("alice").orElseThrow();
+        var profile = profiles.save(new com.homeflix.identity.account.Profile(alice, "Alice", "avatar-1"));
+        MvcResult login = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"username\":\"alice\",\"password\":\"" + PASSWORD + "\"}")).andReturn();
+        mvc.perform(post("/api/v1/auth/logout").header("X-Requested-With", "homeflix")
+            .cookie(new jakarta.servlet.http.Cookie("refresh_token", cookieValue(login))));
+
+        MvcResult select = mvc.perform(post("/api/v1/profiles/" + profile.getId() + "/select")
+            .header("Authorization", "Bearer " + jsonField(login, "accessToken"))).andReturn();
+
+        assertThat(select.getResponse().getStatus()).isEqualTo(401);
+    }
+
     private static String jsonField(MvcResult r, String field) throws Exception {
         var m = java.util.regex.Pattern.compile("\"" + field + "\"\\s*:\\s*\"([^\"]+)\"").matcher(r.getResponse().getContentAsString());
         assertThat(m.find()).isTrue();
