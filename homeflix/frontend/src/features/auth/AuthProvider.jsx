@@ -4,21 +4,27 @@ import { forgetProfile as forgetRememberedProfile } from '@/services/activeProfi
 import { onSessionExpired } from '@/services/api'
 import { deleteOwnAccount, restoreSession, selectProfile as selectProfileRequest, signIn, signOut } from '@/services/auth'
 
-const ANONYMOUS = { status: 'anonymous', account: null, activeProfileId: null, sessionExpired: false, accountDeleted: false }
+const ANONYMOUS = {
+  status: 'anonymous',
+  account: null,
+  activeProfileId: null,
+  sessionExpired: false,
+  accountDisabled: false,
+  accountDeleted: false,
+}
 
 const authenticated = (me) => ({
+  ...ANONYMOUS,
   status: 'authenticated',
   account: me.account,
   activeProfileId: me.activeProfileId ?? null,
-  sessionExpired: false,
-  accountDeleted: false,
 })
 
 /**
  * Fournit la session (`useAuth()`). Au démarrage, tente de rouvrir la session via le cookie de
  * rafraîchissement ; tant que la réponse n'est pas arrivée, `status` vaut `loading`.
- * Si le client d'API perd la session (refresh refusé), l'utilisateur redevient anonyme avec
- * `sessionExpired: true` : les gardes le redirigent vers `/login` avec un message.
+ * Si le client d'API perd la session (refresh refusé) ou apprend que le compte est désactivé, l'utilisateur redevient
+ * anonyme avec `sessionExpired` ou `accountDisabled` : les gardes le redirigent vers `/login` avec un message.
  * @param {object} props
  * @param {React.ReactNode} props.children
  */
@@ -30,8 +36,9 @@ export default function AuthProvider({ children }) {
     restoreSession().then((me) => {
       if (active) setSession(me ? authenticated(me) : ANONYMOUS)
     })
-    const unsubscribe = onSessionExpired(() => {
-      if (active) setSession({ ...ANONYMOUS, sessionExpired: true })
+    const unsubscribe = onSessionExpired((code) => {
+      const disabled = code === 'ACCOUNT_DISABLED'
+      if (active) setSession({ ...ANONYMOUS, accountDisabled: disabled, sessionExpired: !disabled })
     })
     return () => {
       active = false

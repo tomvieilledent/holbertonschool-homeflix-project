@@ -122,13 +122,6 @@ Valeurs du champ `errorCode` d'un téléchargement `FAILED` (Acquisition). Ce ne
 | `NO_PEERS` | Aucun pair disponible pour ce fichier |
 | `DISK_FULL` | Espace disque insuffisant dans le dossier de téléchargements |
 | `TORRENT_CLIENT_UNAVAILABLE` | Client BitTorrent injoignable pendant le téléchargement |
-
-### Autres codes d'échec (sans message dédié)
-
-Le frontend n'a pas encore de message propre à ces valeurs : il affiche son message générique.
-
-| Code | Sens |
-|---|---|
 | `TORRENT_LOST` | Le client BitTorrent ne connaît plus le torrent |
 | `DOWNLOAD_FAILED` | Échec signalé par le client sans cause précise |
 | `INVALID_FILE` | Aucune vidéo `mp4`, `mkv` ou `webm` dans le torrent |

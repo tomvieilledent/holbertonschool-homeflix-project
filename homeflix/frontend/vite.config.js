@@ -52,6 +52,9 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       setupFiles: './src/test/setup.js',
+      // Plus long que le délai d'une seule attente (5 s, voir setup.js) : les parcours et l'audit axe enchaînent
+      // plusieurs écrans et dépassaient sinon la limite sur une machine chargée.
+      testTimeout: 15_000,
       css: false,
     },
     server: {

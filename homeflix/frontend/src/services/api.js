@@ -25,8 +25,8 @@ export const setAccessToken = (token) => {
 export const isAbortError = (error) => error?.name === 'AbortError'
 
 /**
- * Enregistre ce qu'il faut faire quand la session est définitivement perdue (refresh refusé).
- * @param {() => void} handler
+ * Enregistre ce qu'il faut faire quand la session est définitivement perdue (refresh refusé, compte désactivé).
+ * @param {(code: 'SESSION_EXPIRED'|'ACCOUNT_DISABLED') => void} handler
  * @returns {() => void} Fonction de désinscription.
  */
 export function onSessionExpired(handler) {
@@ -74,12 +74,19 @@ async function request(service, path, { method = 'GET', query, body, headers, si
   return text ? JSON.parse(text) : null
 }
 
+/** Codes qui disent que la session est finie : aucun nouvel essai ne servira. */
+const SESSION_OVER = ['SESSION_EXPIRED', 'ACCOUNT_DISABLED']
+
+const isSessionOver = (error) => error instanceof ApiError && SESSION_OVER.includes(error.code)
+
 /**
- * Le refresh renvoie un jeton sans profil actif : on ré-sélectionne le profil retenu pour retrouver le claim
- * `pid`. Un échec ne perd pas la session : sans profil actif, l'interface redemande simplement le choix. Un
- * profil introuvable (supprimé, ou d'un autre compte) est oublié.
- * @param {string} token Jeton fraîchement obtenu, sans profil.
- * @returns {Promise<string>} Le jeton portant le profil, ou `token` si la sélection échoue.
+ * Le refresh conserve le profil actif de la session, mais la session est commune à tous les onglets : un autre onglet
+ * a pu en choisir un autre. On ré-sélectionne donc le profil retenu par cet onglet. Un profil introuvable (supprimé,
+ * ou d'un autre compte) est oublié. Une panne de la sélection ne fait pas perdre la session ; une session finie ou un
+ * compte désactivé, si.
+ * @param {string} token Jeton fraîchement obtenu.
+ * @returns {Promise<string>} Le jeton portant le profil de cet onglet, ou `token` si la sélection échoue.
+ * @throws {ApiError} `SESSION_EXPIRED` ou `ACCOUNT_DISABLED`.
  */
 async function restoreActiveProfile(token) {
   const profileId = rememberedProfile()
@@ -91,6 +98,7 @@ async function restoreActiveProfile(token) {
     })
     return selected.accessToken
   } catch (error) {
+    if (isSessionOver(error)) throw error
     if (error instanceof ApiError && error.status === 404) forgetProfile()
     return token
   }
@@ -140,17 +148,22 @@ const NOT_A_TOKEN_PROBLEM = ['AUTH_INVALID_CREDENTIALS', 'TICKET_EXPIRED']
 const shouldRefresh = (error) =>
   error instanceof ApiError && error.status === 401 && !NOT_A_TOKEN_PROBLEM.includes(error.code)
 
-function sessionLost() {
+/** Abandonne la session et prévient l'application ; `cause` distingue un compte désactivé d'une session expirée. */
+function sessionLost(cause) {
+  const disabled = cause?.code === 'ACCOUNT_DISABLED'
+  const code = disabled ? 'ACCOUNT_DISABLED' : 'SESSION_EXPIRED'
   accessToken = null
   forgetProfile()
-  sessionExpiredHandler()
-  return new ApiError(401, 'SESSION_EXPIRED')
+  sessionExpiredHandler(code)
+  return new ApiError(disabled ? 403 : 401, code)
 }
+
+const isAccountDisabled = (error) => error instanceof ApiError && error.code === 'ACCOUNT_DISABLED'
 
 /**
  * Appel d'API : ajoute le jeton, convertit les erreurs en `ApiError` (message français), et sur un
- * 401 tente un refresh puis rejoue la requête UNE fois. Si la session est perdue, appelle le handler
- * de `onSessionExpired` et lève `SESSION_EXPIRED`.
+ * 401 tente un refresh puis rejoue la requête UNE fois. Si la session est perdue ou le compte désactivé, appelle le
+ * handler de `onSessionExpired` et lève `SESSION_EXPIRED` ou `ACCOUNT_DISABLED`.
  *
  * @param {'identity'|'library'|'acquisition'} service
  * @param {string} path Chemin après le service, ex. `/v1/media`.
@@ -175,6 +188,7 @@ export async function apiFetch(service, path, { auth = true, headers, ...options
   try {
     return await send()
   } catch (error) {
+    if (auth && isAccountDisabled(error)) throw sessionLost(error)
     if (!auth || !shouldRefresh(error)) throw error
   }
 
@@ -182,7 +196,7 @@ export async function apiFetch(service, path, { auth = true, headers, ...options
     await refreshAccessToken()
   } catch (error) {
     // Refresh refusé : session perdue. Une panne réseau ou serveur ne l'est pas : on remonte l'erreur.
-    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) throw sessionLost()
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) throw sessionLost(error)
     throw error
   }
 
@@ -190,7 +204,7 @@ export async function apiFetch(service, path, { auth = true, headers, ...options
     return await send()
   } catch (error) {
     // Rejeu refusé alors que le jeton vient d'être renouvelé : on s'arrête là (pas de boucle).
-    if (shouldRefresh(error)) throw sessionLost()
+    if (shouldRefresh(error) || isAccountDisabled(error)) throw sessionLost(error)
     throw error
   }
 }

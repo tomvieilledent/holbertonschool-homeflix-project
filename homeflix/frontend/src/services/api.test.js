@@ -317,7 +317,7 @@ describe('profil actif après un renouvellement du jeton', () => {
   const SELECT = '*/api/identity/v1/profiles/:profileId/select'
   const WITH_PROFILE = 'jeton-avec-profil'
 
-  /** Le refresh renvoie un jeton sans profil ; seul le jeton issu de la sélection ouvre la bibliothèque. */
+  /** Ici le jeton du refresh ne porte pas le profil de l'onglet : seul celui de la sélection ouvre la bibliothèque. */
   function protectedByProfile(seen) {
     return http.get(MEDIA, ({ request }) => {
       const auth = request.headers.get('Authorization')
@@ -391,6 +391,55 @@ describe('profil actif après un renouvellement du jeton', () => {
     await expect(apiFetch('library', '/v1/media')).resolves.toEqual({ ok: true })
     expect(lost).not.toHaveBeenCalled()
     expect(rememberedProfile()).toBe('p1')
+  })
+
+  it.each([
+    [401, 'SESSION_EXPIRED'],
+    [403, 'ACCOUNT_DISABLED'],
+  ])('une sélection refusée en %s %s après le refresh met fin à la session', async (status, code) => {
+    rememberProfile('p1')
+    const lost = vi.fn()
+    unsubscribe = onSessionExpired(lost)
+    server.use(protectedMedia([]), refreshReturning({ count: 0 }), selecting([], () => problem(status, code)))
+
+    await expect(apiFetch('library', '/v1/media')).rejects.toMatchObject({ code, status })
+    expect(lost).toHaveBeenCalledWith(code)
+    expect(getAccessToken()).toBeNull()
+    expect(rememberedProfile()).toBeNull()
+  })
+
+  it('un simple accès refusé à la sélection (mot de passe temporaire) ne met pas fin à la session', async () => {
+    rememberProfile('p1')
+    const lost = vi.fn()
+    unsubscribe = onSessionExpired(lost)
+    server.use(refreshReturning({ count: 0 }), selecting([], () => problem(403, 'ACCESS_DENIED')))
+
+    await expect(refreshAccessToken()).resolves.toBe('nouveau-jeton')
+    expect(lost).not.toHaveBeenCalled()
+  })
+
+  it('un compte désactivé met fin à la session dès la première réponse, sans refresh', async () => {
+    const refresh = { count: 0 }
+    const lost = vi.fn()
+    unsubscribe = onSessionExpired(lost)
+    server.use(refreshReturning(refresh), selecting([], () => problem(403, 'ACCOUNT_DISABLED')))
+
+    await expect(apiFetch('identity', '/v1/profiles/p1/select', { method: 'POST' })).rejects.toMatchObject({
+      code: 'ACCOUNT_DISABLED',
+    })
+    expect(refresh.count).toBe(0)
+    expect(lost).toHaveBeenCalledWith('ACCOUNT_DISABLED')
+  })
+
+  it('un refresh refusé pour compte désactivé le dit', async () => {
+    const lost = vi.fn()
+    unsubscribe = onSessionExpired(lost)
+    server.use(
+      http.get(MEDIA, () => problem(401, 'SESSION_EXPIRED')),
+      http.post(REFRESH, () => problem(403, 'ACCOUNT_DISABLED')),
+    )
+    await expect(apiFetch('library', '/v1/media')).rejects.toMatchObject({ code: 'ACCOUNT_DISABLED' })
+    expect(lost).toHaveBeenCalledWith('ACCOUNT_DISABLED')
   })
 
   it('une session perdue oublie le profil retenu', async () => {

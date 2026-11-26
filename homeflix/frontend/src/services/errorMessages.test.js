@@ -23,10 +23,13 @@ describe('messages d’erreur', () => {
 
   it('couvrent les codes d’échec d’un téléchargement', () => {
     const codes = tableCodes('### Codes d\'échec d\'un téléchargement')
-    expect(codes).toEqual(['NO_PEERS', 'DISK_FULL', 'TORRENT_CLIENT_UNAVAILABLE'])
-    for (const code of codes) {
-      expect(downloadFailureMessage(code)).not.toBe(downloadFailureMessage('INCONNU'))
-    }
+    expect(codes).toEqual(expect.arrayContaining([
+      'NO_PEERS', 'DISK_FULL', 'TORRENT_CLIENT_UNAVAILABLE', 'TORRENT_LOST', 'DOWNLOAD_FAILED', 'INVALID_FILE',
+      'LIBRARY_UNAVAILABLE', 'LIBRARY_REJECTED',
+    ]))
+    const messages = codes.map((code) => downloadFailureMessage(code))
+    for (const message of messages) expect(message).not.toBe(downloadFailureMessage('INCONNU'))
+    expect(new Set(messages).size).toBe(codes.length) // un message propre à chaque code
   })
 
   it('ne laissent filtrer aucun terme technique', () => {
