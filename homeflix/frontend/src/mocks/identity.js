@@ -41,8 +41,21 @@ export function identityHandlers(db) {
       return noContent()
     }),
 
+    http.post(`${BASE}/auth/change-password`, async ({ request }) => {
+      const auth = authenticate(db, request, { temporary: true })
+      if (auth.error) return auth.error
+      const { currentPassword, newPassword } = await readJson(request)
+      if (currentPassword !== MOCK_PASSWORD) {
+        return problem('validation-error', { code: 'INVALID_CURRENT_PASSWORD', errors: undefined })
+      }
+      if (!newPassword || newPassword.length < 12) return invalid('newPassword', 'Au moins 12 caractères.')
+      auth.account.mustChangePassword = false
+      setSession(db, { accountId: auth.account.id, activeProfileId: null })
+      return HttpResponse.json(tokenResponse)
+    }),
+
     http.get(`${BASE}/auth/me`, ({ request }) => {
-      const auth = authenticate(db, request)
+      const auth = authenticate(db, request, { temporary: true })
       if (auth.error) return auth.error
       return HttpResponse.json({ account: auth.account, activeProfileId: auth.profileId ?? null })
     }),

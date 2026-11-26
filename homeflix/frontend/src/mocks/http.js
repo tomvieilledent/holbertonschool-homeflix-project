@@ -25,12 +25,14 @@ export const noContent = () => new HttpResponse(null, { status: 204 })
  * Vérifie la session. Retourne `{ error }` (réponse prête à renvoyer) ou `{ account, profileId }`.
  * @param {ReturnType<import('@/mocks/db').createDb>} db
  * @param {Request} request
- * @param {{ admin?: boolean, profile?: boolean }} [required] Rôle ADMIN et/ou profil actif exigés.
+ * @param {{ admin?: boolean, profile?: boolean, temporary?: boolean }} [required] Rôle ADMIN et/ou profil actif
+ *   exigés ; `temporary` : route ouverte même avec un mot de passe temporaire.
  */
-export function authenticate(db, request, { admin = false, profile = false } = {}) {
+export function authenticate(db, request, { admin = false, profile = false, temporary = false } = {}) {
   const header = request.headers.get('Authorization')
   const account = db.accounts.find((a) => a.id === db.session?.accountId)
   if (!header?.startsWith('Bearer ') || !account?.enabled) return { error: problem('session-expired') }
+  if (account.mustChangePassword && !temporary) return { error: problem('access-denied') }
   if (admin && account.role !== 'ADMIN') return { error: problem('access-denied') }
   if (profile && !db.session.activeProfileId) return { error: problem('profile-not-selected') }
   return { account, profileId: db.session.activeProfileId }

@@ -66,6 +66,7 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 |---|---|---|
 | `VALIDATION_ERROR` | 400 | Un ou plusieurs champs invalides |
 | `AUTH_INVALID_CREDENTIALS` | 401 | Identifiants incorrects (message identique que le compte existe ou non) |
+| `INVALID_CURRENT_PASSWORD` | 400 | Mot de passe actuel incorrect lors d'un changement de mot de passe |
 | `SESSION_EXPIRED` | 401 | Jeton ou refresh token expiré : l'interface demande de se reconnecter |
 | `TICKET_EXPIRED` | 401 | Ticket de streaming expiré |
 | `ACCOUNT_DISABLED` | 403 | Compte désactivé |

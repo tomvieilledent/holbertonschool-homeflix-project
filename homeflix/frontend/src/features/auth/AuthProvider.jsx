@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '@/features/auth/authContext'
 import { forgetProfile as forgetRememberedProfile } from '@/services/activeProfile'
 import { onSessionExpired } from '@/services/api'
-import { deleteOwnAccount, restoreSession, selectProfile as selectProfileRequest, signIn, signOut } from '@/services/auth'
+import {
+  changePassword as changePasswordRequest,
+  deleteOwnAccount,
+  restoreSession,
+  selectProfile as selectProfileRequest,
+  signIn,
+  signOut,
+} from '@/services/auth'
 
 const ANONYMOUS = { status: 'anonymous', account: null, activeProfileId: null, sessionExpired: false, accountDeleted: false }
 
@@ -43,6 +50,10 @@ export default function AuthProvider({ children }) {
     setSession(authenticated(await signIn(username, password)))
   }, [])
 
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    setSession(authenticated(await changePasswordRequest(currentPassword, newPassword)))
+  }, [])
+
   const logout = useCallback(async () => {
     await signOut()
     setSession(ANONYMOUS)
@@ -68,8 +79,8 @@ export default function AuthProvider({ children }) {
   }, [])
 
   const value = useMemo(
-    () => ({ ...session, login, logout, deleteAccount, selectProfile, forgetProfile }),
-    [session, login, logout, deleteAccount, selectProfile, forgetProfile],
+    () => ({ ...session, login, logout, changePassword, deleteAccount, selectProfile, forgetProfile }),
+    [session, login, logout, changePassword, deleteAccount, selectProfile, forgetProfile],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
