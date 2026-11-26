@@ -1,5 +1,6 @@
 package com.homeflix.acquisition.torrent;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -13,12 +14,18 @@ import java.util.List;
  *                        connaît la durée d'attente.
  * @param files           fichiers du torrent, chemins **relatifs au dossier de téléchargements** (`/downloads`), sans
  *                        {@code ..} ni chemin absolu ; renseigné quand le torrent est terminé
+ * @param idleSince       dernière activité d'un torrent en cours **sans aucun pair** ({@link Instant#EPOCH} s'il n'en a
+ *                        jamais eu) ; {@code null} dès qu'un pair est connecté
  */
-public record TorrentStatus(State state, int progressPercent, String errorCode, List<String> files) {
+public record TorrentStatus(State state, int progressPercent, String errorCode, List<String> files, Instant idleSince) {
 
     public enum State { QUEUED, DOWNLOADING, COMPLETED, FAILED }
 
     public TorrentStatus {
         files = files == null ? List.of() : List.copyOf(files);
+    }
+
+    public TorrentStatus(State state, int progressPercent, String errorCode, List<String> files) {
+        this(state, progressPercent, errorCode, files, null);
     }
 }

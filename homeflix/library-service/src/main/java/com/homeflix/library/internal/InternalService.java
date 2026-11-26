@@ -115,7 +115,7 @@ public class InternalService {
             throw new ApiException(HttpStatus.NOT_FOUND, "MEDIA_FILE_MISSING", "Fichier introuvable",
                 "Le fichier terminé est introuvable dans le dossier de téléchargements.");
         } catch (IOException e) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "MEDIA_FILE_MISSING", "Fichier inaccessible",
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Fichier inaccessible",
                 "Le fichier terminé n'a pas pu être lu.");
         }
     }

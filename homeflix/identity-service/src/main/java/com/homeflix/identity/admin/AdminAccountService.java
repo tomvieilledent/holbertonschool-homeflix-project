@@ -25,7 +25,7 @@ import com.homeflix.identity.setup.AccountResponse;
 @Service
 public class AdminAccountService {
 
-    static final int MAX_SIZE = 100;
+    static final int MAX_SIZE = 50;
 
     private final AccountRepository accounts;
     private final RoleRepository roles;

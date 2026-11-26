@@ -282,7 +282,7 @@ paths:
         - `Range: bytes=0-99`, `bytes=100-` ou `bytes=-500` : `206 Partial Content` avec `Content-Range`.
         - Plage hors limites : `416` avec `Content-Range: bytes */<taille>`.
         - Ticket absent ou mauvais média : `403` ; ticket expiré : `401` (`TICKET_EXPIRED`).
-        - Fichier absent : `404` (`MEDIA_FILE_MISSING`) ; format non supporté : `415` (`MEDIA_UNSUPPORTED_FORMAT`).
+        - Fichier absent : `404` (`MEDIA_FILE_MISSING`).
         Le chemin disque n'est jamais exposé.
       security: []
       parameters:
@@ -306,7 +306,6 @@ paths:
         "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Problem" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "415": { $ref: "#/components/responses/Problem" }
         "416":
           description: Plage invalide
           headers:
