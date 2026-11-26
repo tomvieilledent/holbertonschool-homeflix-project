@@ -198,6 +198,40 @@ class DownloadSyncServiceTests {
 		assertThat(download.getState()).isEqualTo(DownloadState.FAILED);
 	}
 
+	/** Ancien téléchargement échoué (client coupé) et sa relance sur la même entrée. */
+	private Download retryAfterOutage(String newTorrentId) {
+		Download old = new Download(download.getEntryId(), download.getRequestedBy());
+		old.setState(DownloadState.FAILED);
+		old.setErrorCode("TORRENT_CLIENT_UNAVAILABLE");
+		old.setTorrentId("abc");
+		download.setTorrentId(newTorrentId);
+		when(downloads.findByStateAndErrorCodeAndTorrentIdIsNotNull(DownloadState.FAILED, "TORRENT_CLIENT_UNAVAILABLE"))
+				.thenReturn(List.of(old));
+		return old;
+	}
+
+	@Test
+	void aTorrentTakenOverByARetryIsNotRemoved() {
+		Download old = retryAfterOutage("abc"); // le client rend le même identifiant pour le même torrent
+		torrentIs(TorrentStatus.State.DOWNLOADING, 20, null);
+
+		sync.sync();
+
+		verify(torrent, never()).cancel(anyString());
+		assertThat(old.getTorrentId()).isNull();
+		assertThat(download.getState()).isEqualTo(DownloadState.DOWNLOADING);
+	}
+
+	@Test
+	void anAbandonedTorrentIsKeptWhileARetryIsStarting() {
+		Download old = retryAfterOutage(null); // enregistré, pas encore transmis au client
+
+		sync.sync();
+
+		verify(torrent, never()).cancel(anyString());
+		assertThat(old.getTorrentId()).isEqualTo("abc");
+	}
+
 	@Test
 	void pathChecks() {
 		assertThat(DownloadSyncService.isSafeVideoPath("a/b.MP4")).isTrue();
