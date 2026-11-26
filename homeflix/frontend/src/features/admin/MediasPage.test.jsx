@@ -98,6 +98,28 @@ describe('MediasPage', () => {
       expect(await screen.findByRole('heading', { name: 'Aucun film pour « zzz »' })).toBeInTheDocument()
     })
 
+    it.each([
+      ['sans résultat', 'zzz'],
+      ['avec des résultats', 'sintel'],
+    ])('« Effacer la recherche » remet la liste complète après une recherche %s', async (_, q) => {
+      const router = renderPage(`/admin/medias?q=${q}&page=1`)
+      await userEvent.click(await screen.findByRole('button', { name: 'Effacer la recherche' }))
+
+      await waitFor(() => expect(screen.getByText(`${media.length} films`)).toBeInTheDocument())
+      expect(router.state.location.search).toBe('')
+      const input = screen.getByLabelText('Rechercher un titre')
+      expect(input).toHaveValue('')
+      expect(input).toHaveFocus()
+      expect(screen.queryByRole('button', { name: 'Effacer la recherche' })).not.toBeInTheDocument()
+    })
+
+    it('n’offre pas d’effacer quand aucune recherche n’est en cours', async () => {
+      renderPage()
+      await screen.findByRole('table')
+      await userEvent.type(screen.getByLabelText('Rechercher un titre'), 'sin') // pas encore lancée
+      expect(screen.queryByRole('button', { name: 'Effacer la recherche' })).not.toBeInTheDocument()
+    })
+
     it('propose de réessayer quand la liste ne se charge pas, sans détail technique', async () => {
       fetchMock.mockResolvedValueOnce(problem(500, 'INTERNAL_ERROR'))
       renderPage()

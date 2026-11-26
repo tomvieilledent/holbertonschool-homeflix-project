@@ -14,7 +14,7 @@ Revue faite le 25/11/2026 sur la pile Docker Compose, avec des données de test 
 |---|---|---|
 | Navigation | Moins de 560 px : barre fixe en bas de l'écran | Dans l'en-tête |
 | Grille du catalogue et de « Ma liste » | Jusqu'à 640 px : deux colonnes | Autant de colonnes que la place le permet |
-| Tableaux d'administration | Conteneur de 640 px au plus : une fiche par ligne (`components/DataTable`) | Tableau |
+| Tableaux d'administration | Conteneur de 704 px au plus : une fiche par ligne (`components/DataTable`) | Tableau |
 | Titres | Jusqu'à 640 px : taille réduite | Taille de la charte |
 | Lecteur | Moins de 560 px : barre de position sur sa propre ligne ; écran bas (paysage) : image limitée à la hauteur de l’écran | Image en 16:9 |
 

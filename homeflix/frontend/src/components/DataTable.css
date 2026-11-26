@@ -42,8 +42,10 @@
   }
 }
 
-/* Conteneur étroit (téléphone) : une fiche par ligne, chaque valeur sous le nom de sa colonne. */
-@container (max-width: 40rem) {
+/* Conteneur étroit (téléphone, ou petite fenêtre avec la navigation latérale) : une fiche par ligne, chaque valeur
+   sous le nom de sa colonne. En dessous de 44 rem, le tableau des comptes ne tient pas : ses actions sortaient du
+   cadre. */
+@container (max-width: 44rem) {
   .data-table__table,
   .data-table__table tbody,
   .data-table__table tr,
