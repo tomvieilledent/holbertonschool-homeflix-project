@@ -146,6 +146,20 @@ class TransmissionClientTests {
         assertThat(status()).isEqualTo(new TorrentStatus(TorrentStatus.State.DOWNLOADING, 42, null, List.of()));
     }
 
+    @Test
+    void aDownloadingTorrentWithoutPeersReportsSinceWhenItIsIdle() {
+        serveTorrent(torrent(4, 0.1, 0, "", 1000, 900, 1.0, "[],\"peersConnected\":0,\"activityDate\":1700000000"));
+
+        assertThat(status().idleSince()).isEqualTo(java.time.Instant.ofEpochSecond(1700000000));
+    }
+
+    @Test
+    void aConnectedPeerMeansTheTorrentIsNotIdle() {
+        serveTorrent(torrent(4, 0.1, 0, "", 1000, 900, 1.0, "[],\"peersConnected\":2,\"activityDate\":1700000000"));
+
+        assertThat(status().idleSince()).isNull();
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3})
     void aWaitingOrCheckingTorrentIsQueued(int transmissionStatus) {

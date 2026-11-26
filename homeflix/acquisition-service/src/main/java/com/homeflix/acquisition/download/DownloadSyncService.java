@@ -115,22 +115,39 @@ public class DownloadSyncService {
         switch (s.state()) {
             case FAILED -> fail(id, s.errorCode() == null ? "DOWNLOAD_FAILED" : s.errorCode());
             case COMPLETED -> complete(id, s);
-            case DOWNLOADING -> update(id, d -> {
-                d.setState(DownloadState.DOWNLOADING);
-                d.setProgressPercent(s.progressPercent());
-            });
+            case DOWNLOADING -> {
+                if (s.idleSince() != null && withoutSourceTooLong(id, s.idleSince())) {
+                    failWithoutSource(id, torrentId);
+                    return;
+                }
+                update(id, d -> {
+                    d.setState(DownloadState.DOWNLOADING);
+                    d.setProgressPercent(s.progressPercent());
+                });
+            }
             case QUEUED -> {
-                Download d = downloads.findById(id).orElse(null);
-                if (d != null && Duration.between(d.getCreatedAt(), Instant.now()).compareTo(noPeersTimeout) > 0) {
-                    try {
-                        torrent.cancel(torrentId);
-                    } catch (TorrentClientUnavailableException e) {
-                        log.warn("Annulation du torrent sans source impossible : client indisponible");
-                    }
-                    fail(id, "NO_PEERS");
+                if (withoutSourceTooLong(id, Instant.EPOCH)) {
+                    failWithoutSource(id, torrentId);
                 }
             }
         }
+    }
+
+    /** Vrai si rien ne s'est passé depuis le délai, compté au plus tôt à partir de la création du téléchargement. */
+    private boolean withoutSourceTooLong(UUID id, Instant lastActivity) {
+        return downloads.findById(id)
+                .map(d -> d.getCreatedAt().isAfter(lastActivity) ? d.getCreatedAt() : lastActivity)
+                .map(since -> Duration.between(since, Instant.now()).compareTo(noPeersTimeout) > 0)
+                .orElse(false);
+    }
+
+    private void failWithoutSource(UUID id, String torrentId) {
+        try {
+            torrent.cancel(torrentId);
+        } catch (TorrentClientUnavailableException e) {
+            log.warn("Annulation du torrent sans source impossible : client indisponible");
+        }
+        fail(id, "NO_PEERS");
     }
 
     private void complete(UUID id, TorrentStatus s) {

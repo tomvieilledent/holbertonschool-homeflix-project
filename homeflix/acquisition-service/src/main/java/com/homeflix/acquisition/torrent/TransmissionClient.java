@@ -2,6 +2,7 @@ package com.homeflix.acquisition.torrent;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +52,8 @@ public class TransmissionClient implements TorrentClient {
     private static final int LOCAL_ERROR = 3;
 
     private static final List<String> STATUS_FIELDS = List.of("hashString", "status", "percentDone", "error",
-        "errorString", "totalSize", "leftUntilDone", "metadataPercentComplete", "files");
+        "errorString", "totalSize", "leftUntilDone", "metadataPercentComplete", "files",
+        "peersConnected", "activityDate");
 
     private final TransmissionProperties properties;
     private final RestClient http;
@@ -147,8 +149,15 @@ public class TransmissionClient implements TorrentClient {
             case CHECK_WAIT, CHECKING, DOWNLOAD_WAIT -> new TorrentStatus(TorrentStatus.State.QUEUED, progress, null, List.of());
             // Arrêté sans être terminé (jamais mis en pause par nous) : le client ne le téléchargera plus.
             case STOPPED -> new TorrentStatus(TorrentStatus.State.FAILED, progress, "TORRENT_CLIENT_UNAVAILABLE", List.of());
-            default -> new TorrentStatus(TorrentStatus.State.DOWNLOADING, progress, null, List.of());
+            default -> new TorrentStatus(TorrentStatus.State.DOWNLOADING, progress, null, List.of(), idleSince(torrent));
         };
+    }
+
+    private static Instant idleSince(Map<String, Object> torrent) {
+        if (!(torrent.get("peersConnected") instanceof Number peers) || peers.intValue() > 0) {
+            return null;
+        }
+        return Instant.ofEpochSecond(number(torrent.get("activityDate")).longValue());
     }
 
     /** 0 à 99 : jamais 100 tant que le torrent n'est pas terminé (le 100 est réservé à COMPLETED). */
