@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,6 +56,32 @@ class DownloadSyncServiceTests {
 		sync.sync();
 		assertThat(download.getProgressPercent()).isEqualTo(42);
 		assertThat(download.getState()).isEqualTo(DownloadState.DOWNLOADING);
+	}
+
+	@Test
+	void anActiveTorrentWithoutAnyPeerFailsAfterTheDelay() throws Exception {
+		DownloadSyncService impatient = new DownloadSyncService(downloads, entries, torrent, library, Duration.ZERO, 2);
+		when(torrent.status("abc")).thenReturn(Optional.of(
+				new TorrentStatus(TorrentStatus.State.DOWNLOADING, 12, null, List.of(), Instant.EPOCH)));
+		Thread.sleep(5);
+
+		impatient.sync();
+
+		verify(torrent).cancel("abc");
+		assertThat(download.getState()).isEqualTo(DownloadState.FAILED);
+		assertThat(download.getErrorCode()).isEqualTo("NO_PEERS");
+	}
+
+	@Test
+	void anActiveTorrentKeepsRunningWhileItHasPeersOrWasRecentlyActive() {
+		torrentIs(TorrentStatus.State.DOWNLOADING, 10, null);
+		sync.sync();
+		when(torrent.status("abc")).thenReturn(Optional.of(
+				new TorrentStatus(TorrentStatus.State.DOWNLOADING, 11, null, List.of(), Instant.EPOCH)));
+		sync.sync(); // sans pair, mais le téléchargement vient d'être créé : le délai n'est pas écoulé
+
+		assertThat(download.getState()).isEqualTo(DownloadState.DOWNLOADING);
+		assertThat(download.getProgressPercent()).isEqualTo(11);
 	}
 
 	@Test
