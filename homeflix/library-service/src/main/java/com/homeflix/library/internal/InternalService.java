@@ -123,7 +123,10 @@ public class InternalService {
         });
     }
 
-    /** Enregistre le fichier terminé : il doit exister dans le dossier de téléchargements et être une vidéo. */
+    /**
+     * Enregistre le fichier terminé : il doit exister dans le dossier de téléchargements et être une vidéo. Une entrée
+     * retirée du catalogue est rétablie avec ses métadonnées : le téléchargement a été redemandé.
+     */
     @Transactional
     public UUID registerCompleted(DownloadRequest request) {
         MediaRoot root = downloadsRoot();
@@ -135,12 +138,9 @@ public class InternalService {
                 throw new ApiException(HttpStatus.NOT_FOUND, "MEDIA_FILE_MISSING", "Fichier introuvable",
                     "Le fichier terminé est introuvable ou n'est pas une vidéo prise en charge.");
             }
+            items.findByRootIdAndRelativePath(root.getId(), relative).ifPresent(item -> item.setDeleted(false));
             IndexWriter.Outcome outcome = writer.upsert(root.getId(), relative, Files.size(file),
                 Files.getLastModifiedTime(file).toInstant(), Mp4Duration.read(file));
-            if (outcome.result() == IndexWriter.Result.SKIPPED) {
-                throw new ApiException(HttpStatus.CONFLICT, "CONFLICT", "Conflit",
-                    "Cette entrée a été retirée du catalogue.");
-            }
             MediaItem item = items.findById(outcome.mediaId()).orElseThrow();
             item.setAvailability(Availability.AVAILABLE); // sort d'un éventuel DOWNLOADING
             return item.getId();
