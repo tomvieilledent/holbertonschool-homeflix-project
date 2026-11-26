@@ -96,6 +96,12 @@ Toute réponse d'erreur utilise `Content-Type: application/problem+json` :
 
 Le champ `detail` des erreurs standard du serveur web (405, 406, 415, 400 non métier) est un **message fixe en français** : il ne reprend jamais ce que le client a envoyé.
 
+### Autres codes d'erreur (sans message dédié)
+
+| Code | Statut | Sens |
+|---|---|---|
+| `ACQUISITION_UNAVAILABLE` | 503 | Acquisition injoignable depuis un autre service |
+
 ### Codes des erreurs HTTP standard
 
 Erreurs de protocole du serveur web, **jamais déclenchées par l'interface** : le frontend n'a pas de message dédié et retombe sur son message générique. Utiles pour les clients tiers et les tests. Le `detail` est un message fixe en français, jamais une valeur envoyée par le client.

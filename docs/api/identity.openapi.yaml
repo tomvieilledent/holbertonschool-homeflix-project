@@ -205,7 +205,8 @@ paths:
       tags: [Account]
       summary: Supprime son propre compte et ses données
       description: |
-        Confirmation du mot de passe obligatoire. Supprime profils, sessions et données associées (purge Library).
+        Confirmation du mot de passe obligatoire. Supprime profils, sessions et données associées (purge Acquisition puis Library ;
+        `503` si l'un des deux est injoignable, et le compte est conservé).
         Les fichiers médias ne sont jamais supprimés. Refusé pour le dernier administrateur (`LAST_ADMIN`).
       requestBody:
         required: true
@@ -290,7 +291,7 @@ paths:
     delete:
       tags: [Admin]
       summary: Supprime un compte et ses données (ADMIN)
-      description: Dernier administrateur → `LAST_ADMIN` (409). Les fichiers médias ne sont jamais supprimés.
+      description: Dernier administrateur → `LAST_ADMIN` (409). Acquisition ou Library injoignable → `503`, compte conservé. Les fichiers médias ne sont jamais supprimés.
       responses:
         "204": { description: Supprimé }
         "401": { $ref: "#/components/responses/Problem" }
