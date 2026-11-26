@@ -2,7 +2,11 @@ package com.homeflix.acquisition.library;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +23,10 @@ class HttpLibraryClient implements LibraryClient {
 
     private static final Logger log = LoggerFactory.getLogger(HttpLibraryClient.class);
     private static final int ATTEMPTS = 3;
+
+    private record MediaId(UUID mediaId) { }
+
+    private record MediaIds(List<UUID> mediaIds) { }
 
     private final RestClient http;
     private final String internalKey;
@@ -37,8 +45,29 @@ class HttpLibraryClient implements LibraryClient {
     }
 
     @Override
-    public void registerCompleted(String relativePath, String title) {
-        post("/internal/downloads/completed", relativePath, title);
+    public UUID registerCompleted(String relativePath, String title) {
+        MediaId reply = post("/internal/downloads/completed", relativePath, title);
+        if (reply == null || reply.mediaId() == null) {
+            throw new LibraryUnavailableException(); // réponse illisible : le fichier n'est pas considéré comme reçu
+        }
+        return reply.mediaId();
+    }
+
+    @Override
+    public Set<UUID> present(Collection<UUID> mediaIds) {
+        try {
+            MediaIds reply = http.post().uri("/internal/media/present")
+                .header("X-Internal-Key", internalKey)
+                .body(new MediaIds(List.copyOf(mediaIds)))
+                .retrieve().body(MediaIds.class);
+            if (reply == null || reply.mediaIds() == null) {
+                throw new LibraryUnavailableException();
+            }
+            return Set.copyOf(reply.mediaIds());
+        } catch (RestClientException e) {
+            log.warn("Library ne dit pas quels médias sont présents");
+            throw new LibraryUnavailableException();
+        }
     }
 
     @Override
@@ -51,15 +80,14 @@ class HttpLibraryClient implements LibraryClient {
         post("/internal/downloads/failed", relativePath, null);
     }
 
-    private void post(String uri, String relativePath, String title) {
+    private MediaId post(String uri, String relativePath, String title) {
         Map<String, String> body = Map.of("relativePath", relativePath, "title", title == null ? "" : title);
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
-                http.post().uri(uri)
+                return http.post().uri(uri)
                     .header("X-Internal-Key", internalKey)
                     .body(body)
-                    .retrieve().toBodilessEntity();
-                return;
+                    .retrieve().body(MediaId.class); // null pour une réponse sans corps (204)
             } catch (HttpClientErrorException e) {
                 log.warn("Library a refusé l'appel {} (HTTP {})", uri, e.getStatusCode().value());
                 throw new LibraryRejectedException(); // une requête refusée ne se rejoue pas

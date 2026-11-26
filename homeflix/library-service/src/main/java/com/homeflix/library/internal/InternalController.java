@@ -1,5 +1,6 @@
 package com.homeflix.library.internal;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,6 +47,11 @@ public class InternalController {
     public ResponseEntity<Void> failed(@Valid @RequestBody DownloadRequest request) {
         service.releaseDownload(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/media/present")
+    public Map<String, List<UUID>> present(@Valid @RequestBody PresentMediaRequest request) {
+        return Map.of("mediaIds", service.present(request));
     }
 
     @PostMapping("/reindex")

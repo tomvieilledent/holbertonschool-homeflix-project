@@ -195,8 +195,9 @@ public class DownloadSyncService {
             return;
         }
         String title = entries.findById(current.getEntryId()).map(CatalogueEntry::getTitle).orElse(null);
+        UUID mediaId;
         try {
-            library.registerCompleted(file.get(), title);
+            mediaId = library.registerCompleted(file.get(), title);
         } catch (LibraryUnavailableException e) {
             fail(id, "LIBRARY_UNAVAILABLE");
             return;
@@ -208,6 +209,7 @@ public class DownloadSyncService {
             d.setState(DownloadState.COMPLETED);
             d.setProgressPercent(100);
             d.setFileRelativePath(file.get());
+            d.setLibraryMediaId(mediaId);
             d.setFinishedAt(Instant.now());
         });
     }

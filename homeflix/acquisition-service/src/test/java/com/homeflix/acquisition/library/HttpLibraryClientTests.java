@@ -13,13 +13,22 @@ import com.sun.net.httpserver.HttpServer;
 
 class HttpLibraryClientTests {
 
+	private static final java.util.UUID MEDIA = java.util.UUID.randomUUID();
+
 	private static HttpServer server(int status, AtomicInteger calls, String[] key) throws Exception {
 		HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		s.createContext("/internal/downloads/completed", ex -> {
 			calls.incrementAndGet();
 			key[0] = ex.getRequestHeaders().getFirst("X-Internal-Key");
 			ex.getRequestBody().readAllBytes();
-			ex.sendResponseHeaders(status, -1);
+			if (status == 200) {
+				byte[] body = ("{\"mediaId\":\"" + MEDIA + "\"}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+				ex.getResponseHeaders().add("Content-Type", "application/json");
+				ex.sendResponseHeaders(status, body.length);
+				ex.getResponseBody().write(body);
+			} else {
+				ex.sendResponseHeaders(status, -1);
+			}
 			ex.close();
 		});
 		s.start();
@@ -37,7 +46,7 @@ class HttpLibraryClientTests {
 		String[] key = new String[1];
 		HttpServer s = server(200, calls, key);
 		try {
-			client(s).registerCompleted("a.mkv", "A");
+			assertThat(client(s).registerCompleted("a.mkv", "A")).isEqualTo(MEDIA);
 			assertThat(calls).hasValue(1);
 			assertThat(key[0]).isEqualTo("secret");
 		} finally {

@@ -118,7 +118,8 @@ class InternalApiIntegrationTests {
     void withoutOrWithAWrongKeyEveryRouteAnswers401() throws Exception {
         String purge = "{\"scope\":\"PROFILE\",\"profileId\":\"" + lea + "\"}";
         for (String url : new String[] { "/internal/purge", "/internal/downloads", "/internal/downloads/completed",
-                "/internal/downloads/failed", "/internal/reindex" }) {
+                "/internal/downloads/failed",
+                "/internal/media/present", "/internal/reindex" }) {
             call(url, purge, null).andExpect(status().isUnauthorized());
             call(url, purge, "mauvaise-cle").andExpect(status().isUnauthorized());
             call(url, purge, KEY + "x").andExpect(status().isUnauthorized());
@@ -213,6 +214,20 @@ class InternalApiIntegrationTests {
             .isZero();
         assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'pret.mp4'", String.class))
             .isEqualTo("AVAILABLE");
+    }
+
+    @Test
+    void presentListsOnlyAvailableMedia() throws Exception {
+        Files.writeString(DOWNLOADS.resolve("pret.mp4"), "video");
+        call("/internal/downloads/completed", "{\"relativePath\":\"pret.mp4\"}").andExpect(status().isOk());
+        call("/internal/downloads", "{\"relativePath\":\"encours.mp4\"}").andExpect(status().isOk());
+        String ready = jdbc.queryForObject("select id::text from media_items where relative_path = 'pret.mp4'", String.class);
+        String pending = jdbc.queryForObject("select id::text from media_items where relative_path = 'encours.mp4'", String.class);
+
+        call("/internal/media/present", "{\"mediaIds\":[\"" + ready + "\",\"" + pending + "\",\"" + UUID.randomUUID() + "\"]}")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mediaIds.length()").value(1))
+            .andExpect(jsonPath("$.mediaIds[0]").value(ready));
     }
 
     @Test

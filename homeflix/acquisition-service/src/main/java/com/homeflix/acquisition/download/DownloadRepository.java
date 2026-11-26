@@ -21,5 +21,8 @@ public interface DownloadRepository extends JpaRepository<Download, UUID> {
 
     Page<Download> findByState(DownloadState state, Pageable pageable);
 
+    /** Téléchargements terminés dont le média est connu, du plus récent au plus ancien. */
+    List<Download> findByEntryIdInAndLibraryMediaIdIsNotNullOrderByCreatedAtDesc(Collection<UUID> entryIds);
+
     Optional<Download> findByEntryIdAndStateIn(UUID entryId, Collection<DownloadState> states);
 }

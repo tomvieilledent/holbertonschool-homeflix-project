@@ -22,6 +22,7 @@ import com.homeflix.acquisition.catalogue.CatalogueEntry;
 import com.homeflix.acquisition.catalogue.CatalogueEntryRepository;
 import com.homeflix.acquisition.catalogue.CatalogueService;
 import com.homeflix.acquisition.catalogue.DownloadSource;
+import com.homeflix.acquisition.catalogue.LibraryPresence;
 import com.homeflix.acquisition.library.LibraryClient;
 import com.homeflix.acquisition.library.LibraryRejectedException;
 import com.homeflix.acquisition.library.LibraryUnavailableException;
@@ -48,15 +49,17 @@ public class DownloadService {
     private final RightsNoticeService rights;
     private final TorrentClient torrent;
     private final LibraryClient library;
+    private final LibraryPresence presence;
 
     public DownloadService(DownloadRepository downloads, CatalogueEntryRepository entries, CatalogueService catalogue,
-            RightsNoticeService rights, TorrentClient torrent, LibraryClient library) {
+            RightsNoticeService rights, TorrentClient torrent, LibraryClient library, LibraryPresence presence) {
         this.downloads = downloads;
         this.entries = entries;
         this.catalogue = catalogue;
         this.rights = rights;
         this.torrent = torrent;
         this.library = library;
+        this.presence = presence;
     }
 
     public DownloadResponse start(UUID entryId, UUID accountId) {
@@ -67,6 +70,10 @@ public class DownloadService {
         DownloadSource source = catalogue.sourceFor(entryId);
         if (downloads.findByEntryIdAndStateIn(entryId, DownloadState.ACTIVE).isPresent()) {
             throw alreadyActive();
+        }
+        if (presence.mediaByEntry(List.of(entryId)).containsKey(entryId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "CONFLICT", "Déjà dans la bibliothèque",
+                    "Ce film est déjà dans la bibliothèque.");
         }
         Download download = new Download(entryId, accountId);
         try {
@@ -143,7 +150,7 @@ public class DownloadService {
     private static DownloadResponse toResponse(Download d, String title) {
         String code = d.getErrorCode();
         return new DownloadResponse(d.getId(), d.getEntryId(), title, d.getState(), d.getProgressPercent(), code,
-                messageFor(code), null, d.getCreatedAt(), d.getFinishedAt());
+                messageFor(code), d.getLibraryMediaId(), d.getCreatedAt(), d.getFinishedAt());
     }
 
     /** Message lisible, sans détail technique (le frontend choisit son propre texte à partir du code). */

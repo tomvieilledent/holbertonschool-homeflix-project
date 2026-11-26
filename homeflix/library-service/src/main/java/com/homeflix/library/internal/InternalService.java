@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -69,6 +70,15 @@ public class InternalService {
         MapSqlParameterSource params = new MapSqlParameterSource("id", id);
         jdbc.update("DELETE FROM favourites WHERE " + column + " = :id", params);
         jdbc.update("DELETE FROM progress WHERE " + column + " = :id", params);
+    }
+
+    /** Parmi ces médias, ceux qui sont encore au catalogue et lisibles. */
+    @Transactional(readOnly = true)
+    public List<UUID> present(PresentMediaRequest request) {
+        return items.findAllById(request.mediaIds()).stream()
+            .filter(item -> !item.isDeleted() && item.getAvailability() == Availability.AVAILABLE)
+            .map(MediaItem::getId)
+            .toList();
     }
 
     /** Fait apparaître le fichier en cours de téléchargement dans le catalogue, statut DOWNLOADING. */
