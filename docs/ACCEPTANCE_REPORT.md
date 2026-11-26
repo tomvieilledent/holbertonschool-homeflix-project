@@ -21,7 +21,7 @@
 | 3 | Chercher et lire | Conforme (préliminaire) | _à faire_ | |
 | 4 | Pause puis reprise | Conforme (préliminaire) | _à faire_ | |
 | 5 | Changer de profil | Conforme (préliminaire) | _à faire_ | |
-| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Annulation en cours de route et échec du client depuis #275, réseau de la soutenance ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
+| 6 | Acquérir un contenu manquant (P2P) | **Partiel** | _à faire_ | Essai sur le réseau de la soutenance ; torrent non retiré après un échec ([#111](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/111)) |
 | 7 | Action non autorisée | Conforme (préliminaire) | _à faire_ | |
 | 8 | Redémarrer les conteneurs | Conforme (préliminaire) | _à faire_ | |
 | 9 | Fichier ou service indisponible | Conforme (préliminaire) | _à faire_ | |
@@ -85,7 +85,7 @@
 
 ## Scénario 6 : acquérir un contenu manquant (P2P)
 
-**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 et 6 l'ont été depuis l'interface le 25/11 à 22:51 (commit `4652b9f`). Restent l'annulation en cours de route, l'échec du client et l'essai sur le réseau de la soutenance.
+**Statut : Partiel.** Les étapes 1 à 4 sont vérifiées par l'API ; les étapes 5 à 8 depuis l'interface les 25 et 26/11 (commit `4652b9f`). Reste l'essai sur le réseau de la soutenance, et un défaut relevé à l'étape 8.
 
 | Étape | Attendu | Obtenu (préliminaire) | Preuve | Statut |
 |---|---|---|---|---|
@@ -95,6 +95,8 @@
 | S6.4 Démarrer un téléchargement | 202, `DOWNLOADING` | 202, `DOWNLOADING` ; second démarrage 409 ; annulation `CANCELLED` ; panne de Transmission 503 puis reprise | `INTEGRATION_J7.md` | Conforme (préliminaire) |
 | S6.5 Suivre jusqu'à `COMPLETED` | La progression avance, état final `COMPLETED` | Progression visible sans recharger (20 % relevé), « Terminé » à 100 % en moins d'une minute (25/11) | `acceptance/s06-03-progression-20-pourcent.png`, `s06-04-etat-termine-100-pourcent.png` | Conforme (préliminaire) |
 | S6.6 Le fichier est indexé, visible puis lisible | Film dans le catalogue et lisible | Sintel dans « Médias » et sur l'accueil (« Disponible »), lecture démarrée, durée 14:48 ; ni année ni genre | `acceptance/s06-05-sintel-dans-medias.png`, `s06-06-sintel-accueil.png`, `s06-07-lecture-sintel.png` | Conforme (préliminaire) |
+| S6.7 Annuler en cours de route | État `CANCELLED`, aucun film ajouté | Annulé à 60 % ; aucune donnée dans `/downloads` ; Sintel absent de la bibliothèque (26/11) | `acceptance/s06-08-annulation.png`, `s06-09-annulation-medias-sans-sintel.png` | Conforme (préliminaire) |
+| S6.8 Arrêter le client BitTorrent pendant un transfert | État `FAILED`, message lisible, relance possible | « Échoué » à 13 % avec « Le service de téléchargement est injoignable. » ; après redémarrage le torrent a terminé seul sans que l'état change ; « Télécharger » de nouveau → « Terminé », film indexé (26/11) | `acceptance/s06-10-echec-client-coupe.png`, `s06-12-relance-terminee.png`, `s06-13-sintel-apres-relance.png` | **Partiel** (`KNOWN_LIMITS.md` L15) |
 
 ## Scénario 7 : action non autorisée
 
@@ -178,6 +180,7 @@ Preuves à ranger dans `acceptance/` : captures des écrans ci-dessus (sans mot 
 | Un compte désactivé garde l'accès jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | `ARCHITECTURE.md` §9 |
 | La confirmation de désactivation d'un compte annonce une fermeture « immédiate » des sessions | Hors scénarios, texte inexact | [#265](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/265) |
 | Un film retiré du catalogue ne peut pas être rajouté depuis l'écran | Scénario 2 (si retrait par erreur) | `KNOWN_LIMITS.md` L13 |
+| Après un échec par arrêt du client, le torrent reste et termine seul alors que l'état reste « Échoué » (contournement : relancer) | Scénario 6 | `KNOWN_LIMITS.md` L15 |
 | Les doublons de contenu ne sont pas détectés | Scénarios 2 et 6 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) |
 | Titres affichés = noms de fichier tant que les métadonnées ne sont pas corrigées | Scénarios 2 et 3 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) |
 | Pas de HTTPS dans l'application | Hors scénarios | README, section 6 |
