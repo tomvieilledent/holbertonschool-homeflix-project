@@ -136,7 +136,9 @@ paths:
     patch:
       tags: [Admin]
       summary: Modifie le libellé ou l'activation d'un dossier (ADMIN)
-      description: Le chemin n'est pas modifiable (supprimer puis recréer le dossier).
+      description: |
+        Le chemin n'est pas modifiable (supprimer puis recréer le dossier). `enabled: false` exclut seulement le dossier
+        des indexations : ses films restent visibles et lisibles. Pour les masquer, retirer le dossier (`DELETE`).
       requestBody:
         required: true
         content:
