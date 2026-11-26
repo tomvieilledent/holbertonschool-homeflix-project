@@ -54,6 +54,10 @@ public class MediaRootService {
         return check(rawPath).validation();
     }
 
+    /**
+     * Ajoute un dossier. S'il avait été retiré, il est réactivé avec ses entrées : la prochaine indexation les retrouve
+     * au lieu d'en créer d'autres, et les entrées retirées du catalogue le restent.
+     */
     @Transactional
     public MediaRootResponse create(MediaRootInput input) {
         Check check = check(input.path());
@@ -63,8 +67,13 @@ public class MediaRootService {
             throw new ApiException(status, v.code(), "Dossier refusé", v.message());
         }
         String label = input.label() == null || input.label().isBlank() ? defaultLabel(check.real()) : input.label().strip();
-        MediaRoot root = roots.save(new MediaRoot(check.real().toString(), label));
-        return MediaRootResponse.from(root);
+        String path = check.real().toString();
+        MediaRoot root = roots.findFirstByPathAndRemovedTrueOrderByCreatedAtDesc(path)
+                .orElseGet(() -> new MediaRoot(path, label));
+        root.setLabel(label);
+        root.setEnabled(true);
+        root.setRemoved(false);
+        return MediaRootResponse.from(roots.save(root));
     }
 
     @Transactional

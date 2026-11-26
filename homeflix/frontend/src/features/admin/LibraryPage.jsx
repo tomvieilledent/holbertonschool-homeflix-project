@@ -129,8 +129,8 @@ export default function LibraryPage() {
             disque.
           </p>
           <p>
-            Si vous le rajoutez plus tard, ses films seront ajoutés comme de nouveaux films : les anciennes fiches
-            resteront indisponibles, avec leurs corrections, leur place dans « Ma liste » et leur progression.
+            Si vous le rajoutez plus tard, une indexation retrouvera ses films avec leurs corrections, leur place dans
+            « Ma liste » et leur progression. Les films retirés du catalogue le resteront.
           </p>
         </ConfirmModal>
       )}
