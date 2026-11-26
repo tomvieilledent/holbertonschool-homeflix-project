@@ -251,7 +251,9 @@ describe('AccountsPage', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Désactiver le compte famille' }))
 
       expect(dialog()).toHaveAccessibleName('Désactiver le compte « famille » ?')
-      expect(within(dialog()).getByText(/sessions sont fermées immédiatement/)).toBeInTheDocument()
+      // La coupure n’est pas immédiate : le jeton d’accès déjà émis reste valable jusqu’à son expiration.
+      expect(within(dialog()).getByText(/session déjà ouverte peut continuer jusqu’à 15 minutes/)).toBeInTheDocument()
+      expect(dialog()).not.toHaveTextContent('immédiatement')
       expect(within(dialog()).getByRole('button', { name: 'Annuler' })).toHaveFocus()
       expect(writes).toHaveLength(0)
 
