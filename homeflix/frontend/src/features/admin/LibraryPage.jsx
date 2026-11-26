@@ -126,7 +126,11 @@ export default function LibraryPage() {
         >
           <p>
             Les films de ce dossier deviendront indisponibles dans le catalogue. Aucun fichier n’est supprimé de votre
-            disque : vous pourrez le rajouter plus tard.
+            disque.
+          </p>
+          <p>
+            Si vous le rajoutez plus tard, ses films seront ajoutés comme de nouveaux films : les anciennes fiches
+            resteront indisponibles, avec leurs corrections, leur place dans « Ma liste » et leur progression.
           </p>
         </ConfirmModal>
       )}
