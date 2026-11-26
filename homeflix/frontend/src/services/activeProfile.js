@@ -1,9 +1,8 @@
 // Profil actif retenu pour cet onglet (`sessionStorage`) : un identifiant de profil n'a rien de secret.
 //
-// Pourquoi : `POST /auth/refresh` renvoie un access token sans profil actif (`pid`), alors que le contrat dit
-// que le claim est conservé. Sans cette mémoire, chaque rechargement et chaque renouvellement du jeton (toutes
-// les 15 min) ferait perdre le profil : les routes de la bibliothèque répondraient `PROFILE_NOT_SELECTED`.
-// Après un refresh, le client ré-sélectionne ce profil (voir `refreshAccessToken` dans `api.js`).
+// Pourquoi : `POST /auth/refresh` conserve le profil actif de la session, mais tous les onglets partagent cette
+// session. Sans cette mémoire, un onglet passerait au profil choisi en dernier dans un autre à chaque renouvellement
+// du jeton. Après un refresh, le client ré-sélectionne ce profil (voir `refreshAccessToken` dans `api.js`).
 
 const KEY = 'homeflix:active-profile'
 

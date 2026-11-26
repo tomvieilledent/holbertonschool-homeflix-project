@@ -6,10 +6,11 @@ import { loginUrl } from '@/features/auth/redirect'
 /**
  * Garde de route : un anonyme est redirigé vers `/login?next=<destination>`. À utiliser comme route
  * de mise en page. Si la session vient d'expirer, la redirection porte `state.reason = 'session-expired'`
- * pour que la page de connexion explique pourquoi ; de même après la suppression du compte (`account-deleted`).
+ * pour que la page de connexion explique pourquoi ; de même après la suppression du compte (`account-deleted`) ou sa
+ * désactivation (`account-disabled`).
  */
 export default function RequireAuth() {
-  const { status, sessionExpired, accountDeleted } = useAuth()
+  const { status, sessionExpired, accountDisabled, accountDeleted } = useAuth()
   const location = useLocation()
 
   if (status === 'loading') {
@@ -19,9 +20,10 @@ export default function RequireAuth() {
       </div>
     )
   }
-  if (status === 'anonymous' && accountDeleted) {
-    // Le compte vient d'être supprimé : pas de `?next=` (la page demandée n'a plus de sens), seulement l'explication.
-    return <Navigate to="/login" replace state={{ reason: 'account-deleted' }} />
+  if (status === 'anonymous' && (accountDeleted || accountDisabled)) {
+    // Compte supprimé ou désactivé : pas de `?next=` (la page demandée n'a plus de sens), seulement l'explication.
+    const reason = accountDeleted ? 'account-deleted' : 'account-disabled'
+    return <Navigate to="/login" replace state={{ reason }} />
   }
   if (status === 'anonymous') {
     return (

@@ -54,6 +54,11 @@ const DOWNLOAD_FAILURES = {
   NO_PEERS: 'Aucune source n’est disponible pour ce fichier pour le moment.',
   DISK_FULL: 'L’espace disque est insuffisant pour ce téléchargement.',
   TORRENT_CLIENT_UNAVAILABLE: BY_CODE.TORRENT_CLIENT_UNAVAILABLE,
+  TORRENT_LOST: 'Le service de téléchargement a perdu la trace de ce téléchargement. Relancez-le depuis le catalogue.',
+  DOWNLOAD_FAILED: 'Le téléchargement a échoué sans cause précise. Relancez-le depuis le catalogue.',
+  INVALID_FILE: 'Le contenu téléchargé ne contient aucune vidéo prise en charge (.mp4, .mkv ou .webm).',
+  LIBRARY_UNAVAILABLE: 'Le fichier est téléchargé, mais la bibliothèque était indisponible : il n’a pas été ajouté.',
+  LIBRARY_REJECTED: 'Le fichier est téléchargé, mais la bibliothèque l’a refusé : il n’a pas été ajouté.',
 }
 
 /** Codes d'erreur métier pour lesquels un message est défini. */

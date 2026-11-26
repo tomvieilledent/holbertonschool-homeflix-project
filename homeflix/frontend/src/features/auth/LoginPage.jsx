@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/authContext'
 import { safeNext } from '@/features/auth/redirect'
 import SessionExpiredNotice from '@/features/auth/SessionExpiredNotice'
 import useSetupRequired from '@/features/auth/useSetupRequired'
+import { userMessage } from '@/services/errorMessages'
 
 /** Message d'échec de connexion : le 401 reste générique (rien sur l'existence du compte). */
 const failureMessage = (error) =>
@@ -69,6 +70,11 @@ export default function LoginPage() {
       )}
       {state?.reason === 'account-deleted' && (
         <p role="status">Votre compte et ses données ont été supprimés.</p>
+      )}
+      {state?.reason === 'account-disabled' && !error && (
+        <p className="auth-form__error" role="alert">
+          {userMessage('ACCOUNT_DISABLED')}
+        </p>
       )}
       {error && (
         <p className="auth-form__error" role="alert">

@@ -15,7 +15,8 @@ export async function listAccounts(query = {}, signal) {
 }
 
 /**
- * Crée un compte (`POST /admin/accounts`). Le mot de passe est temporaire : l'utilisateur devra le changer.
+ * Crée un compte (`POST /admin/accounts`). Le mot de passe choisi reste valable : aucun changement n'est imposé au
+ * nouveau compte (seule une réinitialisation, `resetPassword`, rend le mot de passe temporaire).
  * Lève une `ApiError` : `VALIDATION_ERROR` (champs), `CONFLICT` (identifiant ou e-mail déjà utilisé).
  * @param {{username: string, email: string, password: string, role: 'USER'|'ADMIN'}} account
  */
