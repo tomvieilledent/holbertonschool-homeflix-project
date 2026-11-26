@@ -41,18 +41,18 @@ règle). Il n'y a rien à signaler.
 | ID | Gravité | Titre | Décision humaine | Vérificateur | PR |
 |---|---|---|---|---|---|
 | AI-01 | Haute | `POST /profiles/{id}/select` émet un nouveau jeton à un compte désactivé ou déconnecté | Accepté | Tom ; Haitu : confirmé (26/11) | [#286](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/286) |
-| AI-02 | Moyenne | `inLibrary`, `libraryMediaId` et le refus `409` de `POST /downloads` sont décrits par le contrat mais jamais produits | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) (contrat) ; code après la soutenance |
+| AI-02 | Moyenne | `inLibrary`, `libraryMediaId` et le refus `409` de `POST /downloads` sont décrits par le contrat mais jamais produits | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) (contrat) puis [#308](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/308) (films arrivés par un téléchargement) |
 | AI-03 | Moyenne | Les extensions vidéo d'Acquisition et de Library diffèrent, et tout refus de Library est enregistré comme `LIBRARY_UNAVAILABLE` | Accepté | Tom | [#287](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/287) |
-| AI-04 | Moyenne | `mustChangePassword` est posé mais jamais appliqué, et aucune route ne permet de changer son mot de passe | Accepté | Tom | [#274](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/274) (écran frontend manquant) |
-| AI-05 | Moyenne | `data-model.md` décrit une purge asynchrone avec reprise et une purge Acquisition qui n'existent pas | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) |
+| AI-04 | Moyenne | `mustChangePassword` est posé mais jamais appliqué, et aucune route ne permet de changer son mot de passe | Accepté | Tom | Corrigé : [#274](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/274) avec l'écran [#315](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/315) |
+| AI-05 | Moyenne | `data-model.md` décrit une purge asynchrone avec reprise et une purge Acquisition qui n'existent pas | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) puis [#309](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/309) (purge côté Acquisition) |
 | AI-06 | Moyenne | Le flux Acquisition → Library n'est que partiel, et `internal.md` le décrit de façon périmée | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) |
 | AI-07 | Basse | Des valeurs de `errorCode` d'un téléchargement ne figurent pas au contrat, et le frontend les affiche avec un message générique | Accepté | Tom | [#287](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/287) ; messages frontend à faire |
-| AI-08 | Basse | Des codes et statuts d'erreur de Library sortent des conventions | Accepté | Tom | Après la soutenance |
-| AI-09 | Basse | Identity s'écarte de son contrat : `size` jusqu'à 100, `403` non documenté sur `/auth/me` | Accepté | Tom | Après la soutenance |
+| AI-08 | Basse | Des codes et statuts d'erreur de Library sortent des conventions | Accepté | Tom | Corrigé : [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311) |
+| AI-09 | Basse | Identity s'écarte de son contrat : `size` jusqu'à 100, `403` non documenté sur `/auth/me` | Accepté | Tom | Corrigé : [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311) |
 | AI-10 | Basse | L'ADR 0002 contredit la configuration actuelle (healthchecks, 401/503, port, surcouche de dev) | Accepté | Tom | Corrigé par Haitu dans l'ADR 0002 (26/11) |
 | AI-11 | Basse | Le modèle de session documenté omet `fid` et `active_profile_id`, et un commentaire du frontend contredit le contrat | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) ; commentaire frontend à faire |
-| AI-12 | Basse | Un dossier autorisé désactivé laisse ses médias lisibles (comportement non spécifié) | À clarifier | Tom | Décision d'équipe |
-| AI-13 | Information | `IdentityClient` de Library est du code mort, sans délai d'attente | Accepté | Tom | Après la soutenance |
+| AI-12 | Basse | Un dossier autorisé désactivé laisse ses médias lisibles (comportement non spécifié) | À clarifier | Tom | Choix assumé, précisé au contrat par [#313](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/313) |
+| AI-13 | Information | `IdentityClient` de Library est du code mort, sans délai d'attente | Accepté | Tom | Corrigé : [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311) |
 | AI-14 | Information | La validation du lien magnet accepte n'importe quel paramètre après l'infohash | Rejeté | Tom | Abandonné |
 
 ---
@@ -104,7 +104,7 @@ Bilan : 12 acceptés, 1 à clarifier (AI-12), 1 rejeté (AI-14).
 | Preuve de reproduction | *Établi par lecture* : `CatalogueService.java:61` passe littéralement `false, null` ; `DownloadService.java:133` passe `null` à la position `libraryMediaId` du record `DownloadResponse.java:18` ; `DownloadService.start` ne consulte aucun état « en bibliothèque ». *À refaire (non exécuté)* : terminer un téléchargement (#111), puis `GET /api/acquisition/v1/catalogue` (`inLibrary` attendu `false`) et `POST /api/acquisition/v1/downloads` sur la même entrée (`202` attendu au lieu de `409`). |
 | Correction suggérée | Faire renvoyer le `mediaId` par `LibraryClient.registerCompleted`, le stocker (colonne `library_media_id` dans `downloads`, nouvelle migration), en déduire `inLibrary` et `libraryMediaId` dans `CatalogueService.list` et refuser `POST /downloads` par `409 CONFLICT`. Sinon, si c'est hors périmètre : marquer ces champs et ce `409` « non implémentés » dans `acquisition.openapi.yaml` et dans les limites connues. |
 | Décision humaine | **Accepté** — Confirmé par lecture : `false, null` et `libraryMediaId` nul en dur, aucun refus 409 dans `DownloadService.start`. |
-| Suite | PR [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) : champs et `409` marqués non implémentés dans le contrat. Implémentation après la soutenance. À reporter dans les limites connues. |
+| Suite | PR [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) : champs et `409` marqués non implémentés dans le contrat. Implémentation après la soutenance. À reporter dans les limites connues. **Mise à jour (26/11 soir) :** implémenté par [#308](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/308) pour les films arrivés par un téléchargement. |
 
 ### AI-03 — Les extensions vidéo d'Acquisition et de Library diffèrent, et tout refus de Library est enregistré comme `LIBRARY_UNAVAILABLE`
 
@@ -160,7 +160,7 @@ Bilan : 12 acceptés, 1 à clarifier (AI-12), 1 rejeté (AI-14).
 | Preuve de reproduction | *Établi par lecture* : recherche `/internal/` dans `acquisition-service/src/main` → uniquement `HttpLibraryClient.java:44` (`/internal/downloads/completed`). *À refaire (non exécuté)* : lancer un téléchargement et lister `GET /api/library/v1/media?availability=DOWNLOADING` pendant le transfert : liste vide attendue. |
 | Correction suggérée | Soit ajouter `markDownloading` (appelé après `torrent.add` dans `DownloadService.start`) et éventuellement `reindex` à `LibraryClient` ; soit retirer ces flux de `data-model.md` et d'`internal.md`. Dans tous les cas, mettre à jour `internal.md` : lignes 12-14 (état « fait » et délais 3 s, 3 essais), ligne 78 (supprimer « la synchronisation non ») et ligne 90. |
 | Décision humaine | **Accepté** — Confirmé par lecture : seul `/internal/downloads/completed` est appelé. Écart supplémentaire : `internal.md` annonce une reprise « jusqu'à succès », alors que le code passe en `FAILED` après 3 essais. La remarque sur l'indexation est mineure : `upsert` indexe bien le fichier déclaré. |
-| Suite | PR [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) (en relecture) : `internal.md` et `data-model.md` corrigés. Statut `DOWNLOADING` : après la soutenance. |
+| Suite | PR [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) (en relecture) : `internal.md` et `data-model.md` corrigés. Statut `DOWNLOADING` : après la soutenance. **Mise à jour (26/11 soir) :** statut « en téléchargement » branché par [#307](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/307). |
 
 ### AI-07 — Des valeurs de `errorCode` d'un téléchargement ne figurent pas au contrat, et le frontend les affiche avec un message générique
 
@@ -188,7 +188,7 @@ Bilan : 12 acceptés, 1 à clarifier (AI-12), 1 rejeté (AI-14).
 | Preuve de reproduction | *Établi par lecture* (recherches et lignes citées). |
 | Correction suggérée | Ajouter `RANGE_NOT_SATISFIABLE` (416) à `CONVENTIONS.md`. Retirer le `415` de `library.openapi.yaml` ou l'implémenter dans `StreamController.contentType`. Utiliser un autre code pour l'erreur d'entrée-sortie de `InternalService:117` (par exemple `INTERNAL_ERROR` en `500`, ou `404 MEDIA_FILE_MISSING`). |
 | Décision humaine | **Accepté** — Confirmé par lecture et recherche : `MEDIA_UNSUPPORTED_FORMAT` n'est produit par aucun service, `RANGE_NOT_SATISFIABLE` n'est pas dans les conventions, `MEDIA_FILE_MISSING` sort en 503. |
-| Suite | Après la soutenance. |
+| Suite | Après la soutenance. **Mise à jour (26/11 soir) :** corrigé par [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311). |
 
 ### AI-09 — Identity s'écarte de son contrat : `size` jusqu'à 100, `403` non documenté sur `/auth/me`
 
@@ -202,7 +202,7 @@ Bilan : 12 acceptés, 1 à clarifier (AI-12), 1 rejeté (AI-14).
 | Preuve de reproduction | *Établi par lecture*. *À refaire (non exécuté)* : `GET /api/identity/v1/admin/accounts?size=80` → `200` attendu (contrat : `400`). |
 | Correction suggérée | Ramener `MAX_SIZE` à 50 ou documenter 100. Ajouter `403` (`ACCOUNT_DISABLED`) à `/auth/me` dans `identity.openapi.yaml`. |
 | Décision humaine | **Accepté** — Reproduit par test : `size=80` répond 200, et `/auth/me` répond 403 `ACCOUNT_DISABLED` pour un compte désactivé. |
-| Suite | Après la soutenance : ramener le maximum à 50 et documenter le 403. |
+| Suite | Après la soutenance : ramener le maximum à 50 et documenter le 403. **Mise à jour (26/11 soir) :** corrigé par [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311). |
 
 ### AI-10 — L'ADR 0002 contredit la configuration actuelle
 
@@ -258,7 +258,7 @@ Bilan : 12 acceptés, 1 à clarifier (AI-12), 1 rejeté (AI-14).
 | Preuve de reproduction | *Établi par lecture* : recherche `fetchSigningKeys|IdentityClient` dans `library-service/src`. |
 | Correction suggérée | Supprimer `IdentityClient` et son test, ou lui appliquer `identity.jwks-timeout`. |
 | Décision humaine | **Accepté** — Confirmé par recherche : `IdentityClient` n'est utilisé que par son test. Aucun effet en production. |
-| Suite | Suppression après la soutenance. |
+| Suite | Suppression après la soutenance. **Mise à jour (26/11 soir) :** code supprimé par [#311](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/311). |
 
 ### AI-14 — La validation du lien magnet accepte n'importe quel paramètre après l'infohash
 
