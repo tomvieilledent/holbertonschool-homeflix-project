@@ -180,11 +180,21 @@ Passage manuel sur la pile réelle remise à zéro, commit `12d033e`. Il porte s
 | R2 | Pause puis reprise | « Reprendre à 2:00 » et barre de progression ; F5 conserve le profil (compte à deux profils) | [`s04-reprendre-a-2-00.png`](acceptance/s04-reprendre-a-2-00.png) | Conforme |
 | R3 | Téléchargement visible dans le catalogue (#307) | « En téléchargement », puis « Terminé » à 100 % | [`s06-17-en-telechargement.png`](acceptance/s06-17-en-telechargement.png) | Conforme |
 | R4 | Film déjà téléchargé (#308) | « Dans la bibliothèque · Voir » à la place de « Télécharger » | [`s06-18-dans-la-bibliotheque.png`](acceptance/s06-18-dans-la-bibliotheque.png) | Conforme |
-| R4 bis | Retélécharger un film retiré | « Échoué » à 0 %, refus de Library (409) | [`s06-19-retelechargement-refuse.png`](acceptance/s06-19-retelechargement-refuse.png) | **Non conforme** ([#316](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/316)) |
+| R4 bis | Retélécharger un film retiré | « Échoué » à 0 %, refus de Library (409) | [`s06-19-retelechargement-refuse.png`](acceptance/s06-19-retelechargement-refuse.png) | **Non conforme** à ce commit ([#316](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/316), corrigé ensuite par #321, vérifié ci-dessous) |
 | R5 | Annulation en cours de route (#307) | Aucune fiche « Sintel » au catalogue | | Conforme |
 | R6 | Mot de passe réinitialisé (#274, #315) | Changement imposé ; mauvais mot de passe actuel refusé ; ancien temporaire refusé après le changement | [`s07-changement-impose.png`](acceptance/s07-changement-impose.png) | Conforme |
 | R7 | Compte désactivé avec une session ouverte (#314) | Au changement de profil : retour à la connexion avec « Ce compte est désactivé » | [`s07-compte-desactive.png`](acceptance/s07-compte-desactive.png) | Conforme |
 | R8 | Suppression d'un compte (#309) | Favoris, progression, acquittement et compte : 1 avant, 0 après ; 1 téléchargement conservé, anonymisé | Comptages dans les trois bases | Conforme |
+
+### Après #321, #322 et #312 (26/11, soir)
+
+Pile reconstruite et remise à zéro, commit `ec117da`.
+
+| # | Vérifié | Obtenu | Preuve | Statut |
+|---|---|---|---|---|
+| E1 | Affiches (#312) | Affiches des deux films de `/media` sur l'accueil, le catalogue et la fiche | [`s03-affiches.png`](acceptance/s03-affiches.png) | Conforme |
+| E2 | Retélécharger un film téléchargé puis retiré (#321) | Second téléchargement « Terminé », film de retour au catalogue et lu | [`s06-20-retelechargement-termine.png`](acceptance/s06-20-retelechargement-termine.png) | Conforme |
+| E3 | Retirer puis rajouter `/media`, puis indexer (#322) | 0 film ajouté, 0 doublon ; le film retiré auparavant ne revient pas ; « Ma liste » et la reprise à 1:01 conservées | [`s02-dossier-rajoute-indexation.png`](acceptance/s02-dossier-rajoute-indexation.png), [`s02-dossier-rajoute-medias.png`](acceptance/s02-dossier-rajoute-medias.png) | Conforme |
 
 ## Défauts connus
 
@@ -194,8 +204,6 @@ Passage manuel sur la pile réelle remise à zéro, commit `12d033e`. Il porte s
 |---|---|---|
 | Un compte désactivé garde l'accès jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | `ARCHITECTURE.md` §9 |
 | Un film retiré du catalogue ne peut pas être rajouté depuis l'écran | Scénario 2 (si retrait par erreur) | `KNOWN_LIMITS.md` L13 |
-| Un film téléchargé puis retiré ne peut pas être retéléchargé | Scénario 6 (si retrait après téléchargement) | [#316](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/316) |
-| Retirer puis rajouter un dossier duplique les films | Scénario 2 (si retrait d'un dossier) | [#277](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/277) |
 | Les doublons de contenu ne sont pas détectés | Scénarios 2 et 6 | [#73](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/73) |
 | Titres affichés = noms de fichier tant que les métadonnées ne sont pas corrigées | Scénarios 2 et 3 | [#84](https://github.com/tomvieilledent/holbertonschool-homeflix-project/issues/84) |
 | Pas de HTTPS dans l'application | Hors scénarios | README, section 6 |

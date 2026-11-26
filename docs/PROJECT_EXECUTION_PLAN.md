@@ -211,6 +211,22 @@ Le registre complet (28 risques avec probabilité, impact, mesure et responsable
 - **Obligatoires (P0/P1)** : setup admin, auth/refresh/logout, comptes et rôles, profils, indexation, catalogue/recherche/genres, streaming Range, progression, favoris, administration, acquisition P2P réelle, Docker Compose, doc, tests, acceptation, agent IA, vidéo.
 - **Facultatives (P2/P3)** : anti brute-force, état des services (P2), E2E Playwright, onboarding guidé.
 
+### Exclusions du MVP
+
+Ce que le MVP ne fait **pas**, par choix. Le détail et les effets sont dans [`KNOWN_LIMITS.md`](KNOWN_LIMITS.md). La priorité est celle qu'on donnerait à une évolution.
+
+| Exclusion | Pourquoi | Évolution | Référence |
+|---|---|---|---|
+| Conversion vidéo (transcodage) | Le fichier est servi tel quel : serveur léger ; lecture vérifiée en MP4 H.264/AAC | P1 | T7 |
+| HTTPS fourni par l'application | Usage sur réseau local ; derrière un proxy HTTPS s'il en sort | P1 | T4 |
+| Sous-titres, pistes audio multiples, séries et saisons | Hors du parcours « un film » | P2 | L7 |
+| Métadonnées et affiches récupérées sur Internet | Aucun appel à un service externe : métadonnées saisies à la main, affiche lue seulement à côté de la vidéo | P2 | L6, L7 |
+| Lien magnet ou adresse libre au téléchargement | Droit d'auteur : catalogue fermé, source et licence documentées | Non prévu | T6 |
+| Rotation de la clé de signature, secrets Docker | Simplicité du MVP | P2 | T2, T3 |
+| Détection des doublons de contenu | L'empreinte est la taille, la date et le chemin | P3 | L16 |
+| Port de pairs BitTorrent publié | Transmission reste isolé | P3 | T5 |
+| NAS, macOS, Windows sans WSL 2, ARM, Safari et navigateurs mobiles réels | Non testés : aucun support promis | P3 | Section 6 des limites |
+
 ## 8. Décisions techniques à confirmer (J1)
 
 1. JWT RS256 + JWKS, refresh en cookie HttpOnly, claim `pid`, ticket de streaming (ADR de l'issue « ADR identité et sécurité »).

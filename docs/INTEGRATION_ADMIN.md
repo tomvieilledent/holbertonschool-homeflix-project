@@ -6,7 +6,7 @@ Fait le 25/11/2026 sur la pile Docker Compose, sans mock, avec un compte adminis
 
 ## Résultat
 
-**Les écrans d'administration fonctionnent contre l'API réelle.** Un défaut du service Library reste à corriger (A1).
+**Les écrans d'administration fonctionnent contre l'API réelle.** Le défaut du service Library relevé alors (A1) est corrigé depuis par #322.
 
 | Contrôle | Résultat |
 |---|---|
@@ -18,7 +18,7 @@ Fait le 25/11/2026 sur la pile Docker Compose, sans mock, avec un compte adminis
 
 | # | Constat | Service | Suggestion |
 |---|---|---|---|
-| A1 | **Retirer un dossier puis le rajouter indexe ses films en double.** Constaté : 31 films avant, 36 après (5 fichiers dans le dossier). La fiche corrigée (titre, genre, année), sa place dans « Ma liste » et sa progression restent sur l'ancienne entrée, indisponible ; la nouvelle repart de zéro | Library | À l'ajout, réactiver le dossier retiré de même chemin (`removed = false`) : les entrées seraient retrouvées par dossier et chemin relatif |
+| A1 | *Corrigé le 26/11 par #322.* **Retirer un dossier puis le rajouter indexe ses films en double.** Constaté : 31 films avant, 36 après (5 fichiers dans le dossier). La fiche corrigée (titre, genre, année), sa place dans « Ma liste » et sa progression restent sur l'ancienne entrée, indisponible ; la nouvelle repart de zéro | Library | À l'ajout, réactiver le dossier retiré de même chemin (`removed = false`) : les entrées seraient retrouvées par dossier et chemin relatif |
 | A2 | Deux fichiers identiques donnent deux entrées, « Doublons 0 » | Library | Point encore ouvert dans #73 |
 | A3 | Un fichier `.mp4` corrompu est ajouté au catalogue, « Erreurs 0 » ; l'échec n'apparaît qu'à la lecture | Library | Contrôler le contenu à l'indexation, ou assumer et le documenter |
 | A4 | La durée reste vide (« — ») pour les films indexés | Library | Limite déjà connue ([`KNOWN_LIMITS.md`](KNOWN_LIMITS.md)) |
@@ -26,7 +26,7 @@ Fait le 25/11/2026 sur la pile Docker Compose, sans mock, avec un compte adminis
 
 ## Corrigé côté interface
 
-La fenêtre de retrait d'un dossier disait « vous pourrez le rajouter plus tard » sans prévenir de A1. Elle indique maintenant que les films seront ajoutés comme de nouveaux films. **Texte à revoir quand A1 sera corrigé.**
+La fenêtre de retrait d'un dossier disait « vous pourrez le rajouter plus tard » sans prévenir de A1. Elle indique maintenant que les films seront ajoutés comme de nouveaux films. Texte mis à jour par #322 avec la correction.
 
 ## À savoir
 
