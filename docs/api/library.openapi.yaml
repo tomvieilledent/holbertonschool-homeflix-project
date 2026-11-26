@@ -380,6 +380,23 @@ paths:
               schema: { type: array, items: { $ref: "#/components/schemas/ContinueWatchingItem" } }
         "401": { $ref: "#/components/responses/Problem" }
         "409": { $ref: "#/components/responses/Problem" }
+  /me/completed:
+    get:
+      tags: [Profile data]
+      summary: Titres terminés du profil actif
+      description: États `COMPLETED` uniquement, triés par dernière lecture décroissante. La progression se réinitialise avec `DELETE /media/{mediaId}/progress`.
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200":
+          description: Titres terminés
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaPage" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
   /home:
     get:
       tags: [Profile data]
