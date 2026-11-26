@@ -37,7 +37,7 @@ Cinq étapes. Toutes les commandes se lancent dans le dossier `homeflix/` du dé
 
 **1. Récupérer le code**
 
-Le dépôt est **privé** : il faut un compte GitHub qui y a accès (identifiants ou clé SSH). Sans accès, le clonage s'arrête sur une demande d'identifiant.
+Si GitHub demande un identifiant pendant le clonage, c'est que le dépôt n'est pas public pour vous : il faut un compte GitHub qui y a accès (identifiants ou clé SSH).
 
 ```bash
 git clone https://github.com/tomvieilledent/holbertonschool-homeflix-project.git
@@ -98,74 +98,42 @@ Ouvrez **http://localhost:8080/setup** (écran « Première configuration ») et
 
 Après l'envoi, vous arrivez sur la page de connexion (« Administrateur créé. Connectez-vous pour continuer. »). Cette étape ne se fait qu'**une fois** : ensuite, l'adresse `/setup` renvoie vers la connexion.
 
-### Déclarer votre dossier de films et lancer l'indexation
-
-Les écrans d'administration (dossiers, indexation, comptes, profils) sont **en cours de développement**. En attendant, ces trois actions se font en ligne de commande, avec l'API que l'interface utilisera. Elles marchent telles quelles.
-
-D'abord, obtenez un jeton de connexion (valable 15 minutes ; relancez ces deux lignes quand il expire). Évitez les guillemets `"` et les antislashs `\` dans votre mot de passe pour ces commandes :
-
-```bash
-BASE=http://localhost:8080
-read -r -p "Identifiant : " ADMIN; read -r -s -p "Mot de passe : " PASS; echo
-TOKEN=$(curl -s -X POST "$BASE/api/identity/v1/auth/login" -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$ADMIN\",\"password\":\"$PASS\"}" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
-[ -n "$TOKEN" ] && echo "Connecté" || echo "Échec de la connexion"
-```
-
-Ensuite, déclarez le dossier de films. Dans le conteneur, votre `MEDIA_DIR` s'appelle toujours **`/media`** :
-
-```bash
-curl -s -X POST "$BASE/api/library/v1/admin/media-roots" -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"path":"/media","label":"Mes films"}'
-```
-
-La réponse contient l'identifiant du dossier (code HTTP 201). Puis lancez l'indexation et regardez son état :
-
-```bash
-curl -s -X POST "$BASE/api/library/v1/admin/index" -H "Authorization: Bearer $TOKEN"
-curl -s "$BASE/api/library/v1/admin/index/status" -H "Authorization: Bearer $TOKEN"
-```
-
-L'indexation est rapide : `"state":"COMPLETED"` indique qu'elle est finie, et `"added"` donne le nombre de films ajoutés. Relancez-la chaque fois que vous ajoutez des films. Un film dont le fichier disparaît (ou dont le disque est démonté) passe à « indisponible » sans être supprimé, et revient quand le fichier revient.
-
 ### Créer un profil
 
-Chaque personne regarde avec un **profil** (jusqu'à 5 par compte) : c'est à lui que sont rattachés la progression et la liste « Ma liste ». Créez le vôtre :
+Chaque personne regarde avec un **profil** (jusqu'à 5 par compte) : c'est à lui que sont rattachés la progression et la liste « Ma liste ». À la première connexion, l'écran « Aucun profil » propose **Créer un profil**. Les profils se renomment et se suppriment ensuite dans le menu du compte, « Gérer les profils ».
 
-```bash
-curl -s -X POST "$BASE/api/identity/v1/profiles" -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"name":"Moi","avatar":"bleu"}'
-```
+### Déclarer votre dossier de films et lancer l'indexation (administrateur)
 
-### Ajouter un proche
+1. Ouvrez **Administration → Bibliothèque** (tant qu'aucun film n'est indexé, l'Accueil de l'administrateur y mène aussi).
+2. Cliquez sur **Ajouter un dossier**, saisissez **`/media`** (dans le conteneur, votre `MEDIA_DIR` s'appelle toujours ainsi), puis **Vérifier le dossier** et **Ajouter le dossier**.
+3. Cliquez sur **Lancer l'indexation**. À la fin, les compteurs indiquent combien de films ont été ajoutés.
 
-L'administrateur crée un compte (rôle `USER`) ; la personne se connecte ensuite sur http://localhost:8080 et crée son profil avec la commande ci-dessus, en utilisant **son** jeton. Le mot de passe (12 caractères minimum) est saisi sans s'afficher et n'est écrit nulle part :
+Relancez l'indexation chaque fois que vous ajoutez des films. Un film dont le fichier disparaît (ou dont le disque est démonté) passe à « indisponible » sans être supprimé, et revient quand le fichier revient.
 
-```bash
-read -r -p "Identifiant du proche : " NEWUSER; read -r -p "Adresse e-mail : " NEWMAIL
-read -r -s -p "Mot de passe (12 caractères minimum) : " NEWPASS; echo
-curl -s -X POST "$BASE/api/identity/v1/admin/accounts" -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$NEWUSER\",\"email\":\"$NEWMAIL\",\"password\":\"$NEWPASS\",\"role\":\"USER\"}"
-```
+Les titres affichés sont d'abord les **noms de fichier** (par exemple `big-buck-bunny-2008-640`). Corrigez titre, année, genres et description dans **Administration → Médias** : une réindexation ne les écrase pas.
+
+### Ajouter un proche (administrateur)
+
+Dans **Administration → Comptes**, cliquez sur **Créer un compte** (rôle « Utilisateur », mot de passe de 12 caractères minimum) et communiquez-lui son identifiant et son mot de passe. La personne se connecte sur http://localhost:8080 et crée son profil.
 
 ### Regarder un film
 
 1. Ouvrez **http://localhost:8080** et connectez-vous.
 2. Choisissez votre profil (« Qui regarde ? »). Si vous n'en avez qu'un, il est choisi automatiquement.
-3. Ouvrez le **Catalogue** (recherche par titre), choisissez un film, puis lancez la lecture.
-4. Vous pouvez avancer et reculer dans la vidéo.
+3. Ouvrez l'**Accueil** ou le **Catalogue** (recherche par titre, filtre par genre), choisissez un film, puis lancez la lecture.
+4. Vous pouvez avancer et reculer dans la vidéo. La position est enregistrée : le film reprend là où vous vous êtes arrêté.
 
-> **À savoir.**
-> - Les titres affichés sont les **noms de fichier** (par exemple `big-buck-bunny-2008-640`) tant qu'un administrateur n'a pas corrigé les métadonnées, ce qui ne se fait pour l'instant que par l'API.
-> - Le lecteur **n'enregistre pas encore la position** : « Reprendre à… » et la rangée « Continuer à regarder » de l'Accueil restent donc vides (issue #65).
-> - L'**Accueil** fonctionne (récents, catégories, « Ma liste »), mais ses rangées sont vides tant qu'il n'y a pas de média ou de favori.
+> **À savoir.** Il n'y a ni affiches, ni durée sur les cartes, ni sous-titres dans le lecteur. Les autres limites sont dans [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md).
 
 ### Télécharger un film autorisé en P2P (administrateur)
 
-> **En cours de développement.** Par l'API, l'administrateur peut déjà lire et acquitter le rappel des droits, démarrer, suivre et annuler un téléchargement du catalogue fermé. Il n'y a pas encore d'écran d'administration, et l'état d'un téléchargement n'avance pas tout seul : il reste « DOWNLOADING » à 0 % tant que la synchronisation avec le client BitTorrent n'est pas livrée (issue #99). Le fichier reçu n'est donc pas encore indexé automatiquement.
+Le catalogue des contenus téléchargeables est **fermé** : seules des entrées avec une source et une licence documentées y figurent (voir [`docs/legal/P2P_DEMO.md`](docs/legal/P2P_DEMO.md)), et aucune adresse ne peut être saisie.
 
-Ce qui est déjà en place : le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur ; le catalogue des contenus téléchargeables est **fermé** (seules des entrées avec une source et une licence documentées y figurent, voir [`docs/legal/P2P_DEMO.md`](docs/legal/P2P_DEMO.md)). Les fichiers terminés arrivent dans `/downloads/complete`. Pour que Library les voie, déclarez le dossier **`/downloads`** (et non `/downloads/complete`) : même appel que pour `/media`, avec `"path":"/downloads"`.
+1. Dans **Administration → Bibliothèque**, ajoutez aussi le dossier **`/downloads`** (et non `/downloads/complete`), comme pour `/media`. Sans cela, le film reçu ne peut pas entrer dans la bibliothèque.
+2. Ouvrez **Administration → Acquisition** et cliquez sur **Télécharger**. La première fois, lisez et acceptez le rappel des droits.
+3. Suivez la progression dans « Téléchargements » jusqu'à « Terminé » : le film apparaît alors dans le catalogue. Il n'a que son titre : complétez année et genres dans « Médias ».
+
+Un film déjà présent dans la bibliothèque n'est pas proposé au téléchargement (« Dans la bibliothèque »). Le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur. Les fichiers terminés arrivent dans `/downloads/complete`.
 
 ## 4. Configuration
 
@@ -247,13 +215,14 @@ Commencez toujours par `docker compose ps` (état des services) puis `docker com
 | Le premier démarrage est très long ou un service est `unhealthy` | Compilation en cours, ou mémoire insuffisante | Patientez jusqu'à une dizaine de minutes la première fois ; sinon lisez `docker compose logs <service>` |
 | Un conteneur s'arrête seul (code 137, `Killed`) | Manque de mémoire | Libérez de la mémoire ou, sous Docker Desktop, augmentez-la dans les réglages (au moins 4 Go) |
 | Erreur d'authentification de PostgreSQL après avoir régénéré `.env` | Les mots de passe sont lus seulement à la création du volume | `docker compose down -v` (efface les données), puis relancez |
-| Aucun film après l'indexation | Dossier non déclaré, mauvais chemin, ou extension non reconnue (`.mp4`, `.mkv`, `.webm`) | Vérifiez `MEDIA_DIR` et la déclaration de `/media` ; lisez `"errors"` dans l'état de l'indexation |
+| Aucun film après l'indexation | Dossier non déclaré, mauvais chemin, ou extension non reconnue (`.mp4`, `.mkv`, `.webm`) | Vérifiez `MEDIA_DIR` et la déclaration de `/media` ; regardez le compteur « Erreurs » dans Administration → Bibliothèque |
 | Un film est « indisponible » | Fichier absent, droits insuffisants ou partage démonté | Rétablissez le fichier ou le montage, puis relancez l'indexation |
 | La vidéo ne démarre pas | Format non pris en charge par votre navigateur (souvent `.mkv`) | Utilisez un MP4 H.264/AAC |
 | `429` « Trop de tentatives » à la connexion | Cinq mauvais mots de passe de suite verrouillent l'identifiant pendant 5 minutes | Patientez 5 minutes, ou `docker compose restart identity-service` (le compteur est en mémoire) |
 | Déconnecté à chaque rechargement en HTTP depuis un autre appareil | Le cookie de session est « Secure » et le navigateur le refuse hors HTTPS | Sur un réseau de confiance : `COOKIE_SECURE=false` dans `.env`, puis `docker compose up -d` |
 | Droits refusés sur `/downloads` | `PUID` et `PGID` ne correspondent pas au propriétaire du dossier | Ajustez `PUID`/`PGID` (`id -u`, `id -g`) ou changez le propriétaire du dossier |
-| Un appel de téléchargement répond `409` « dossier non déclaré » | `/downloads` n'est pas déclaré comme dossier dans Library | Déclarez `/downloads` (section 3) |
+| Un téléchargement échoue à la fin, ou le film reçu n'apparaît pas | `/downloads` n'est pas déclaré comme dossier dans Library | Déclarez `/downloads` (section 3), puis relancez le téléchargement |
+| Un téléchargement « Échoué » : « service de téléchargement injoignable » | Le client BitTorrent s'est arrêté | Vérifiez `docker compose ps`, puis cliquez de nouveau sur « Télécharger » |
 | Un téléchargement P2P ne démarre jamais | Aucun pair disponible, ou le réseau bloque BitTorrent | Mettez `TRANSMISSION_DHT=true` dans `.env` et relancez ; sinon essayez un autre réseau |
 
 Les limites connues du MVP, avec l'issue qui les suit, sont listées dans [`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md).
