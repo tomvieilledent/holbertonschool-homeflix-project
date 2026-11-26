@@ -259,6 +259,29 @@ describe('lecteur et progression', () => {
     expect(screen.queryByLabelText('Progression de visionnage')).not.toBeInTheDocument()
   })
 
+  it('un film terminé rejoint les « Titres terminés » du profil ; réinitialisé, il repart de zéro', async () => {
+    const actor = user()
+    const { router } = openApp('/')
+    await signInAs(actor, { profile: 'Alice' })
+    const video = await startPlaying(actor)
+    pauseAt(video, FILM_DURATION)
+    await waitFor(() => expect(requestsTo(/PUT .*\/progress/)).toHaveLength(1))
+
+    // Un autre profil ne le voit pas.
+    await switchProfile(actor, 'Bruno')
+    await screen.findByRole('region', { name: 'Ajoutés récemment' })
+    expect(screen.queryByRole('region', { name: 'Titres terminés' })).not.toBeInTheDocument()
+
+    await switchProfile(actor, 'Alice')
+    const done = await screen.findByRole('region', { name: 'Titres terminés' })
+    expect(within(done).getByRole('heading', { level: 3, name: FILM })).toBeInTheDocument()
+    await actor.click(within(done).getByRole('button', { name: `Réinitialiser la progression de « ${FILM} »` }))
+    await waitFor(() => expect(within(done).queryByRole('heading', { level: 3, name: FILM })).not.toBeInTheDocument())
+
+    await act(async () => router.navigate(`/media/${journey.db.media.find((m) => m.title === FILM).id}`))
+    expect(await screen.findByRole('link', { name: 'Lecture' })).toBeInTheDocument()
+  })
+
   it('chaque profil a sa propre position de lecture', async () => {
     const actor = user()
     openApp('/')

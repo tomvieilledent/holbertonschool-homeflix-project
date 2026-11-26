@@ -42,6 +42,12 @@
   gap: var(--space-2);
 }
 
+/* Action propre à une liste (`action`) : marges latérales réduites, son libellé tient sur deux lignes sur une carte
+   étroite. */
+.movie-card > .btn {
+  padding-inline: var(--space-2);
+}
+
 .availability-badge {
   display: inline-block;
   padding: var(--space-1) var(--space-2);

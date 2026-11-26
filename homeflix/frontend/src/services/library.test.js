@@ -2,7 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { setAccessToken } from '@/services/api'
-import { getProgress, resetProgress, saveProgress } from '@/services/library'
+import { getProgress, listAllCompleted, resetProgress, saveProgress } from '@/services/library'
 
 const server = setupServer()
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -33,6 +33,40 @@ function slowWrites(stored, { fail = false } = {}) {
 beforeEach(() => {
   server.resetHandlers()
   setAccessToken('jeton')
+})
+
+describe('titres terminés', () => {
+  const COMPLETED = '*/api/library/v1/me/completed'
+  const page = (items, number = 0, totalPages = 1) => ({ items, page: number, size: 50, total: items.length, totalPages })
+
+  it('parcourt toutes les pages', async () => {
+    const asked = []
+    server.use(
+      http.get(COMPLETED, ({ request }) => {
+        const query = new URL(request.url).searchParams
+        asked.push(`${query.get('page')}/${query.get('size')}`)
+        const number = Number(query.get('page'))
+        return HttpResponse.json(page([{ id: `m${number}` }], number, 3))
+      }),
+    )
+    expect(await listAllCompleted()).toEqual([{ id: 'm0' }, { id: 'm1' }, { id: 'm2' }])
+    expect(asked).toEqual(['0/50', '1/50', '2/50'])
+  })
+
+  it('attend la sauvegarde en cours : un film qu’on vient de terminer y figure', async () => {
+    const stored = {}
+    server.use(
+      ...slowWrites(stored),
+      http.get(COMPLETED, () => HttpResponse.json(page(Object.keys(stored).map((id) => ({ id }))))),
+    )
+    saveProgress('m1', { positionSeconds: 600, durationSeconds: 600 })
+    expect(await listAllCompleted()).toEqual([{ id: 'm1' }])
+  })
+
+  it('refuse une réponse inattendue', async () => {
+    server.use(http.get(COMPLETED, () => HttpResponse.json({})))
+    await expect(listAllCompleted()).rejects.toThrow('Réponse inattendue pour les titres terminés')
+  })
 })
 
 describe('progression : lire après sa propre écriture', () => {

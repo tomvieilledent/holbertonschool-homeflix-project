@@ -7,26 +7,31 @@ import homeEmpty from '@fixtures/library/home-empty.json'
 import { AuthContext } from '@/features/auth/authContext'
 import HomePage from '@/features/catalogue/HomePage'
 import ProfileScope from '@/features/favourites/ProfileScope'
-import { expectBusy } from '@/test/busy'
+import { expectAvailable, expectBusy } from '@/test/busy'
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
 const noContent = () => new Response(null, { status: 204 })
 
-const favouritesPage = (items) => ({ items, page: 0, size: 50, total: items.length, totalPages: 1 })
+const mediaPage = (items) => ({ items, page: 0, size: 50, total: items.length, totalPages: 1 })
 
 /**
- * Simule l'API Library : `GET /home`, `GET /me/favourites` (`favourites` ; `null` simule une panne) et les
- * `PUT` / `DELETE /me/favourites/{id}`.
+ * Simule l'API Library : `GET /home`, `GET /me/completed` (`completed`), `GET /me/favourites` (`favourites`) et les
+ * `PUT` / `DELETE` des favoris et de la progression. `null` à la place d'une liste simule une panne.
  */
-function serve({ homeBody = home, favourites = home.favourites } = {}) {
+function serve({ homeBody = home, favourites = home.favourites, completed = [] } = {}) {
   return async (url) => {
     const path = String(url)
+    if (path.endsWith('/progress')) return noContent()
+    if (path.includes('/me/completed')) {
+      if (completed === null) throw new TypeError('network')
+      return json(mediaPage(completed))
+    }
     if (path.includes('/me/favourites/')) return noContent()
     if (path.includes('/me/favourites')) {
       if (favourites === null) throw new TypeError('network')
-      return json(favouritesPage(favourites))
+      return json(mediaPage(favourites))
     }
     if (path.endsWith('/home')) return json(homeBody)
     throw new Error(`requête inattendue : ${path}`)
@@ -121,6 +126,92 @@ describe('HomePage', () => {
     expect(await screen.findByRole('region', { name: 'Ajoutés récemment' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Ma liste' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /ma liste/i })).not.toBeInTheDocument()
+  })
+
+  describe('titres terminés', () => {
+    const done = home.recentlyAdded.slice(0, 2)
+    const [first, second] = done
+    const resetButton = (title) =>
+      within(row('Titres terminés')).getByRole('button', { name: `Réinitialiser la progression de « ${title} »` })
+    const deletes = () => fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE').map(([url]) => String(url))
+
+    it('liste les titres terminés dans l’ordre de la réponse, chacun avec sa réinitialisation', async () => {
+      fetchMock.mockImplementation(serve({ completed: done }))
+      renderHome()
+      const region = await screen.findByRole('region', { name: 'Titres terminés' })
+      expect(titlesIn(region)).toEqual(done.map((media) => media.title))
+      for (const media of done) expect(resetButton(media.title)).toBeInTheDocument()
+      expect(within(row('Ajoutés récemment')).queryByRole('button', { name: /Réinitialiser/ })).not.toBeInTheDocument()
+    })
+
+    it('masque la rangée quand aucun titre n’est terminé', async () => {
+      renderHome()
+      await screen.findByRole('region', { name: 'Ma liste' })
+      await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/me/completed'))).toBe(true))
+      expect(screen.queryByRole('region', { name: 'Titres terminés' })).not.toBeInTheDocument()
+    })
+
+    it('réinitialise la progression : le film quitte la rangée, avec confirmation', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation(serve({ completed: done }))
+      renderHome()
+      await screen.findByRole('region', { name: 'Titres terminés' })
+
+      await user.click(resetButton(first.title))
+      await waitFor(() => expect(titlesIn(row('Titres terminés'))).toEqual([second.title]))
+      expect(deletes()).toEqual([`/api/library/v1/media/${first.id}/progress`])
+      expect(screen.getByText(`Progression de « ${first.title} » réinitialisée.`)).toBeInTheDocument()
+
+      await user.click(resetButton(second.title))
+      await waitFor(() => expect(screen.queryByRole('region', { name: 'Titres terminés' })).not.toBeInTheDocument())
+    })
+
+    it('bloque le bouton pendant l’appel ; un refus du serveur garde le film et l’explique', async () => {
+      const user = userEvent.setup()
+      const respond = serve({ completed: done })
+      let release
+      const gate = new Promise((resolve) => {
+        release = resolve
+      })
+      fetchMock.mockImplementation(async (url, init) => {
+        if (init?.method !== 'DELETE') return respond(url, init)
+        await gate
+        return json({ code: 'INTERNAL_ERROR' }, 500)
+      })
+      renderHome()
+      await screen.findByRole('region', { name: 'Titres terminés' })
+
+      await user.click(resetButton(first.title))
+      expectBusy(resetButton(first.title))
+      await user.click(resetButton(first.title)) // un second clic est ignoré
+      release()
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        `Impossible de réinitialiser la progression de « ${first.title} ».`,
+      )
+      expect(titlesIn(row('Titres terminés'))).toEqual(done.map((media) => media.title))
+      expectAvailable(resetButton(first.title))
+      expect(deletes()).toHaveLength(1)
+    })
+
+    it('un échec de chargement n’empêche pas le reste de l’accueil et se réessaie', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation(serve({ completed: null }))
+      renderHome()
+      expect(await screen.findByRole('heading', { name: 'Titres terminés indisponibles' })).toBeInTheDocument()
+      expect(row('Ajoutés récemment')).toBeInTheDocument()
+
+      fetchMock.mockImplementation(serve({ completed: done }))
+      await user.click(screen.getByRole('button', { name: 'Réessayer' }))
+      expect(await screen.findByRole('region', { name: 'Titres terminés' })).toBeInTheDocument()
+    })
+
+    it('reste visible quand plus aucun film n’est disponible', async () => {
+      fetchMock.mockImplementation(serve({ homeBody: homeEmpty, favourites: [], completed: done }))
+      renderHome()
+      expect(await screen.findByRole('region', { name: 'Titres terminés' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Aucun film pour le moment' })).toBeInTheDocument()
+    })
   })
 
   describe('« Ma liste » (mise à jour optimiste)', () => {
