@@ -40,6 +40,7 @@ erDiagram
         text token_hash UK "SHA-256, jamais le jeton"
         timestamptz expires_at
         timestamptz revoked_at
+        uuid active_profile_id "profil restitué au refresh, optionnel"
         timestamptz created_at
     }
     setup_state {
@@ -150,17 +151,18 @@ Comment la base les garantit (migration `V1__init.sql` d'Acquisition) :
 - **Un acquittement par compte et par version** : clé primaire `(account_id, notice_version)` ; un changement de version du texte demande un nouvel acquittement.
 - **Chemin du fichier téléchargé** : `file_relative_path` est relatif au dossier de téléchargements, jamais absolu, sans segment `..`.
 - **Seed** (`V2__seed_demo_catalogue.sql`) : *Sintel*, `ON CONFLICT (infohash) DO NOTHING` (idempotent). Source de la licence : `docs/legal/P2P_DEMO.md`.
-- `inLibrary` et `libraryMediaId` de l'API ne sont pas stockés : ils viendront de la synchronisation avec Library (issue #99).
+- `inLibrary` et `libraryMediaId` de l'API **ne sont pas implémentés** : ils ne sont pas stockés et valent toujours `false` et `null`.
 
 ## Cohérence entre services
 
 | Événement | Service source | Effet dans les autres services | Mécanisme |
 |---|---|---|---|
 | Suppression d'un profil | Identity | Library supprime ses favoris et sa progression | `POST /internal/purge` (profil) |
-| Suppression d'un compte | Identity | Library purge toutes les données du compte ; Acquisition supprime ses acquittements | `POST /internal/purge` (compte) |
-| Téléchargement démarré | Acquisition | Library peut afficher l'entrée en `DOWNLOADING` | `POST /internal/...` de Library |
-| Téléchargement terminé | Acquisition | Library enregistre le fichier du dossier de téléchargements et lance l'indexation | `POST /internal/...` de Library |
+| Suppression d'un compte | Identity | Library purge toutes les données du compte ; Acquisition **conserve** ses acquittements et l'auteur des téléchargements | `POST /internal/purge` (compte), vers Library seulement |
+| Téléchargement démarré | Acquisition | aucun : la route de Library existe, Acquisition ne l'appelle pas encore | `POST /internal/downloads` (non branché) |
+| Téléchargement terminé | Acquisition | Library enregistre et indexe le fichier déclaré | `POST /internal/downloads/completed` |
 
-- La purge est **asynchrone et rejouable** : si l'appel échoue, Identity conserve une demande de purge en attente et réessaie. Une donnée orpheline (profil supprimé) est inoffensive car Library n'expose une ligne que via le `pid` d'un jeton valide.
+- La purge est **synchrone** : Library est appelée avant la suppression locale. Si l'appel échoue, Identity répond `503 LIBRARY_UNAVAILABLE`, ne supprime rien et l'utilisateur réessaie (voir [`internal.md`](../api/internal.md)).
+- **Limite** : Acquisition n'a pas d'API interne. Après la suppression d'un compte, `rights_acknowledgements.account_id` et `downloads.requested_by` restent dans sa base (identifiants seuls, sans nom ni e-mail).
 - Library traite un `account_id` ou `profile_id` inconnu comme une donnée sans propriétaire ; elle ne les valide jamais en interrogeant la base d'Identity.
 - Supprimer un compte, un profil ou une entrée du catalogue **ne supprime jamais un fichier média**.
