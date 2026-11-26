@@ -76,6 +76,12 @@ public class IndexWriter {
         return new Outcome(changed ? Result.UPDATED : Result.UNCHANGED, item.getId());
     }
 
+    /** Associe l'affiche trouvée à côté de la vidéo, ou l'efface si elle a disparu. */
+    @Transactional
+    public void setPoster(UUID mediaId, String posterPath) {
+        metadata.findById(mediaId).ifPresent(m -> m.setPosterPath(posterPath));
+    }
+
     /**
      * Marque indisponibles les médias de la racine absents du scan ; aucun fichier n'est touché.
      *

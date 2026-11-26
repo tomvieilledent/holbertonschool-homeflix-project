@@ -15,6 +15,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.homeflix.library.poster.PosterLinks;
+
 /**
  * Lecture du catalogue en SQL paramétré. Seules des constantes (jamais une valeur du client) sont concaténées
  * au texte SQL : les valeurs passent par des paramètres liés, le tri par une liste blanche.
@@ -44,19 +46,21 @@ public class MediaCatalogueRepository {
         FROM media_items i JOIN media_metadata m ON m.media_id = i.id
         """;
 
-    private static final RowMapper<MediaView> MAPPER = MediaCatalogueRepository::map;
+    private final RowMapper<MediaView> mapper = this::map;
+    private final PosterLinks posters;
 
     private final NamedParameterJdbcTemplate jdbc;
 
-    public MediaCatalogueRepository(NamedParameterJdbcTemplate jdbc) {
+    public MediaCatalogueRepository(NamedParameterJdbcTemplate jdbc, PosterLinks posters) {
         this.jdbc = jdbc;
+        this.posters = posters;
     }
 
     List<MediaView> search(Filter filter, Sort sort, int limit, long offset) {
         MapSqlParameterSource params = new MapSqlParameterSource();
         String where = where(filter, params);
         params.addValue("limit", limit).addValue("offset", offset);
-        return jdbc.query(SELECT + where + " ORDER BY " + sort.sql + ", i.id LIMIT :limit OFFSET :offset", params, MAPPER);
+        return jdbc.query(SELECT + where + " ORDER BY " + sort.sql + ", i.id LIMIT :limit OFFSET :offset", params, mapper);
     }
 
     long count(Filter filter) {
@@ -68,7 +72,7 @@ public class MediaCatalogueRepository {
     }
 
     public Optional<MediaView> findById(UUID id) {
-        return jdbc.query(SELECT + " WHERE i.deleted = false AND i.id = :id", new MapSqlParameterSource("id", id), MAPPER)
+        return jdbc.query(SELECT + " WHERE i.deleted = false AND i.id = :id", new MapSqlParameterSource("id", id), mapper)
             .stream().findFirst();
     }
 
@@ -77,7 +81,7 @@ public class MediaCatalogueRepository {
         return jdbc.query(SELECT + " JOIN favourites f ON f.media_id = i.id"
             + " WHERE i.deleted = false AND f.profile_id = :profileId"
             + " ORDER BY f.added_at DESC, i.id LIMIT :limit OFFSET :offset",
-            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), MAPPER);
+            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), mapper);
     }
 
     public long countFavourites(UUID profileId) {
@@ -98,7 +102,7 @@ public class MediaCatalogueRepository {
         return jdbc.query("""
             SELECT i.id, m.title, m.description, m.poster_path, m.genres, m.year, m.duration_seconds,
                    i.availability, i.added_at""" + COMPLETED + " ORDER BY p.updated_at DESC, i.id LIMIT :limit OFFSET :offset",
-            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), MAPPER);
+            new MapSqlParameterSource("profileId", profileId).addValue("limit", limit).addValue("offset", offset), mapper);
     }
 
     public long countCompleted(UUID profileId) {
@@ -136,7 +140,7 @@ public class MediaCatalogueRepository {
     /** Médias disponibles, ajoutés en dernier en premier. */
     public List<MediaView> findRecentlyAdded(int limit) {
         return jdbc.query(SELECT + " WHERE i.deleted = false AND i.availability = 'AVAILABLE'"
-            + " ORDER BY i.added_at DESC, i.id LIMIT :limit", new MapSqlParameterSource("limit", limit), MAPPER);
+            + " ORDER BY i.added_at DESC, i.id LIMIT :limit", new MapSqlParameterSource("limit", limit), mapper);
     }
 
     /** Pour chaque genre ayant au moins un média disponible, ses `perGenre` médias les plus récents (une seule requête). */
@@ -184,15 +188,17 @@ public class MediaCatalogueRepository {
         return input.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
-    private static MediaView map(ResultSet rs, int row) throws SQLException {
+    private MediaView map(ResultSet rs, int row) throws SQLException {
         Array genres = rs.getArray("genres");
         List<String> list = genres == null ? new ArrayList<>() : Arrays.asList((String[]) genres.getArray());
         int year = rs.getInt("year");
         Integer yearValue = rs.wasNull() ? null : year;
         int duration = rs.getInt("duration_seconds");
         Integer durationValue = rs.wasNull() ? null : duration;
-        return new MediaView(rs.getObject("id", UUID.class), rs.getString("title"), rs.getString("description"),
-            rs.getString("poster_path"), list, yearValue, durationValue, rs.getString("availability"),
+        UUID id = rs.getObject("id", UUID.class);
+        return new MediaView(id, rs.getString("title"), rs.getString("description"),
+            rs.getString("poster_path") == null ? null : posters.url(id), // jamais le chemin disque
+            list, yearValue, durationValue, rs.getString("availability"),
             rs.getTimestamp("added_at").toInstant());
     }
 }
