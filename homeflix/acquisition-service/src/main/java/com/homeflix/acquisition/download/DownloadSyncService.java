@@ -124,6 +124,7 @@ public class DownloadSyncService {
                     d.setState(DownloadState.DOWNLOADING);
                     d.setProgressPercent(s.progressPercent());
                 });
+                announce(id, s);
             }
             case QUEUED -> {
                 if (withoutSourceTooLong(id, Instant.EPOCH)) {
@@ -148,6 +149,39 @@ public class DownloadSyncService {
             log.warn("Annulation du torrent sans source impossible : client indisponible");
         }
         fail(id, "NO_PEERS");
+    }
+
+    /**
+     * Signale une fois à Library le fichier en cours, dès que son nom est connu. Sans effet sur le téléchargement :
+     * si Library est injoignable, l'appel est retenté au passage suivant.
+     */
+    private void announce(UUID id, TorrentStatus s) {
+        Optional<String> file = videoFile(s.files());
+        Download current = downloads.findById(id).orElse(null);
+        if (file.isEmpty() || current == null || current.getFileRelativePath() != null
+                || !DownloadState.ACTIVE.contains(current.getState())) {
+            return;
+        }
+        String title = entries.findById(current.getEntryId()).map(CatalogueEntry::getTitle).orElse(null);
+        try {
+            library.registerDownloading(file.get(), title);
+        } catch (LibraryUnavailableException e) {
+            return;
+        } catch (LibraryRejectedException e) {
+            // Refus définitif (dossier non déclaré, entrée retirée) : inutile de le rejouer.
+            log.info("Library n'affichera pas le téléchargement {} comme en cours", id);
+        }
+        if (!update(id, d -> d.setFileRelativePath(file.get()))) {
+            release(file.get()); // annulé pendant l'appel
+        }
+    }
+
+    private void release(String relativePath) {
+        try {
+            library.registerFailed(relativePath);
+        } catch (LibraryUnavailableException | LibraryRejectedException e) {
+            log.warn("Library n'a pas pu être prévenue de l'arrêt d'un téléchargement");
+        }
     }
 
     private void complete(UUID id, TorrentStatus s) {
@@ -197,18 +231,23 @@ public class DownloadSyncService {
     }
 
     private void fail(UUID id, String code) {
-        update(id, d -> {
+        boolean failed = update(id, d -> {
             d.setState(DownloadState.FAILED);
             d.setErrorCode(code);
             d.setFinishedAt(Instant.now());
         });
+        if (failed) {
+            downloads.findById(id).map(Download::getFileRelativePath).ifPresent(this::release);
+        }
     }
 
     /** N'écrit que si le téléchargement est encore actif (une annulation concurrente reste CANCELLED). */
-    private void update(UUID id, java.util.function.Consumer<Download> change) {
-        downloads.findById(id).filter(d -> DownloadState.ACTIVE.contains(d.getState())).ifPresent(d -> {
+    private boolean update(UUID id, java.util.function.Consumer<Download> change) {
+        Optional<Download> active = downloads.findById(id).filter(d -> DownloadState.ACTIVE.contains(d.getState()));
+        active.ifPresent(d -> {
             change.accept(d);
             downloads.save(d);
         });
+        return active.isPresent();
     }
 }

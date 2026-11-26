@@ -34,6 +34,9 @@ import com.homeflix.library.media.MediaRootRepository;
 @Service
 public class InternalService {
 
+    /** Empreinte provisoire d'une entrée créée pour un téléchargement : aucun fichier n'a encore été vu. */
+    private static final String DOWNLOADING_FINGERPRINT = "downloading";
+
     private final NamedParameterJdbcTemplate jdbc;
     private final MediaRootRepository roots;
     private final MediaItemRepository items;
@@ -75,7 +78,7 @@ public class InternalService {
         MediaItem item = items.findByRootIdAndRelativePath(root.getId(), relative).orElse(null);
         boolean created = item == null;
         if (created) {
-            item = items.save(new MediaItem(root, relative, 0, Instant.now(), "downloading"));
+            item = items.save(new MediaItem(root, relative, 0, Instant.now(), DOWNLOADING_FINGERPRINT));
             String title = request.title() == null || request.title().isBlank()
                 ? VideoFiles.titleFrom(relative) : request.title().strip();
             metadata.save(new MediaMetadata(item, title));
@@ -87,6 +90,26 @@ public class InternalService {
             item.setAvailability(Availability.DOWNLOADING);
         }
         return item.getId();
+    }
+
+    /**
+     * Sort une entrée de l'état DOWNLOADING après un échec ou une annulation ; idempotent. Une entrée créée pour ce
+     * téléchargement est supprimée ; une entrée qui existait déjà redevient UNAVAILABLE. Les autres ne changent pas.
+     */
+    @Transactional
+    public void releaseDownload(DownloadRequest request) {
+        roots.findByPathAndRemovedFalse(downloadsRoot).ifPresent(root -> {
+            String relative = relativeInsideRoot(root, request.relativePath());
+            items.findByRootIdAndRelativePath(root.getId(), relative)
+                .filter(item -> item.getAvailability() == Availability.DOWNLOADING)
+                .ifPresent(item -> {
+                    if (DOWNLOADING_FINGERPRINT.equals(item.getFingerprint())) {
+                        items.delete(item);
+                    } else {
+                        item.setAvailability(Availability.UNAVAILABLE);
+                    }
+                });
+        });
     }
 
     /** Enregistre le fichier terminé : il doit exister dans le dossier de téléchargements et être une vidéo. */

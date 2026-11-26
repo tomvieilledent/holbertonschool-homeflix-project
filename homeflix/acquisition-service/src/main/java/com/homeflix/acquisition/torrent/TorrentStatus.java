@@ -13,7 +13,7 @@ import java.util.List;
  *                        docs/api/CONVENTIONS.md). {@code NO_PEERS} se décide dans la synchronisation (#99), qui
  *                        connaît la durée d'attente.
  * @param files           fichiers du torrent, chemins **relatifs au dossier de téléchargements** (`/downloads`), sans
- *                        {@code ..} ni chemin absolu ; renseigné quand le torrent est terminé
+ *                        {@code ..} ni chemin absolu ; renseigné pour un torrent terminé, ou en cours dès que ses métadonnées sont reçues
  * @param idleSince       dernière activité d'un torrent en cours **sans aucun pair** ({@link Instant#EPOCH} s'il n'en a
  *                        jamais eu) ; {@code null} dès qu'un pair est connecté
  */

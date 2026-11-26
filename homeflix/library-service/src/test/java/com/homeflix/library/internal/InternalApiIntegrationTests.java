@@ -117,7 +117,8 @@ class InternalApiIntegrationTests {
     @Test
     void withoutOrWithAWrongKeyEveryRouteAnswers401() throws Exception {
         String purge = "{\"scope\":\"PROFILE\",\"profileId\":\"" + lea + "\"}";
-        for (String url : new String[] { "/internal/purge", "/internal/downloads", "/internal/downloads/completed", "/internal/reindex" }) {
+        for (String url : new String[] { "/internal/purge", "/internal/downloads", "/internal/downloads/completed",
+                "/internal/downloads/failed", "/internal/reindex" }) {
             call(url, purge, null).andExpect(status().isUnauthorized());
             call(url, purge, "mauvaise-cle").andExpect(status().isUnauthorized());
             call(url, purge, KEY + "x").andExpect(status().isUnauthorized());
@@ -196,6 +197,22 @@ class InternalApiIntegrationTests {
             .isEqualTo(5L);
         assertThat(jdbc.queryForObject("select count(*) from media_items where relative_path = 'complete/film.mp4'", Integer.class))
             .isEqualTo(1);
+    }
+
+    @Test
+    void aFailedDownloadRemovesItsEntryButNeverAnAvailableOne() throws Exception {
+        Files.writeString(DOWNLOADS.resolve("pret.mp4"), "video");
+        call("/internal/downloads/completed", "{\"relativePath\":\"pret.mp4\"}").andExpect(status().isOk());
+        call("/internal/downloads", "{\"relativePath\":\"encours.mp4\"}").andExpect(status().isOk());
+
+        call("/internal/downloads/failed", "{\"relativePath\":\"encours.mp4\"}").andExpect(status().isNoContent());
+        call("/internal/downloads/failed", "{\"relativePath\":\"encours.mp4\"}").andExpect(status().isNoContent());
+        call("/internal/downloads/failed", "{\"relativePath\":\"pret.mp4\"}").andExpect(status().isNoContent());
+
+        assertThat(jdbc.queryForObject("select count(*) from media_items where relative_path = 'encours.mp4'", Integer.class))
+            .isZero();
+        assertThat(jdbc.queryForObject("select availability from media_items where relative_path = 'pret.mp4'", String.class))
+            .isEqualTo("AVAILABLE");
     }
 
     @Test

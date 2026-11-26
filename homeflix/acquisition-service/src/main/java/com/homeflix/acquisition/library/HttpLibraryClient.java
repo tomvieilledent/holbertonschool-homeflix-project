@@ -38,16 +38,30 @@ class HttpLibraryClient implements LibraryClient {
 
     @Override
     public void registerCompleted(String relativePath, String title) {
+        post("/internal/downloads/completed", relativePath, title);
+    }
+
+    @Override
+    public void registerDownloading(String relativePath, String title) {
+        post("/internal/downloads", relativePath, title);
+    }
+
+    @Override
+    public void registerFailed(String relativePath) {
+        post("/internal/downloads/failed", relativePath, null);
+    }
+
+    private void post(String uri, String relativePath, String title) {
         Map<String, String> body = Map.of("relativePath", relativePath, "title", title == null ? "" : title);
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
-                http.post().uri("/internal/downloads/completed")
+                http.post().uri(uri)
                     .header("X-Internal-Key", internalKey)
                     .body(body)
                     .retrieve().toBodilessEntity();
                 return;
             } catch (HttpClientErrorException e) {
-                log.warn("Library a refusé le fichier terminé (HTTP {})", e.getStatusCode().value());
+                log.warn("Library a refusé l'appel {} (HTTP {})", uri, e.getStatusCode().value());
                 throw new LibraryRejectedException(); // une requête refusée ne se rejoue pas
             } catch (RestClientException e) {
                 log.warn("Appel à Library en échec (essai {}/{})", attempt, ATTEMPTS);
