@@ -66,6 +66,7 @@ class DownloadApiIntegrationTests {
 	@Autowired MockMvc mvc;
 	@Autowired JdbcTemplate jdbc;
 	@MockitoBean TorrentClient torrent;
+	@MockitoBean com.homeflix.acquisition.library.LibraryClient library;
 
 	private final UUID admin = UUID.randomUUID();
 
@@ -79,7 +80,7 @@ class DownloadApiIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		reset(torrent);
+		reset(torrent, library);
 		when(torrent.add(anyString())).thenReturn(SINTEL_HASH);
 	}
 
@@ -193,6 +194,38 @@ class DownloadApiIntegrationTests {
 		mvc.perform(post("/api/v1/downloads/" + id + "/cancel").with(asAdmin())).andExpect(status().isOk());
 		mvc.perform(post("/api/v1/downloads").with(asAdmin()).contentType(MediaType.APPLICATION_JSON).content(SINTEL_BODY))
 				.andExpect(status().isAccepted());
+	}
+
+	@Test
+	void aFilmAlreadyInTheLibraryIsFlaggedAndCannotBeDownloadedAgain() throws Exception {
+		UUID media = completedSintel();
+		when(library.present(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(java.util.Set.of(media));
+		acknowledge();
+
+		mvc.perform(get("/api/v1/catalogue").with(asAdmin()))
+				.andExpect(jsonPath("$.items[?(@.id == '" + SINTEL_ID + "')].inLibrary").value(true))
+				.andExpect(jsonPath("$.items[?(@.id == '" + SINTEL_ID + "')].libraryMediaId").value(media.toString()));
+		mvc.perform(post("/api/v1/downloads").with(asAdmin()).contentType(MediaType.APPLICATION_JSON).content(SINTEL_BODY))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("CONFLICT"));
+		verify(torrent, never()).add(anyString());
+	}
+
+	@Test
+	void aFilmThatLeftTheLibraryCanBeDownloadedAgain() throws Exception {
+		completedSintel();
+		when(library.present(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(java.util.Set.of());
+		acknowledge();
+
+		mvc.perform(post("/api/v1/downloads").with(asAdmin()).contentType(MediaType.APPLICATION_JSON).content(SINTEL_BODY))
+				.andExpect(status().isAccepted());
+	}
+
+	private UUID completedSintel() {
+		UUID media = UUID.randomUUID();
+		jdbc.update("insert into downloads (id, entry_id, requested_by, state, progress_percent, library_media_id) "
+				+ "values (?, ?, ?, 'COMPLETED', 100, ?)", UUID.randomUUID(), SINTEL_ID, admin, media);
+		return media;
 	}
 
 	@Test

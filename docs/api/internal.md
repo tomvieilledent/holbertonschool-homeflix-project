@@ -12,6 +12,7 @@ Tous les appels de service à service de HomeFlix : qui appelle qui, avec quelle
 | 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | 3 s, 3 essais | sans effet sur le téléchargement ; retenté au passage suivant | fait (#72, #292) |
 | 5 | Acquisition | Library | `POST /internal/downloads/completed` (téléchargement terminé) | `X-Internal-Key` | 3 s, 3 essais (aucun nouvel essai après un refus `4xx`) | le téléchargement passe `FAILED` ; le fichier reste dans `/downloads`, une réindexation manuelle le reprend | fait (#72, #99) |
 | 5 bis | Acquisition | Library | `POST /internal/downloads/failed` (échec ou annulation) | `X-Internal-Key` | 3 s, 3 essais | journalisé, non rejoué : l'entrée peut rester « en téléchargement » | fait (#292) |
+| 5 ter | Acquisition | Library | `POST /internal/media/present` (films toujours disponibles) | `X-Internal-Key` | 3 s, 1 essai | Acquisition s'en tient aux téléchargements terminés qu'il a enregistrés | fait (#293) |
 | 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | — | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), **non appelé** par Acquisition |
 | 7 | Acquisition | Transmission | RPC HTTP (`/transmission/rpc`) | identifiants Transmission (`TRANSMISSION_USER`, `TRANSMISSION_PASS`) | 3 s (`TRANSMISSION_TIMEOUT`) | `503 TORRENT_CLIENT_UNAVAILABLE`, sans détail technique | fait (#74) |
 | 8 | Identity | Acquisition | purge des données d'un compte (acquittements, historique) | `X-Internal-Key` | — | — | **pas encore** : Acquisition n'a pas d'API interne |
@@ -72,13 +73,13 @@ Admin ─ POST /downloads ─▶ Acquisition ─ RPC ─▶ Transmission        
   Acquisition ─ POST /internal/downloads/completed {relativePath} ─▶ Library
      Library : le fichier existe dans /downloads et c'est une vidéo → l'entrée passe à AVAILABLE → 200 {mediaId}
      fichier absent → 404 MEDIA_FILE_MISSING ; chemin invalide (absolu, `..`) → 400 ; dossier non déclaré → 409
-  Acquisition : passe le téléchargement à COMPLETED (le `mediaId` reçu n'est pas conservé)
+  Acquisition : passe le téléchargement à COMPLETED (le `mediaId` reçu est conservé)
   ── échec après les essais, ou refus : le téléchargement passe FAILED, sans reprise automatique.
 ```
 
 Dès que le nom du fichier est connu, Acquisition appelle `POST /internal/downloads` : le catalogue l'affiche « en téléchargement ». Après un échec ou une annulation, `POST /internal/downloads/failed` retire cet état.
 
-Non branché : `libraryMediaId`.
+Avant d'afficher le catalogue ou de démarrer un téléchargement, `POST /internal/media/present` vérifie que les films déjà reçus sont toujours disponibles.
 
 ## Gestion des pannes
 
@@ -133,6 +134,12 @@ Réponses : `200 {"mediaId":"<uuid>"}` ; `404 MEDIA_FILE_MISSING` ; `400` chemin
 Même corps (`title` ignoré). Une entrée créée pour ce téléchargement est supprimée ; une entrée qui existait déjà redevient `UNAVAILABLE` ; une entrée dans un autre état ne change pas. Idempotent.
 
 Réponses : `204` ; `400` chemin invalide.
+
+### `POST /internal/media/present` — Acquisition (films toujours disponibles)
+```json
+{ "mediaIds": ["<uuid>"] }
+```
+Au plus 100 identifiants. Réponse : `200 {"mediaIds":[…]}`, limitée aux médias non retirés et `AVAILABLE`.
 
 ### `POST /internal/reindex` — Acquisition
 Lance l'indexation de tous les dossiers autorisés. Si une indexation tourne déjà, son état est renvoyé (pas d'erreur).

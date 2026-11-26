@@ -30,13 +30,15 @@ public class CatalogueService {
     private final CatalogueEntryRepository entries;
     private final DownloadRepository downloads;
 
-    public CatalogueService(CatalogueEntryRepository entries, DownloadRepository downloads) {
+    private final LibraryPresence presence;
+
+    public CatalogueService(CatalogueEntryRepository entries, DownloadRepository downloads, LibraryPresence presence) {
         this.entries = entries;
         this.downloads = downloads;
+        this.presence = presence;
     }
 
     /** Une page du catalogue, triée par titre (puis par identifiant, pour un ordre stable entre deux appels). */
-    @Transactional(readOnly = true)
     public CataloguePageResponse list(int page, int size) {
         Page<CatalogueEntry> result = entries.findAll(
                 PageRequest.of(page, size, Sort.by("title").ascending().and(Sort.by("id").ascending())));
@@ -47,18 +49,19 @@ public class CatalogueService {
                 : downloads.findByEntryIdInAndStateIn(ids, DownloadState.ACTIVE).stream()
                         .collect(Collectors.toMap(Download::getEntryId, Download::getId, (a, b) -> a));
 
+        // Hors transaction : aucune connexion à la base n'est gardée pendant l'appel à Library.
+        Map<UUID, UUID> mediaByEntry = presence.mediaByEntry(ids);
+
         List<CatalogueEntryResponse> items = result.getContent().stream()
-                .map(entry -> toResponse(entry, activeDownloadByEntry.get(entry.getId())))
+                .map(entry -> toResponse(entry, mediaByEntry.get(entry.getId()), activeDownloadByEntry.get(entry.getId())))
                 .toList();
         return new CataloguePageResponse(items, result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages());
     }
 
-    private static CatalogueEntryResponse toResponse(CatalogueEntry entry, UUID activeDownloadId) {
-        // inLibrary et libraryMediaId viendront de la synchronisation avec Library (issue #99) : aucun fichier
-        // n'est encore remis à Library, donc aucune entrée n'est « déjà dans la bibliothèque ».
+    private static CatalogueEntryResponse toResponse(CatalogueEntry entry, UUID libraryMediaId, UUID activeDownloadId) {
         return new CatalogueEntryResponse(entry.getId(), entry.getTitle(), entry.getSource(), entry.getLicense(),
-                entry.getLicenseProofUrl(), entry.getSizeBytes(), false, null, activeDownloadId);
+                entry.getLicenseProofUrl(), entry.getSizeBytes(), libraryMediaId != null, libraryMediaId, activeDownloadId);
     }
 
     /**
