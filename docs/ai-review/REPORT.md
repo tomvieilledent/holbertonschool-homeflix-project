@@ -40,7 +40,7 @@ règle). Il n'y a rien à signaler.
 
 | ID | Gravité | Titre | Décision humaine | Vérificateur | PR |
 |---|---|---|---|---|---|
-| AI-01 | Haute | `POST /profiles/{id}/select` émet un nouveau jeton à un compte désactivé ou déconnecté | Accepté | Tom ; Haitu : à faire | [#286](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/286) |
+| AI-01 | Haute | `POST /profiles/{id}/select` émet un nouveau jeton à un compte désactivé ou déconnecté | Accepté | Tom ; Haitu : confirmé (26/11) | [#286](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/286) |
 | AI-02 | Moyenne | `inLibrary`, `libraryMediaId` et le refus `409` de `POST /downloads` sont décrits par le contrat mais jamais produits | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) (contrat) ; code après la soutenance |
 | AI-03 | Moyenne | Les extensions vidéo d'Acquisition et de Library diffèrent, et tout refus de Library est enregistré comme `LIBRARY_UNAVAILABLE` | Accepté | Tom | [#287](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/287) |
 | AI-04 | Moyenne | `mustChangePassword` est posé mais jamais appliqué, et aucune route ne permet de changer son mot de passe | Accepté | Tom | [#274](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/274) (écran frontend manquant) |
@@ -49,7 +49,7 @@ règle). Il n'y a rien à signaler.
 | AI-07 | Basse | Des valeurs de `errorCode` d'un téléchargement ne figurent pas au contrat, et le frontend les affiche avec un message générique | Accepté | Tom | [#287](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/287) ; messages frontend à faire |
 | AI-08 | Basse | Des codes et statuts d'erreur de Library sortent des conventions | Accepté | Tom | Après la soutenance |
 | AI-09 | Basse | Identity s'écarte de son contrat : `size` jusqu'à 100, `403` non documenté sur `/auth/me` | Accepté | Tom | Après la soutenance |
-| AI-10 | Basse | L'ADR 0002 contredit la configuration actuelle (healthchecks, 401/503, port, surcouche de dev) | Accepté | Tom | À faire (propriétaire de l'ADR : Haitu) |
+| AI-10 | Basse | L'ADR 0002 contredit la configuration actuelle (healthchecks, 401/503, port, surcouche de dev) | Accepté | Tom | Corrigé par Haitu dans l'ADR 0002 (26/11) |
 | AI-11 | Basse | Le modèle de session documenté omet `fid` et `active_profile_id`, et un commentaire du frontend contredit le contrat | Accepté | Tom | [#288](https://github.com/tomvieilledent/holbertonschool-homeflix-project/pull/288) ; commentaire frontend à faire |
 | AI-12 | Basse | Un dossier autorisé désactivé laisse ses médias lisibles (comportement non spécifié) | À clarifier | Tom | Décision d'équipe |
 | AI-13 | Information | `IdentityClient` de Library est du code mort, sans délai d'attente | Accepté | Tom | Après la soutenance |
@@ -59,7 +59,7 @@ règle). Il n'y a rien à signaler.
 
 ## Vérification des constats (26/11)
 
-Les 14 décisions sont validées par le superviseur (Tom). La seconde relecture d'AI-01 par Haitu n'est pas faite.
+Les 14 décisions sont validées par le superviseur (Tom). Seconde relecture d'AI-01 par Haitu faite le 26/11 : reproduit sur la pile réelle au commit `4652b9f` (après déconnexion et après désactivation, `select` répond 200 avec une échéance repoussée), puis correctif #286 vérifié (401 `SESSION_EXPIRED`, 403 `ACCOUNT_DISABLED`).
 
 Chaque constat a été relu dans le code du commit `4652b9f`. Certains ont aussi été reproduits par des tests
 temporaires, écrits et lancés avec Claude Code (`./mvnw test`) sur une copie du dépôt (non versionnés, pile en cours d'exécution non utilisée) :

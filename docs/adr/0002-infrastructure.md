@@ -28,7 +28,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 
 - Node 20.20.2 en local alors que l'image de build utilise Node 24 : les versions doivent être alignées, voir décision 8 (#13).
 - _Résolu par #61 :_ l'image de Transmission est épinglée (`4.1.4-r0-ls369`).
-- Les healthchecks des services Java testent seulement l'ouverture du port TCP, en attendant que `/actuator/health` soit ouvert par la configuration Security (#16, #81).
+- Les healthchecks des services Java testent seulement l'ouverture du port TCP, en attendant que `/actuator/health` soit ouvert par la configuration Security (#16, #81). _Résolu depuis : test HTTP avec `curl`, voir décision 7._
 - Le fichier `.env.example` ne contient pas encore tous les secrets prévus par l'ADR 0001 (clé de signature RSA, clé de ticket de streaming) (#28).
 
 ## Décisions
@@ -50,7 +50,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 
 | Composant | Port conteneur | Publié sur l'hôte |
 |---|---|---|
-| frontend (nginx) | 80 | oui, `${FRONTEND_PORT:-8080}` |
+| frontend (nginx) | 8080 | oui, `${FRONTEND_PORT:-8080}` |
 | identity-service | 8081 | non |
 | library-service | 8082 | non |
 | acquisition-service | 8083 | non |
@@ -58,7 +58,7 @@ Contraintes du sujet : un conteneur par service métier, une base (ou un schéma
 | Transmission (RPC/Web) | 9091 | non |
 | Transmission (échange de pairs) | 51413 | non (voir décision 6) |
 
-Pour déboguer en développement, un développeur peut utiliser un fichier `compose.override.yaml` local, non versionné, qui publie temporairement un port.
+Pour déboguer en développement, la surcouche **versionnée** [`compose.dev.yaml`](../../homeflix/compose.dev.yaml) publie les ports des services et de la base, liés à `127.0.0.1` seulement (`docker compose -f compose.yaml -f compose.dev.yaml up`).
 
 ### 4. PostgreSQL 17, une base et un rôle par service
 
@@ -104,10 +104,10 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 ### 7. Healthchecks et démarrage ordonné
 
 - `db` : `pg_isready`. Les services dépendent de `db` avec `condition: service_healthy`.
-- Services Java : test TCP sur leur port en attendant que `/actuator/health` soit exposé par la configuration Security (#16) ; il sera ensuite remplacé par un test HTTP sur `/actuator/health`.
+- Services Java : test HTTP sur `/actuator/health` avec `curl` (présent dans l'image). La route est publique et sans détail ; elle n'est jamais exposée par le proxy.
 - Library et Acquisition démarrent après Identity (JWKS joignable). Le frontend démarre après les trois services.
 - `restart: unless-stopped` sur tous les services.
-- **Délais et reprises, écart assumé avec l'ADR 0001** : la lecture du JWKS d'Identity par Library et Acquisition a un délai de 3 s (`identity.jwks-timeout`), mais **sans nouvelle tentative** : le décodeur de jetons n'en fait pas et un second essai doublerait l'attente (6 s) pour un service que le démarrage ordonné garantit déjà joignable. À ajouter seulement si une panne réelle le justifie. Quand Identity est injoignable, les services répondent aujourd'hui 401 `SESSION_EXPIRED`, alors que l'ADR 0001 prévoit un 503 `problem+json` : suivi dans l'issue #187.
+- **Délais et reprises, écart assumé avec l'ADR 0001** : la lecture du JWKS d'Identity par Library et Acquisition a un délai de 3 s (`identity.jwks-timeout`), mais **sans nouvelle tentative** : le décodeur de jetons n'en fait pas et un second essai doublerait l'attente (6 s) pour un service que le démarrage ordonné garantit déjà joignable. À ajouter seulement si une panne réelle le justifie. Quand Identity est injoignable, Library et Acquisition répondent 503 `IDENTITY_UNAVAILABLE` au format `problem+json`, comme le prévoit l'ADR 0001 (#187, livré).
 
 ### 8. Versions
 
@@ -189,11 +189,11 @@ Pour déboguer en développement, un développeur peut utiliser un fichier `comp
 | Médias | Volume en lecture/écriture pour Library | Library n'a aucune raison de modifier les médias source |
 | Téléchargements | Copier les fichiers vers `/media` | Écriture dans la bibliothèque de l'utilisateur ; duplication ; racine autorisée séparée plus simple à contrôler |
 | Secrets | Fichier de secrets Docker (`secrets:`) | Mieux isolé, mais ajoute de la complexité à l'installation ; `.env` ignoré par Git suffit pour le MVP, à documenter comme limite |
-| Healthcheck | `curl` dans l'image JRE | Ajoute un binaire à l'image ; test TCP puis `/actuator/health` via un test Java ou `wget` |
+| Healthcheck | Test du port TCP | Ne prouve pas que l'application répond. `curl` sur `/actuator/health` a finalement été retenu, au prix d'un binaire de plus dans l'image |
 
 ## Points ouverts
 
 1. ~~Version exacte de Transmission et ses réglages de partage~~ : fait dans #61.
-2. **Healthcheck HTTP** `/actuator/health` à la place du test TCP, quand la configuration Security de Tom (#16) est livrée.
+2. ~~Healthcheck HTTP `/actuator/health` à la place du test TCP~~ : fait (voir décision 7).
 3. **Publication du port de pairs 51413** : le téléchargement sortant seul a abouti en 38 à 45 s (test #61), donc **non publié**. À réévaluer seulement si le test sur le réseau de la soutenance (#111, #125) est trop lent.
 4. **Environnements supportés** : seuls Docker Engine sur Linux et Docker Desktop (Windows via WSL2) sont à tester ; NAS et partages SMB/NFS à documenter comme prérequis, sans garantie (#112, #116).

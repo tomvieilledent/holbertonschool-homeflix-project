@@ -133,7 +133,7 @@ Le catalogue des contenus téléchargeables est **fermé** : seules des entrées
 2. Ouvrez **Administration → Acquisition** et cliquez sur **Télécharger**. La première fois, lisez et acceptez le rappel des droits.
 3. Suivez la progression dans « Téléchargements » jusqu'à « Terminé » : le film apparaît alors dans le catalogue. Il n'a que son titre : complétez année et genres dans « Médias ».
 
-Un film déjà présent dans la bibliothèque n'est pas proposé au téléchargement (« Dans la bibliothèque »). Le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur. Les fichiers terminés arrivent dans `/downloads/complete`.
+L'application ne signale pas encore qu'un film est déjà dans la bibliothèque : « Télécharger » reste proposé. Le client BitTorrent (Transmission) tourne dans un réseau isolé et n'est **jamais** accessible depuis l'extérieur. Les fichiers terminés arrivent dans `/downloads/complete`.
 
 ## 4. Configuration
 
