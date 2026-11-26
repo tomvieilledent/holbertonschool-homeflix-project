@@ -3,7 +3,7 @@
 //
 // Données de démonstration (docs/api/fixtures) : le compte `famille` (USER) et le compte `admin` (ADMIN) ont le même
 // mot de passe ; trois profils : « Alice » (a une reprise de lecture et trois favoris), « Bruno » et « Enfants ».
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import {
@@ -85,6 +85,26 @@ describe('connexion', () => {
     await router.navigate('/catalogue')
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
     expect(router.state.location.search).toBe('?next=%2Fcatalogue')
+    expect(screen.queryByRole('heading', { level: 1, name: 'Catalogue' })).not.toBeInTheDocument()
+  })
+
+  it('« Qui regarde ? » permet de se déconnecter sans entrer dans un profil', async () => {
+    const actor = user()
+    const { router } = openApp('/catalogue')
+    await signIn(actor)
+    await screen.findByRole('heading', { name: 'Qui regarde ?' })
+
+    await actor.click(screen.getByRole('button', { name: 'Se déconnecter' }))
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument()
+    // Comme depuis le menu du compte : `/login` sans la destination de la personne qui part.
+    expect(router.state.location.pathname).toBe('/login')
+    expect(router.state.location.search).toBe('')
+    expect(requestsTo(/POST .*\/auth\/logout/)).toHaveLength(1)
+    expect(requestsTo(/POST .*\/select/)).toHaveLength(0)
+
+    // Une adresse protégée ramène ensuite à la connexion.
+    await act(async () => router.navigate('/catalogue'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
     expect(screen.queryByRole('heading', { level: 1, name: 'Catalogue' })).not.toBeInTheDocument()
   })
 

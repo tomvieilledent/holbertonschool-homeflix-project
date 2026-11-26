@@ -32,7 +32,7 @@ export default function ProfileMenu() {
 
   const signOut = async () => {
     setOpen(false)
-    // Navigation d'abord : sinon la garde renverrait vers /login?next=<page courante>.
+    // Navigation d'abord : l'écran quitté (le lecteur, par exemple) se ferme tant que la session est encore ouverte.
     navigate('/login', { replace: true })
     await logout()
   }

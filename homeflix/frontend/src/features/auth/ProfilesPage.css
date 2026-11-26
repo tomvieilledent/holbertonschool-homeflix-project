@@ -1,3 +1,12 @@
+/* En haut de l'écran, comme sur la maquette. Le bouton tient dans la marge de la mise en page (3 rem), au-dessus du
+   logo, même sur un écran étroit : d'où les marges internes réduites (la hauteur reste de 2,75 rem). */
+.btn.profiles__sign-out {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-2);
+  padding-block: 0;
+}
+
 .profiles {
   display: flex;
   flex-direction: column;
