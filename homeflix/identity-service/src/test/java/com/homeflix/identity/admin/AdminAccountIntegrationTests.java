@@ -117,6 +117,8 @@ class AdminAccountIntegrationTests {
             .andExpect(jsonPath("$.items[0].passwordHash").doesNotExist());
         mvc.perform(get("/api/v1/admin/accounts?size=0").header("Authorization", bearer(admin)))
             .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/admin/accounts?size=51").header("Authorization", bearer(admin)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
