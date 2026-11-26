@@ -83,7 +83,7 @@ paths:
       description: |
         Le corps ne contient que l'identifiant d'une entrée du catalogue : toute autre propriété est refusée (`VALIDATION_ERROR`).
         Refusé tant que le rappel des droits de la version courante n'est pas acquitté par le compte (`412 RIGHTS_NOT_ACKNOWLEDGED`).
-        Refusé aussi si le fichier est déjà dans la bibliothèque (`inLibrary` vaut true) : `409 CONFLICT`.
+        **Non implémenté** : le refus `409 CONFLICT` d'un fichier déjà dans la bibliothèque (`inLibrary` vaut true).
       operationId: startDownload
       requestBody:
         required: true
@@ -250,12 +250,12 @@ components:
         sizeBytes: { type: integer, format: int64 }
         inLibrary:
           type: boolean
-          description: "Le fichier est déjà présent dans la bibliothèque (téléchargement terminé et indexé). Le frontend désactive alors « Télécharger »."
+          description: "Le fichier est déjà présent dans la bibliothèque (le frontend désactive alors « Télécharger »). **Non implémenté** : vaut toujours false."
         libraryMediaId:
           type: string
           format: uuid
           nullable: true
-          description: "Identifiant du média indexé dans Library si `inLibrary` vaut true (lien « Voir dans la bibliothèque »), sinon null."
+          description: "Identifiant du média indexé dans Library (lien « Voir dans la bibliothèque »). **Non implémenté** : vaut toujours null."
         activeDownloadId:
           type: string
           format: uuid
@@ -315,7 +315,7 @@ components:
           type: string
           format: uuid
           nullable: true
-          description: "Média indexé dans Library une fois `COMPLETED` (lien « Voir dans la bibliothèque »), sinon null."
+          description: "Média indexé dans Library une fois `COMPLETED` (lien « Voir dans la bibliothèque »). **Non implémenté** : vaut toujours null."
         createdAt: { type: string, format: date-time }
         finishedAt: { type: string, format: date-time, nullable: true }
     DownloadPage:

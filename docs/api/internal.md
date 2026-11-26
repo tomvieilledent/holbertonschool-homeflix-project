@@ -9,9 +9,9 @@ Tous les appels de service à service de HomeFlix : qui appelle qui, avec quelle
 | 1 | Library, Acquisition | Identity | `GET /.well-known/jwks.json` (clés publiques, mises en cache) | aucune (clés publiques) | 3 s (`IDENTITY_JWKS_TIMEOUT`) | `503 IDENTITY_UNAVAILABLE` sur la requête en cours ; un jeton déjà vérifié avec une clé en cache continue de passer | fait |
 | 2 | Identity | Library | `POST /internal/purge` portée `PROFILE` (suppression d'un profil) | `X-Internal-Key` | 2 s connexion, 5 s lecture, 1 tentative | `503 LIBRARY_UNAVAILABLE` : **rien n'est supprimé**, l'appel se rejoue tel quel | fait (#59) |
 | 3 | Identity | Library | `POST /internal/purge` portée `ACCOUNT` (suppression d'un compte) | `X-Internal-Key` | idem | idem | fait (#97) |
-| 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | à fixer avec #99 | le téléchargement continue ; la synchronisation (#99) réessaie | côté Library fait (#72), client Acquisition : #99 |
-| 5 | Acquisition | Library | `POST /internal/downloads/completed` (téléchargement terminé) | `X-Internal-Key` | à fixer avec #99 | le fichier reste dans `/downloads` ; la synchronisation (#99) réessaie jusqu'à succès (idempotent) | côté Library fait (#72), client Acquisition : #99 |
-| 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | à fixer avec #99 | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), client Acquisition : #99 |
+| 4 | Acquisition | Library | `POST /internal/downloads` (téléchargement démarré) | `X-Internal-Key` | — | sans objet : aucun appel n'est fait | côté Library fait (#72), **non appelé** par Acquisition |
+| 5 | Acquisition | Library | `POST /internal/downloads/completed` (téléchargement terminé) | `X-Internal-Key` | 3 s, 3 essais (aucun nouvel essai après un refus `4xx`) | le téléchargement passe `FAILED` ; le fichier reste dans `/downloads`, une réindexation manuelle le reprend | fait (#72, #99) |
+| 6 | Acquisition | Library | `POST /internal/reindex` | `X-Internal-Key` | — | une réindexation manuelle par l'administrateur reste possible | côté Library fait (#72), **non appelé** par Acquisition |
 | 7 | Acquisition | Transmission | RPC HTTP (`/transmission/rpc`) | identifiants Transmission (`TRANSMISSION_USER`, `TRANSMISSION_PASS`) | 3 s (`TRANSMISSION_TIMEOUT`) | `503 TORRENT_CLIENT_UNAVAILABLE`, sans détail technique | fait (#74) |
 | 8 | Identity | Acquisition | purge des données d'un compte (acquittements, historique) | `X-Internal-Key` | — | — | **pas encore** : Acquisition n'a pas d'API interne |
 | 9 | Identity | Library et Acquisition | `GET /actuator/health` (état des services pour l'administration, `GET /api/v1/admin/system/status`) | aucune : point public, sans détail, jamais routé par le proxy | 2 s de connexion et 2 s de lecture par service, sondes en parallèle, 3 s au total | un service qui ne répond pas est `DOWN`, l'ensemble `DEGRADED` ; l'appel ne rend jamais d'erreur | fait (#81) |
@@ -66,16 +66,16 @@ Client ─ requête + Authorization: Bearer <JWT> ─▶ Library / Acquisition
 
 ```text
 Admin ─ POST /downloads ─▶ Acquisition ─ RPC ─▶ Transmission           (téléchargement lancé, état DOWNLOADING)
-  Acquisition ─ POST /internal/downloads {relativePath} ─▶ Library      (l'entrée apparaît « en téléchargement »)
   … Transmission télécharge dans /downloads/complete …
   Acquisition (synchronisation) : Transmission annonce « terminé »
   Acquisition ─ POST /internal/downloads/completed {relativePath} ─▶ Library
      Library : le fichier existe dans /downloads et c'est une vidéo → l'entrée passe à AVAILABLE → 200 {mediaId}
      fichier absent → 404 MEDIA_FILE_MISSING ; chemin invalide (absolu, `..`) → 400 ; dossier non déclaré → 409
-  Acquisition : enregistre le média (`libraryMediaId`) et passe le téléchargement à COMPLETED
+  Acquisition : passe le téléchargement à COMPLETED (le `mediaId` reçu n'est pas conservé)
+  ── échec après les essais, ou refus : le téléchargement passe FAILED, sans reprise automatique.
 ```
 
-Ce flux complet sera livré avec #99 (le côté Library existe, le client d'Acquisition et la synchronisation non).
+Non branché : `POST /internal/downloads` (statut « en téléchargement » dans le catalogue) et `libraryMediaId`.
 
 ## Gestion des pannes
 
@@ -87,7 +87,7 @@ Ce flux complet sera livré avec #99 (le côté Library existe, le client d'Acqu
 | Secret interne absent, faux ou jeton utilisateur sur `/internal` | `401` | aucun traitement, aucune fuite d'information |
 | Appel interne rejoué | même résultat que le premier | purge, « téléchargement démarré » et « terminé » sont idempotents |
 
-Écart connu avec l'ADR 0001 (décision 6, « 3 s et 2 tentatives ») : les appels d'Identity vers Library ont aujourd'hui 2 s de délai de connexion, 5 s de lecture et **une seule tentative** ; l'échec est rendu à l'utilisateur, qui peut réessayer. Les appels d'Acquisition suivront la même règle (#99).
+Écart connu avec l'ADR 0001 (décision 6, « 3 s et 2 tentatives ») : les appels d'Identity vers Library ont aujourd'hui 2 s de délai de connexion, 5 s de lecture et **une seule tentative** ; l'échec est rendu à l'utilisateur, qui peut réessayer. L'appel d'Acquisition vers Library a un délai de 3 s et fait **3 essais** au plus.
 
 ---
 

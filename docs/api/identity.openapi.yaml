@@ -361,7 +361,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Access token RS256 (15 min). Claims `sub` (compte), `roles`, `pid` (profil actif, optionnel), `kid`.
+      description: Access token RS256 (15 min). Claims `sub` (compte), `roles`, `pid` (profil actif, optionnel), `fid` (session de refresh), `kid`.
   parameters:
     XRequestedWith:
       name: X-Requested-With

@@ -14,7 +14,7 @@ Trois services Spring Boot (Identity, Library, Acquisition) ont chacun leur base
 
 - Identity signe les jetons avec une clé privée RSA (jamais committée, fournie par volume ou variable d'environnement) et publie la clé publique sur `GET /.well-known/jwks.json` (réseau interne uniquement).
 - Library et Acquisition sont des *resource servers* : ils valident la signature, l'expiration, l'émetteur et le `kid` avec le JWKS (mis en cache, rechargé si `kid` inconnu). Aucun appel à Identity à chaque requête.
-- Claims : `sub` (identifiant du compte), `roles` (`USER`/`ADMIN`), `pid` (profil actif, optionnel), `iss`, `iat`, `exp`, `kid` en en-tête.
+- Claims : `sub` (identifiant du compte), `roles` (`USER`/`ADMIN`), `pid` (profil actif, optionnel), `fid` (session de refresh du jeton), `iss`, `iat`, `exp`, `kid` en en-tête.
 - Le rôle est celui du moment de l'émission : une désactivation de compte prend effet au prochain refresh (15 min au plus). Compromis accepté pour le MVP, documenté dans les limites connues.
 
 ### 2. Refresh token : opaque, rotatif, en cookie HttpOnly
