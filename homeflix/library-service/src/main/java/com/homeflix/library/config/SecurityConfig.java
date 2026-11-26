@@ -42,6 +42,8 @@ public class SecurityConfig {
                 // Le lecteur vidéo ne peut pas envoyer d'en-tête Authorization : l'accès est protégé par le ticket
                 // de streaming signé (paramètre `t`), vérifié par StreamController.
                 .requestMatchers(HttpMethod.GET, "/api/v1/stream/*").permitAll()
+                // Même contrainte pour les affiches (balise <img>) : adresse signée, vérifiée par PosterController.
+                .requestMatchers(HttpMethod.GET, "/api/v1/posters/*").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .oauth2ResourceServer(o -> o

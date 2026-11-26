@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import com.homeflix.library.files.SafePathResolver;
 import com.homeflix.library.media.MediaRoot;
 import com.homeflix.library.media.MediaRootRepository;
+import com.homeflix.library.poster.PosterFiles;
 
 /** Parcourt les dossiers autorisés actifs et synchronise le catalogue. Lecture seule sur les fichiers. */
 @Component
@@ -103,6 +104,9 @@ public class IndexScanner {
             IndexWriter.Outcome outcome = writer.upsert(root.getId(), relative, attrs.size(),
                     attrs.lastModifiedTime().toInstant().truncatedTo(ChronoUnit.MILLIS), Mp4Duration.read(real));
             seen.add(outcome.mediaId());
+            if (outcome.result() != IndexWriter.Result.SKIPPED) {
+                writer.setPoster(outcome.mediaId(), PosterFiles.besideVideo(realRoot, relative).orElse(null));
+            }
             switch (outcome.result()) {
                 case ADDED -> job.added();
                 case UPDATED -> job.updated();
