@@ -6,10 +6,12 @@ import RouteAccessibility from '@/app/RouteAccessibility'
 import RouteErrorPage from '@/app/RouteErrorPage'
 import AccountPage from '@/features/auth/AccountPage'
 import AdminLayout from '@/features/admin/AdminLayout'
+import ChangePasswordPage from '@/features/auth/ChangePasswordPage'
 import LoginPage from '@/features/auth/LoginPage'
 import ManageProfilesPage from '@/features/auth/ManageProfilesPage'
 import ProfilesPage from '@/features/auth/ProfilesPage'
 import MyListPage from '@/features/favourites/MyListPage'
+import { PASSWORD_PATH } from '@/features/auth/redirect'
 import RequireAuth from '@/features/auth/RequireAuth'
 import RequireProfile from '@/features/auth/RequireProfile'
 import RequireRole from '@/features/auth/RequireRole'
@@ -49,6 +51,7 @@ export const routes = [
           {
             element: <RequireAuth />,
             children: [
+              { path: PASSWORD_PATH, handle: { title: 'Nouveau mot de passe' }, element: <ChangePasswordPage /> },
               { path: '/profiles', handle: { title: 'Qui regarde ?' }, element: <ProfilesPage /> },
               { path: '/profiles/manage', handle: { title: 'Gérer les profils' }, element: <ManageProfilesPage /> },
             ],

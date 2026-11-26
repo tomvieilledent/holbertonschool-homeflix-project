@@ -4,6 +4,7 @@
 const BY_CODE = {
   VALIDATION_ERROR: 'Certaines informations sont invalides. Vérifiez les champs signalés.',
   AUTH_INVALID_CREDENTIALS: 'Identifiant ou mot de passe incorrect.',
+  INVALID_CURRENT_PASSWORD: 'Le mot de passe actuel est incorrect.',
   SESSION_EXPIRED: 'Votre session a expiré. Reconnectez-vous pour continuer.',
   TICKET_EXPIRED: 'Le lien de lecture a expiré. Relancez la lecture.',
   ACCOUNT_DISABLED: 'Ce compte est désactivé. Contactez l’administrateur.',

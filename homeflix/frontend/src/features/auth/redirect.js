@@ -4,11 +4,21 @@ const withNext = (base, { pathname, search = '', hash = '' }) => {
   return next === '/' ? base : `${base}?next=${encodeURIComponent(next)}`
 }
 
-/** URL de connexion qui mémorise la destination demandée. */
-export const loginUrl = (location) => withNext('/login', location)
+/** Écran de remplacement d'un mot de passe temporaire. */
+export const PASSWORD_PATH = '/nouveau-mot-de-passe'
+
+/**
+ * URL de connexion qui mémorise la destination demandée. L'écran de changement de mot de passe n'en est pas une : la
+ * garde y ramène d'elle-même si le compte en a encore besoin.
+ */
+export const loginUrl = (location) =>
+  location.pathname === PASSWORD_PATH ? '/login' : withNext('/login', location)
 
 /** URL du choix de profil qui mémorise la destination demandée. */
 export const profilesUrl = (location) => withNext('/profiles', location)
+
+/** URL de l'écran de changement de mot de passe, qui mémorise la destination demandée. */
+export const passwordUrl = (location) => withNext(PASSWORD_PATH, location)
 
 /**
  * Destination après connexion, limitée aux chemins internes : refuse les URL absolues, les URL

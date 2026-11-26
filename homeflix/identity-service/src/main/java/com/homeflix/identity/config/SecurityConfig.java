@@ -66,8 +66,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/setup", "/api/v1/auth/login", "/api/v1/auth/refresh",
                     "/api/v1/auth/logout")
                     .permitAll()
+                // Un jeton « mot de passe temporaire » n'a aucun rôle (voir jwtAuthenticationConverter).
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password").authenticated()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated())
+                .anyRequest().hasAnyRole("USER", "ADMIN"))
             .oauth2ResourceServer(o -> o
                 .jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(ENTRY_POINT)
@@ -95,11 +98,17 @@ public class SecurityConfig {
         return decoder;
     }
 
-    /** Le claim `roles` (USER/ADMIN) devient les autorités ROLE_USER / ROLE_ADMIN. */
+    /**
+     * Le claim `roles` (USER/ADMIN) devient les autorités ROLE_USER / ROLE_ADMIN, sauf si le claim `mcp` (mot de
+     * passe temporaire à changer) est levé : le jeton n'a alors aucun rôle.
+     */
     private static JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<String> roles = jwt.getClaimAsStringList("roles");
+            if (Boolean.TRUE.equals(jwt.getClaim("mcp"))) {
+                return List.<GrantedAuthority>of();
+            }
             return roles == null ? List.<GrantedAuthority>of()
                 : roles.stream().<GrantedAuthority>map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
         });

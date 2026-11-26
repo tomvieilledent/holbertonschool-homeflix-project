@@ -1,7 +1,8 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import Spinner from '@/components/Spinner'
 import { useAuth } from '@/features/auth/authContext'
 import { loginUrl } from '@/features/auth/redirect'
+import RequirePasswordChange from '@/features/auth/RequirePasswordChange'
 
 /**
  * Garde de route : un anonyme est redirigé vers `/login?next=<destination>`. À utiliser comme route
@@ -34,5 +35,5 @@ export default function RequireAuth() {
       />
     )
   }
-  return <Outlet />
+  return <RequirePasswordChange />
 }
