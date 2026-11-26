@@ -76,13 +76,16 @@ class LoginThrottleIntegrationTests {
     @Autowired MutableClock clock;
     @Autowired LoginThrottle throttle;
 
+    /** Adresses distinctes et jamais réutilisées (le tirage aléatoire pouvait retomber sur une adresse déjà bloquée). */
+    private static final java.util.concurrent.atomic.AtomicInteger NEXT_ADDRESS = new java.util.concurrent.atomic.AtomicInteger();
+
     private String ip;
 
     @BeforeEach
     void reset() {
         clock.now = Instant.now();
         // Une adresse par test : le compteur par IP ne déborde pas d'un test à l'autre.
-        ip = "198.51.100." + (int) (Math.random() * 250 + 1);
+        ip = "198.51.100." + NEXT_ADDRESS.incrementAndGet();
         jdbc.update("DELETE FROM accounts");
         accounts.save(new Account("alice", "alice@maison.fr", encoder.encode(PASSWORD), roles.getReferenceById(Role.USER)));
         throttle.reset("alice");
@@ -194,7 +197,7 @@ class LoginThrottleIntegrationTests {
     @Test
     void lockingOneAccountDoesNotLockAnotherFromAnotherAddress() throws Exception {
         failFiveTimes("alice");
-        String other = "203.0.113." + (int) (Math.random() * 250 + 1);
+        String other = "203.0.113." + NEXT_ADDRESS.incrementAndGet();
         mvc.perform(post("/api/v1/auth/login").header("X-Forwarded-For", other)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"bob\",\"password\":\"" + WRONG + "\"}"))
