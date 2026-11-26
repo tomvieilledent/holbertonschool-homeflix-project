@@ -88,6 +88,21 @@ test.describe('administration', () => {
     }
   })
 
+  test('fenêtres sur un petit téléphone : tous les boutons restent entiers', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 740 })
+    await openAdmin(page, '/admin/bibliotheque', 'Bibliothèque')
+    await page.getByRole('button', { name: 'Ajouter un dossier' }).first().click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('button', { name: 'Annuler' })).toBeVisible()
+    const frame = await dialog.boundingBox()
+    for (const button of await dialog.getByRole('button').all()) {
+      const box = await button.boundingBox()
+      const label = await button.textContent()
+      expect(box.x, `« ${label} » sort à gauche`).toBeGreaterThanOrEqual(frame.x)
+      expect(box.x + box.width, `« ${label} » sort à droite`).toBeLessThanOrEqual(frame.x + frame.width)
+    }
+  })
+
   test('acquisition et services : catalogue autorisé et trois services opérationnels', async ({ page }) => {
     await openAdmin(page, '/admin/acquisition', 'Acquisition')
     await expect(page.getByRole('table', { name: 'Contenus autorisés au téléchargement' })).toContainText('Sintel')
