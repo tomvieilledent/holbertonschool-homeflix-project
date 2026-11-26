@@ -239,6 +239,28 @@ class InternalApiIntegrationTests {
     }
 
     @Test
+    void downloadingAgainARemovedFilmRestoresItsEntry() throws Exception {
+        Files.writeString(DOWNLOADS.resolve("retire.mp4"), "video");
+        call("/internal/downloads/completed", "{\"relativePath\":\"retire.mp4\"}").andExpect(status().isOk());
+        String id = jdbc.queryForObject("select id::text from media_items where relative_path = 'retire.mp4'", String.class);
+        jdbc.update("update media_metadata set title = 'Titre corrigé' where media_id = ?::uuid", id);
+        jdbc.update("update media_items set deleted = true where id = ?::uuid", id);
+
+        // Tant que le nouveau téléchargement n'est pas terminé, l'entrée reste retirée, même après un échec.
+        call("/internal/downloads", "{\"relativePath\":\"retire.mp4\"}").andExpect(status().isConflict());
+        call("/internal/downloads/failed", "{\"relativePath\":\"retire.mp4\"}").andExpect(status().isNoContent());
+        assertThat(jdbc.queryForObject("select deleted from media_items where id = ?::uuid", Boolean.class, id)).isTrue();
+
+        call("/internal/downloads/completed", "{\"relativePath\":\"retire.mp4\"}")
+            .andExpect(status().isOk()).andExpect(jsonPath("$.mediaId").value(id));
+        assertThat(jdbc.queryForObject("select deleted from media_items where id = ?::uuid", Boolean.class, id)).isFalse();
+        call("/internal/media/present", "{\"mediaIds\":[\"" + id + "\"]}")
+            .andExpect(jsonPath("$.mediaIds[0]").value(id));
+        assertThat(jdbc.queryForObject("select title from media_metadata where media_id = ?::uuid", String.class, id))
+            .isEqualTo("Titre corrigé");
+    }
+
+    @Test
     void completedRefusesMissingFilesNonVideosAndTraversal() throws Exception {
         Files.writeString(DOWNLOADS.resolve("notes.txt"), "texte");
         call("/internal/downloads/completed", "{\"relativePath\":\"absent.mp4\"}")

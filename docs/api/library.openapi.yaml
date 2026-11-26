@@ -223,7 +223,7 @@ paths:
     delete:
       tags: [Admin]
       summary: Retire une entrée du catalogue sans supprimer le fichier (ADMIN)
-      description: Le fichier source n'est jamais modifié ni supprimé. L'entrée est exclue des réindexations suivantes.
+      description: Le fichier source n'est jamais modifié ni supprimé. L'entrée est exclue des réindexations suivantes ; un nouveau téléchargement terminé du même fichier la rétablit.
       responses:
         "204": { description: Entrée retirée }
         "401": { $ref: "#/components/responses/Problem" }
