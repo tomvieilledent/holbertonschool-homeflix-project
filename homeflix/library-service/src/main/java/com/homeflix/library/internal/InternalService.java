@@ -21,6 +21,7 @@ import com.homeflix.library.files.UnsafePathException;
 import com.homeflix.library.index.IndexService;
 import com.homeflix.library.index.IndexStatus;
 import com.homeflix.library.index.IndexWriter;
+import com.homeflix.library.index.Mp4Duration;
 import com.homeflix.library.index.VideoFiles;
 import com.homeflix.library.media.Availability;
 import com.homeflix.library.media.MediaItem;
@@ -102,7 +103,7 @@ public class InternalService {
                     "Le fichier terminé est introuvable ou n'est pas une vidéo prise en charge.");
             }
             IndexWriter.Outcome outcome = writer.upsert(root.getId(), relative, Files.size(file),
-                Files.getLastModifiedTime(file).toInstant());
+                Files.getLastModifiedTime(file).toInstant(), Mp4Duration.read(file));
             if (outcome.result() == IndexWriter.Result.SKIPPED) {
                 throw new ApiException(HttpStatus.CONFLICT, "CONFLICT", "Conflit",
                     "Cette entrée a été retirée du catalogue.");
