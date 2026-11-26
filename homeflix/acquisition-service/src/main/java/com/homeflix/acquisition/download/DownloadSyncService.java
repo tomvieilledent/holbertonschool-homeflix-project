@@ -91,14 +91,21 @@ public class DownloadSyncService {
      * Un téléchargement passé en FAILED parce que le client était injoignable laisse son torrent dans le client :
      * il reprendrait seul au redémarrage, sans que HomeFlix le sache. Dès que le client répond, le torrent est
      * retiré (sans effacer de fichier terminé) et son identifiant oublié ; recliquer sur « Télécharger » repart de zéro.
+     * Si cette relance est déjà partie, le client lui a rendu le même torrent : il n'est alors pas retiré.
      */
     private void removeAbandonedTorrents() {
         for (Download d : downloads.findByStateAndErrorCodeAndTorrentIdIsNotNull(DownloadState.FAILED,
                 "TORRENT_CLIENT_UNAVAILABLE")) {
-            try {
-                torrent.cancel(d.getTorrentId());
-            } catch (TorrentClientUnavailableException e) {
-                return; // toujours injoignable : nouvelle tentative au prochain passage
+            List<Download> active = downloads.findByStateIn(DownloadState.ACTIVE);
+            if (active.stream().anyMatch(a -> a.getTorrentId() == null && a.getEntryId().equals(d.getEntryId()))) {
+                continue; // relance en train de démarrer : son torrent n'est pas encore connu
+            }
+            if (active.stream().noneMatch(a -> d.getTorrentId().equals(a.getTorrentId()))) {
+                try {
+                    torrent.cancel(d.getTorrentId());
+                } catch (TorrentClientUnavailableException e) {
+                    return; // toujours injoignable : nouvelle tentative au prochain passage
+                }
             }
             d.setTorrentId(null);
             downloads.save(d);
