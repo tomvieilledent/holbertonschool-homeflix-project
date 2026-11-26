@@ -91,6 +91,8 @@ paths:
         Le chemin est validé avant enregistrement : il doit être absolu, sans segment `..`, se trouver sous un emplacement
         autorisé (les montages `/media` et `/downloads` du conteneur), exister, être un dossier lisible, et ne contenir
         ni n'être contenu dans une autre racine. Le chemin enregistré est le chemin réel (liens symboliques résolus).
+        Ajouter un dossier retiré (même chemin réel) le réactive : même identifiant, mêmes entrées avec leurs corrections,
+        favoris et progression, de nouveau disponibles après une indexation. Les entrées retirées du catalogue le restent.
         Erreurs : `ROOT_NOT_FOUND`, `ROOT_NOT_A_DIRECTORY`, `ROOT_NOT_READABLE`, `ROOT_NOT_ALLOWED` (400), `ROOT_OVERLAP` (409).
       requestBody:
         required: true
