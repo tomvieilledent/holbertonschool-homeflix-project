@@ -234,8 +234,8 @@ describe('LibraryPage', () => {
 
       expect(dialog()).toHaveAccessibleName(`Retirer le dossier « ${first.label} » ?`)
       expect(within(dialog()).getByText(/deviendront indisponibles/)).toBeInTheDocument()
-      // Rajouter le dossier ne rétablit pas les anciennes fiches : l'écran le dit avant de confirmer.
-      expect(within(dialog()).getByText(/ajoutés comme de nouveaux films/)).toBeInTheDocument()
+      // Rajouter le dossier retrouve ses films : l'écran le dit avant de confirmer.
+      expect(within(dialog()).getByText(/une indexation retrouvera ses films/)).toBeInTheDocument()
       expect(within(dialog()).getByText(/Aucun fichier n’est supprimé/)).toBeInTheDocument()
       expect(within(dialog()).getByRole('button', { name: 'Annuler' })).toHaveFocus()
       expect(writes).toHaveLength(0)
