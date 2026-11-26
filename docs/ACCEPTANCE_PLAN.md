@@ -301,10 +301,7 @@ En tête du rapport : version candidate (commit ou tag), date, machine, personne
 
 | Limite | Effet sur les scénarios | Issue |
 |---|---|---|
-| Un rechargement de page (F5) fait perdre le profil actif : retour sur « Qui regarde ? » | Un clic de plus (3, 4, 5, 7) | #222 |
-| Un mot de passe temporaire ne peut jamais être changé | Hors scénarios, mais écart de sécurité | #223 |
 | Un compte désactivé garde l'accès à l'API jusqu'à 15 minutes avec un jeton déjà émis | Hors scénarios | Écart E4 de `INTEGRATION_J7.md` (contrat à préciser) |
-| La suppression de compte ne purge pas encore Acquisition | Hors scénarios | #97 |
 | Un même film copié sous un autre nom n'est pas détecté comme doublon | Scénarios 2 et 6 | #73 |
 | Les titres sont les noms de fichier tant que les métadonnées ne sont pas corrigées (le script de démonstration les corrige) | Scénarios 2 et 3 | #84 |
 | Pas de HTTPS dans l'application (HTTP simple sur le port 8080) | Hors scénarios | README, section 6 (« Non testé ») |
