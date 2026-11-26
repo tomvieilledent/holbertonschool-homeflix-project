@@ -101,7 +101,7 @@ public class IndexScanner {
             }
             BasicFileAttributes attrs = Files.readAttributes(real, BasicFileAttributes.class);
             IndexWriter.Outcome outcome = writer.upsert(root.getId(), relative, attrs.size(),
-                    attrs.lastModifiedTime().toInstant().truncatedTo(ChronoUnit.MILLIS));
+                    attrs.lastModifiedTime().toInstant().truncatedTo(ChronoUnit.MILLIS), Mp4Duration.read(real));
             seen.add(outcome.mediaId());
             switch (outcome.result()) {
                 case ADDED -> job.added();

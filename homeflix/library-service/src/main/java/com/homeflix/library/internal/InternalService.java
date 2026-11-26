@@ -21,6 +21,7 @@ import com.homeflix.library.files.UnsafePathException;
 import com.homeflix.library.index.IndexService;
 import com.homeflix.library.index.IndexStatus;
 import com.homeflix.library.index.IndexWriter;
+import com.homeflix.library.index.Mp4Duration;
 import com.homeflix.library.index.VideoFiles;
 import com.homeflix.library.media.Availability;
 import com.homeflix.library.media.MediaItem;
@@ -125,7 +126,7 @@ public class InternalService {
                     "Le fichier terminé est introuvable ou n'est pas une vidéo prise en charge.");
             }
             IndexWriter.Outcome outcome = writer.upsert(root.getId(), relative, Files.size(file),
-                Files.getLastModifiedTime(file).toInstant());
+                Files.getLastModifiedTime(file).toInstant(), Mp4Duration.read(file));
             if (outcome.result() == IndexWriter.Result.SKIPPED) {
                 throw new ApiException(HttpStatus.CONFLICT, "CONFLICT", "Conflit",
                     "Cette entrée a été retirée du catalogue.");
@@ -137,7 +138,7 @@ public class InternalService {
             throw new ApiException(HttpStatus.NOT_FOUND, "MEDIA_FILE_MISSING", "Fichier introuvable",
                 "Le fichier terminé est introuvable dans le dossier de téléchargements.");
         } catch (IOException e) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "MEDIA_FILE_MISSING", "Fichier inaccessible",
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Fichier inaccessible",
                 "Le fichier terminé n'a pas pu être lu.");
         }
     }
