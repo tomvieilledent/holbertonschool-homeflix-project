@@ -130,9 +130,10 @@ Réponses : `200 {"mediaId":"<uuid>"}` ; `400` chemin invalide ; `409` dossier d
 
 ### `POST /internal/downloads/completed` — Acquisition (téléchargement terminé)
 Même corps. Le fichier doit exister dans le dossier de téléchargements (liens symboliques hors dossier refusés) et être
-une vidéo (`mp4`, `mkv`, `webm`). L'entrée passe à `AVAILABLE` (créée si besoin). Idempotent.
+une vidéo (`mp4`, `mkv`, `webm`). L'entrée passe à `AVAILABLE` (créée si besoin). Une entrée retirée du catalogue est
+rétablie, avec le même identifiant et ses métadonnées : l'administrateur a redemandé le film. Idempotent.
 
-Réponses : `200 {"mediaId":"<uuid>"}` ; `404 MEDIA_FILE_MISSING` ; `400` chemin invalide ; `409`.
+Réponses : `200 {"mediaId":"<uuid>"}` ; `404 MEDIA_FILE_MISSING` ; `400` chemin invalide ; `409` dossier de téléchargements non déclaré.
 
 ### `POST /internal/downloads/failed` — Acquisition (échec ou annulation)
 Même corps (`title` ignoré). Une entrée créée pour ce téléchargement est supprimée ; une entrée qui existait déjà redevient `UNAVAILABLE` ; une entrée dans un autre état ne change pas. Idempotent.
