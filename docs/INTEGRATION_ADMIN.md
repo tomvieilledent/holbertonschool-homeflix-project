@@ -21,8 +21,8 @@ Fait le 25/11/2026 sur la pile Docker Compose, sans mock, avec un compte adminis
 | A1 | *Corrigé le 26/11 par #322.* **Retirer un dossier puis le rajouter indexe ses films en double.** Constaté : 31 films avant, 36 après (5 fichiers dans le dossier). La fiche corrigée (titre, genre, année), sa place dans « Ma liste » et sa progression restent sur l'ancienne entrée, indisponible ; la nouvelle repart de zéro | Library | À l'ajout, réactiver le dossier retiré de même chemin (`removed = false`) : les entrées seraient retrouvées par dossier et chemin relatif |
 | A2 | Deux fichiers identiques donnent deux entrées, « Doublons 0 » | Library | Point encore ouvert dans #73 |
 | A3 | Un fichier `.mp4` corrompu est ajouté au catalogue, « Erreurs 0 » ; l'échec n'apparaît qu'à la lecture | Library | Contrôler le contenu à l'indexation, ou assumer et le documenter |
-| A4 | La durée reste vide (« — ») pour les films indexés | Library | Limite déjà connue ([`KNOWN_LIMITS.md`](KNOWN_LIMITS.md)) |
-| A5 | Un téléchargement reste « En cours » : ni « Terminé » ni ajout à la bibliothèque | Acquisition | #99 |
+| A4 | *Corrigé pour les MP4 par #305.* La durée reste vide (« — ») pour les films indexés ; les `.mkv` et `.webm` restent sans durée | Library | Limite déjà connue ([`KNOWN_LIMITS.md`](KNOWN_LIMITS.md), L7) |
+| A5 | *Corrigé par #275.* Un téléchargement reste « En cours » : ni « Terminé » ni ajout à la bibliothèque | Acquisition | #99 |
 
 ## Corrigé côté interface
 
@@ -35,6 +35,8 @@ La fenêtre de retrait d'un dossier disait « vous pourrez le rajouter plus tard
 - Les écrans d'administration fonctionnent sans profil actif.
 
 ## Non vérifié
+
+À la date de ce passage (25/11). Depuis, un transfert BitTorrent réel a abouti et Firefox a été essayé ([`KNOWN_LIMITS.md`](KNOWN_LIMITS.md), sections 1 et 6).
 
 - Aucun transfert BitTorrent réel : Transmission était coupé d'Internet. L'état « Terminé » d'un téléchargement a été écrit dans la base de test pour obtenir le refus d'annulation (409).
 - Un dossier non lisible (`ROOT_NOT_READABLE`) : les permissions ne peuvent pas être retirées sur le montage Windows utilisé. Ce code partage son statut (400) avec les autres refus, observés.
