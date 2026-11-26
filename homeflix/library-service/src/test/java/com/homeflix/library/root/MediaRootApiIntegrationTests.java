@@ -311,12 +311,68 @@ class MediaRootApiIntegrationTests {
 
 	@Test
 	@WithMockUser(roles = "ADMIN")
-	void aRemovedFolderCanBeAddedAgain() throws Exception {
+	void aRemovedFolderAddedAgainIsReactivated() throws Exception {
 		UUID id = createRoot(films);
 		mvc.perform(delete(URL + "/" + id)).andExpect(status().isNoContent());
 
-		create(films.toString()).andExpect(status().isCreated());
-		assertThat(jdbc.queryForObject("select count(*) from media_roots where path = ?", Integer.class, films.toRealPath().toString())).isEqualTo(2);
+		mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"path\":\"" + films + "\",\"label\":\"Retour\"}"))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").value(id.toString()))
+				.andExpect(jsonPath("$.label").value("Retour"))
+				.andExpect(jsonPath("$.enabled").value(true));
+		assertThat(jdbc.queryForObject("select count(*) from media_roots", Integer.class)).isEqualTo(1);
+	}
+
+	@Test
+	@WithMockUser(roles = "ADMIN")
+	void theMostRecentOfSeveralRemovedFoldersIsReactivated() throws Exception {
+		String path = films.toRealPath().toString();
+		UUID older = UUID.randomUUID();
+		UUID newer = UUID.randomUUID();
+		String insert = "insert into media_roots (id, path, label, removed, created_at) values (?, ?, 'x', true, now() - ?::interval)";
+		jdbc.update(insert, older, path, "2 days");
+		jdbc.update(insert, newer, path, "1 day");
+
+		assertThat(createRoot(films)).isEqualTo(newer);
+	}
+
+	@Test
+	@WithMockUser(roles = "ADMIN")
+	void reindexingAReaddedFolderKeepsItsEntries() throws Exception {
+		Path folder = Files.createDirectories(BASE.resolve("retour"));
+		Files.writeString(folder.resolve("garde.mp4"), "video");
+		Files.writeString(folder.resolve("retire.mp4"), "video");
+		UUID id = createRoot(folder);
+		scan();
+		String kept = jdbc.queryForObject("select id::text from media_items where relative_path = 'garde.mp4'", String.class);
+		jdbc.update("update media_metadata set title = 'Titre corrigé', edited = true where media_id = ?::uuid", kept);
+		jdbc.update("update media_items set deleted = true where relative_path = 'retire.mp4'");
+
+		mvc.perform(delete(URL + "/" + id)).andExpect(status().isNoContent());
+		createRoot(folder);
+		scan();
+
+		assertThat(jdbc.queryForObject("select count(*) from media_items", Integer.class)).isEqualTo(2);
+		assertThat(jdbc.queryForObject("select availability from media_items where id = ?::uuid", String.class, kept))
+				.isEqualTo("AVAILABLE");
+		assertThat(jdbc.queryForObject("select title from media_metadata where media_id = ?::uuid", String.class, kept))
+				.isEqualTo("Titre corrigé");
+		assertThat(jdbc.queryForObject("select deleted from media_items where relative_path = 'retire.mp4'", Boolean.class))
+				.isTrue();
+	}
+
+	/** Lance une indexation et attend sa fin. */
+	private void scan() throws Exception {
+		mvc.perform(post("/api/v1/admin/index")).andExpect(status().isAccepted());
+		for (int i = 0; i < 200; i++) {
+			String body = mvc.perform(get("/api/v1/admin/index/status")).andReturn().getResponse().getContentAsString();
+			if (!body.contains("RUNNING")) {
+				return;
+			}
+			Thread.sleep(50);
+		}
+		throw new AssertionError("L'indexation ne se termine pas");
 	}
 
 	// --- Autorisation ---------------------------------------------------------------------------

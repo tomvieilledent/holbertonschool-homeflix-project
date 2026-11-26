@@ -14,4 +14,7 @@ public interface MediaRootRepository extends JpaRepository<MediaRoot, UUID> {
     Optional<MediaRoot> findByIdAndRemovedFalse(UUID id);
 
     Optional<MediaRoot> findByPathAndRemovedFalse(String path);
+
+    /** Dernier dossier créé puis retiré à ce chemin (une ancienne base peut en avoir plusieurs). */
+    Optional<MediaRoot> findFirstByPathAndRemovedTrueOrderByCreatedAtDesc(String path);
 }
