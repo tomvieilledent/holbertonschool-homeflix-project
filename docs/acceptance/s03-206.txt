@@ -1,0 +1,5 @@
+[OK] S3.3 lecture partielle (Range 1000-1999) : 206 (attendu 206)
+HTTP/1.1 206
+Content-Length: 1000
+Accept-Ranges: bytes
+Content-Range: bytes 1000-1999/129184608

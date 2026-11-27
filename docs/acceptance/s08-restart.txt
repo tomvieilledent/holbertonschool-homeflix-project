@@ -1,0 +1,4 @@
+[OK] S8.2 après restart : position : 754 (attendu 754)
+[OK] S8.2 après restart : films : 2 (attendu 2)
+[OK] S8.3 après down puis up : position : 754 (attendu 754)
+[OK] S8.3 après down puis up : films : 2 (attendu 2)

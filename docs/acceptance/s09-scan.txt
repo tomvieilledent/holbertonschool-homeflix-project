@@ -1,0 +1,6 @@
+--- indexation sans le fichier
+{"jobId":"8c68da36-7bfc-46d6-9624-c717e737b892","state":"COMPLETED","scanned":1,"added":0,"updated":0,"markedUnavailable":1,"duplicates":0,"errors":0,"startedAt":"2026-11-27T09:16:26.509255075Z","finishedAt":"2026-11-27T09:16:26.859870089Z"}
+[OK] S9.1 film marqué indisponible : 1 (attendu 1)
+[OK] S9.2 fiche : UNAVAILABLE (attendu UNAVAILABLE)
+[OK] S9.2 ticket de streaming : 409 (attendu 409)
+[OK] S9.3 fichier remis : AVAILABLE (attendu AVAILABLE)

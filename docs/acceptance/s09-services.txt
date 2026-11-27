@@ -1,0 +1,6 @@
+[OK] S9.5 Library arrêté (502 ou 504 du proxy) : erreur-du-proxy (attendu erreur-du-proxy)
+  réponse 504 après 60 s
+--- état des services, Library arrêté
+{"status":"DEGRADED","checkedAt":"2026-11-27T09:17:33.848171365Z","services":[{"name":"identity","status":"UP"},{"name":"library","status":"DOWN"},{"name":"acquisition","status":"UP"}]}
+[OK] S9 état général : DEGRADED (attendu DEGRADED)
+[OK] S9.4 Identity arrêté : connexion : 502 (attendu 502)

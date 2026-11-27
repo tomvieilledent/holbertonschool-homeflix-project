@@ -1,0 +1,9 @@
+[OK] services healthy : 6 (attendu 6)
+SERVICE               STATUS
+acquisition-service   Up 33 seconds (healthy)
+db                    Up About a minute (healthy)
+frontend              Up 6 seconds (healthy)
+identity-service      Up 55 seconds (healthy)
+library-service       Up 34 seconds (healthy)
+transmission          Up About a minute (healthy)
+[OK] création de l'administrateur (/setup) : 201 (attendu 201)

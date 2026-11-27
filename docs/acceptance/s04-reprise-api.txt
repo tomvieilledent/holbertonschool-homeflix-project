@@ -1,0 +1,5 @@
+[OK] S4.1 enregistrer 754 s (Alice) : 200 (attendu 200)
+--- après reconnexion
+{"mediaId":"df71f73c-5265-4824-b9a1-0f99f7ef7de5","positionSeconds":754,"durationSeconds":888,"state":"STARTED","updatedAt":"2026-11-27T09:14:10.686908Z"}
+[OK] S4.2 position après reconnexion : 754 (attendu 754)
+[OK] S4.2 état : STARTED (attendu STARTED)
