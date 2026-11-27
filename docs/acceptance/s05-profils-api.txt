@@ -1,0 +1,4 @@
+[OK] S5.2 progression de Bob : NOT_STARTED (attendu NOT_STARTED)
+[OK] S5.1 Alice ajoute à sa liste : 204 (attendu 204)
+[OK] S5.3 favoris d'Alice : 1 (attendu 1)
+[OK] S5.2 favoris de Bob : 0 (attendu 0)

@@ -1,0 +1,4 @@
+[OK] S2.5 dossier /etc refusé : 400 (attendu 400)
+--- réponse
+{"detail":"Ce dossier n'est pas dans un emplacement autorisé : choisissez un dossier situé sous /media ou /downloads.","instance":"/api/v1/admin/media-roots","status":400,"title":"Dossier refusé","type":"https://homeflix.local/problems/root-not-allowed","code":"ROOT_NOT_ALLOWED"}
+[OK] S2.5 /media/../etc refusé : 400 (attendu 400)

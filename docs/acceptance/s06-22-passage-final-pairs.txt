@@ -1,0 +1,7 @@
+Suivi Transmission pendant le téléchargement du 27/11 à 11:31 (extraits), torrent 08ada5a7a6183aae1e09d831df6748d566095a10
+  0 %      0 B/s       pairs connectés : 1, puis 4, 11, 14, 16
+  4,95 %   3,20 MB/s   16 pairs, reçoit de 8
+  29,5 %   6,74 MB/s   17 pairs, reçoit de 13
+  66,4 %   6,02 MB/s   17 pairs, reçoit de 14
+  100 %    0 B/s       0 pair (partage arrêté à la fin)
+Après : /downloads/complete/Sintel/Sintel.mp4, 129241752 octets, 9 sous-titres et poster.jpg

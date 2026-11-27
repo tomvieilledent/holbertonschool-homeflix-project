@@ -1,0 +1,10 @@
+[OK] S6.3 lien magnet absent du catalogue : 0 (attendu 0)
+[OK] S6.2 acquitter le rappel : 200 (attendu 200)
+[OK] S6.4 démarrer : 202 (attendu 202)
+[OK] S6.4 état : DOWNLOADING (attendu DOWNLOADING)
+[OK] S6.4 second démarrage refusé : 409 (attendu 409)
+[OK] S6.7 annuler : 200 (attendu 200)
+[OK] S6.7 état : CANCELLED (attendu CANCELLED)
+[OK] S6.8 client BitTorrent arrêté : 503 (attendu 503)
+--- réponse
+{"detail":"Le service de téléchargement est momentanément indisponible. Réessayez plus tard.","instance":"/api/v1/downloads","status":503,"title":"Client BitTorrent indisponible","type":"https://homeflix.local/problems/torrent-client-unavailable","code":"TORRENT_CLIENT_UNAVAILABLE"}

@@ -1,0 +1,3 @@
+[OK] S6.1 sans rappel des droits acquitté : 412 (attendu 412)
+--- réponse
+{"detail":"Lisez et acquittez le rappel des droits avant de télécharger.","instance":"/api/v1/downloads","status":412,"title":"Rappel des droits non acquitté","type":"https://homeflix.local/problems/rights-not-acknowledged","code":"RIGHTS_NOT_ACKNOWLEDGED"}

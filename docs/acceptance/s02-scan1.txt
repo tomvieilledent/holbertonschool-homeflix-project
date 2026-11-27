@@ -1,0 +1,4 @@
+--- état après le premier scan
+{"jobId":"836b0c04-cb75-4e4c-936c-167d1feddfb6","state":"COMPLETED","scanned":2,"added":2,"updated":0,"markedUnavailable":0,"duplicates":0,"errors":0,"startedAt":"2026-11-27T09:14:05.722541343Z","finishedAt":"2026-11-27T09:14:05.913564085Z"}
+[OK] S2.2 premier scan : COMPLETED (attendu COMPLETED)
+[OK] S2.2 films ajoutés : 2 (attendu 2)
